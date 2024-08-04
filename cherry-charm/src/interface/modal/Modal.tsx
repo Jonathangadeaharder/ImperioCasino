@@ -73,11 +73,6 @@ const Modal = () => {
                   © 2024 Bar Imperio.
                 </a>
               </div>
-              <div className="modal-about">
-                <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">
-                  Licenciado bajo la GNU AGPL 3.0
-                </a>
-              </div>
             </div>
           </div>
         </div>

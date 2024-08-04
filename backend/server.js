@@ -8,10 +8,10 @@ app.use(bodyParser.json());
 app.use(cors());
 
 const pool = new Pool({
-  user: 'jonandrop',
+  user: 'imperiouser',
   host: 'localhost',
   database: 'yourdb',
-  password: 'C0delyoko!',
+  password: 'dMMLW6bpgFOq6Z',
   port: 5432,
 });
 

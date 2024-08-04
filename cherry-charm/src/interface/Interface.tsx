@@ -23,7 +23,6 @@ const Interface = () => {
 
       {/* Logo */}
       <a
-        href="https://github.com/michaelkolesidis/cherry-charm"
         target="_blank"
       >
         <img className="logo" src="./images/logo.png" alt="" />
