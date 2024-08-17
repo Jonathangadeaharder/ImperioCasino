@@ -1,7 +1,3 @@
-// Copyright (c) 2023 Michael Kolesidis <michael.kolesidis@gmail.com>
-// Licensed under the GNU Affero General Public License v3.0.
-// https://www.gnu.org/licenses/gpl-3.0.html
-
 import {
   useRef,
   useEffect,
@@ -19,8 +15,6 @@ import endgame from "./utils/functions/endgame";
 import { WHEEL_SEGMENT } from "./utils/constants";
 import Reel from "./Reel";
 import Button from "./Button";
-// import Casing from "./Casing";
-// import Bars from "./Bars";
 
 interface ReelGroup extends THREE.Group {
   reelSegment?: number;
@@ -31,59 +25,49 @@ interface ReelGroup extends THREE.Group {
 
 interface SlotMachineProps {
   value: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7)[];
+  userId: string;  // Assuming userId is passed as a prop
 }
 
-const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
-  // const valuesUrl = useGame((state) => state.valuesUrl);
+const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
   const fruit0 = useGame((state) => state.fruit0);
   const fruit1 = useGame((state) => state.fruit1);
   const fruit2 = useGame((state) => state.fruit2);
   const setFruit0 = useGame((state) => state.setFruit0);
   const setFruit1 = useGame((state) => state.setFruit1);
   const setFruit2 = useGame((state) => state.setFruit2);
-  // const receivedSegments = useGame((state) => state.receivedSegments);
-  // const setReceivedSegments = useGame((state) => state.setReceivedSegments);
-  // const setSparkles = useGame((state) => state.setSparkles);
   const phase = useGame((state) => state.phase);
   const start = useGame((state) => state.start);
   const end = useGame((state) => state.end);
   const addSpin = useGame((state) => state.addSpin);
   const coins = useGame((state) => state.coins);
   const updateCoins = useGame((state) => state.updateCoins);
+  const fetchCoins = useGame((state) => state.fetchCoins);
 
-  // const fetchSegmentValues = async () => {
-  //   try {
-  //     const requestOptions = {
-  //       method: "GET",
-  //       headers: { "Content-Type": "application/json" },
-  //     };
-  //     const response = await fetch(valuesUrl, requestOptions);
-  //     if (response.ok) {
-  //       const data = await response.json();
-
-  //       setReceivedSegments(data);
-  //       console.log(data[0]);
-  //     } else {
-  //       console.error("Failed to fetch scratch card: ", response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error while fetching scratch card: ", error);
-  //   }
-  // };
+  // Fetch initial coins when the component mounts
+  useEffect(() => {
+    console.log("Component mounted, userId:", userId);
+    if (userId) {
+      fetchCoins(userId);
+    } else {
+      console.error("userId is undefined. Cannot fetch initial coins.");
+    }
+  }, [userId, fetchCoins]);
 
   useEffect(() => {
     devLog("PHASE: " + phase);
 
     if (phase === "idle") {
-      // const winnings = endgame(fruit0, fruit1, fruit2);
-      updateCoins(endgame(fruit0, fruit1, fruit2));
-
-      // setSparkles(true);
-      // setTimeout(() => {
-      //   setSparkles(false);
-      // }, 1000);
+      console.log("User ID:", userId); // Überprüfen, ob userId definiert ist
+      const winnings = endgame(fruit0, fruit1, fruit2);
+      console.log("Winnings:", winnings);
+      if (userId && winnings !== 0) {  // Nur wenn userId definiert ist und winnings nicht null sind
+        console.log("Updating coins for userId:", userId, "with winnings:", winnings);
+        updateCoins(userId, winnings);
+      } else {
+        console.warn("Skipping updateCoins due to missing userId or winnings being 0.");
+      }
     }
-  }, [phase]);
+  }, [phase, fruit0, fruit1, fruit2, updateCoins, userId]);
 
   const reelRefs = [
     useRef<ReelGroup>(null),
@@ -92,6 +76,7 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
   ];
 
   const spinSlotMachine = () => {
+    console.log("Spinning slot machine");
     start();
     const min = 15;
     const max = 30;
@@ -129,11 +114,19 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
       if (event.code === "Space") {
         if (phase !== "spinning") {
           if (coins > 0) {
-            // fetchSegmentValues();
+            console.log("Space key pressed, spinning slot machine");
             spinSlotMachine();
             addSpin();
-            updateCoins(-1);
+            if (userId) {
+              updateCoins(userId, -1);
+            } else {
+              console.error("userId is undefined, cannot update coins.");
+            }
+          } else {
+            console.warn("Not enough coins to spin the slot machine.");
           }
+        } else {
+          console.log("Slot machine is already spinning.");
         }
       }
     };
@@ -143,7 +136,7 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [phase]);
+  }, [phase, coins, userId, spinSlotMachine, addSpin, updateCoins]);
 
   useFrame(() => {
     for (let i = 0; i < reelRefs.length; i++) {
@@ -196,10 +189,6 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
     reelRefs,
   }));
 
-  // useImperativeHandle(ref, () => ({
-  //   reelRefs: reelRefs.map((ref) => ref.current),
-  // }));
-
   const [buttonZ, setButtonZ] = useState(0);
   const [buttonY, setButtonY] = useState(-13);
 
@@ -208,12 +197,6 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
 
   return (
     <>
-      {/* <Casing
-        scale={[25, 25, 25]}
-        position={[0, -12, 13.8]}
-        rotation={[0.2,  Math.PI, 0]}
-      /> */}
-      {/* <Bars /> */}
       <Reel
         ref={reelRefs[0]}
         value={value[0]}
@@ -248,9 +231,16 @@ const SlotMachine = forwardRef(({ value }: SlotMachineProps, ref) => {
         onClick={() => {
           if (phase !== "spinning") {
             if (coins > 0) {
+              console.log("Button clicked, spinning slot machine");
               spinSlotMachine();
               addSpin();
-              updateCoins(-1);
+              if (userId) {
+                updateCoins(userId, -1);
+              } else {
+                console.error("userId is undefined, cannot update coins.");
+              }
+            } else {
+              console.warn("Not enough coins to spin the slot machine.");
             }
           }
         }}
