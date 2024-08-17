@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -25,11 +26,41 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
+        username = request.form['username']
+        existing_user = User.query.filter_by(username=username).first()
+
+        if existing_user:
+            return 'Username already taken. Please choose a different username.'
+
         hashed_password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
-        new_user = User(username=request.form['username'], password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('login'))
+        new_user = User(username=username, password=hashed_password)
+        
+        try:
+            # Add the new user to the local database
+            db.session.add(new_user)
+            db.session.commit()
+
+            # Call the backend to create a user with 100 starting coins
+            response = requests.post('http://localhost:3001/createUser', json={'userId': new_user.username})
+            
+            # Log the full response for debugging
+            print('Response status code:', response.status_code)
+            print('Response content:', response.content)
+
+            if response.status_code != 201:
+                try:
+                    error_message = response.json().get('error', 'Unknown error')
+                except ValueError:
+                    error_message = f"Non-JSON response: {response.text}"
+
+                return f"Error creating user on backend: {error_message}"
+
+            return redirect(url_for('login'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return f"An error occurred: {str(e)}"
+
     return render_template('signup.html')
 
 @app.route('/dashboard')

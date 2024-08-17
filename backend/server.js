@@ -15,6 +15,30 @@ const pool = new Pool({
   port: 5432,
 });
 
+// Route to create a new user
+app.post('/createUser', async (req, res) => {
+  const { userId } = req.body;
+  const startingCoins = 100;
+
+  try {
+    const result = await pool.query('SELECT userId FROM users WHERE userId = $1', [userId]);
+
+    if (result.rows.length > 0) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    await pool.query(
+      'INSERT INTO users (userId, coins) VALUES ($1, $2)',
+      [userId, startingCoins]
+    );
+
+    res.status(201).json({ message: 'User created successfully', userId, coins: startingCoins });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/updateCoins', async (req, res) => {
   const { userId, coins } = req.body;
   try {
@@ -34,7 +58,7 @@ app.post('/updateCoins', async (req, res) => {
 app.get('/getCoins', async (req, res) => {
   const { userId } = req.query;
   try {
-    const result = await pool.query('SELECT coins FROM users WHERE userid = $1', [userId]);
+    const result = await pool.query('SELECT coins FROM users WHERE userId = $1', [userId]);
     if (result.rows.length > 0) {
       res.json({ coins: result.rows[0].coins });
     } else {
