@@ -4,10 +4,25 @@ import devLog from "../utils/functions/devLog";
 import { Fruit } from "../utils/enums";
 
 // Helper function to fetch initial coins
+const userManagementServer = "http://13.60.215.133:5000";
+
 async function fetchInitialCoins(userId: string): Promise<number> {
+  const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
+
+  if (!token) {
+    console.error("No token found. Redirecting to login.");
+    window.location.href = `${userManagementServer}/login`;
+    return 0;
+  }
+
   try {
-    console.log(`Fetching initial coins for userId: ${userId}`);
-    const response = await fetch(`http://localhost:3001/getCoins?userId=${userId}`);
+    console.log(`Fetching initial coins for userId: ${userId} with token ${token}`);
+    const response = await fetch(`http://13.60.215.133:3001/getCoins?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`, // Ensure 'Bearer' prefix is included
+      },
+    });
     console.log(`Response status: ${response.status}`);
 
     if (!response.ok) {
@@ -24,14 +39,24 @@ async function fetchInitialCoins(userId: string): Promise<number> {
   }
 }
 
+
 // Helper function to update coins in the database
 async function updateCoinsInDatabase(userId: string, coins: number): Promise<void> {
+  const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
+
+  if (!token) {
+    console.error("No token found. Redirecting to login.");
+    window.location.href = `${userManagementServer}/login`;
+    return;
+  }
+
   try {
     console.log(`Updating coins for userId: ${userId} with coins: ${coins}`);
-    const response = await fetch('http://localhost:3001/updateCoins', {
+    const response = await fetch('http://13.60.215.133:3001/updateCoins', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
       },
       body: JSON.stringify({ userId, coins }),
     });
@@ -44,6 +69,8 @@ async function updateCoinsInDatabase(userId: string, coins: number): Promise<voi
     console.error("Error updating coins in database:", error);
   }
 }
+
+
 
 type State = {
   // Modal
