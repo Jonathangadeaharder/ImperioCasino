@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from .config import Config  # Use relative import
 import logging
+from flask_cors import CORS
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG,
@@ -15,6 +16,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # Initialize Migrate

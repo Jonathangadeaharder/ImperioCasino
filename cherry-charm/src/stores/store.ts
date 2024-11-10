@@ -4,7 +4,7 @@ import devLog from "../utils/functions/devLog";
 import { Fruit } from "../utils/enums";
 
 // Helper function to fetch initial coins
-const userManagementServer = "http://13.60.215.133:5000";
+const userManagementServer = "http://127.0.0.1:5000";
 
 async function fetchInitialCoins(userId: string): Promise<number> {
   const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
@@ -17,20 +17,22 @@ async function fetchInitialCoins(userId: string): Promise<number> {
 
   try {
     console.log(`Fetching initial coins for userId: ${userId} with token ${token}`);
-    const response = await fetch(`http://13.60.215.133:3001/getCoins?userId=${userId}`, {
+    const response = await fetch(`${userManagementServer}/getCoins?userId=${userId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`, // Ensure 'Bearer' prefix is included
       },
     });
-    console.log(`Response status: ${response.status}`);
-
+    console.log(`Response: ${response.status}`);
     if (!response.ok) {
       console.error(`Failed to fetch coins for userId: ${userId}, Status: ${response.status}`);
       return 0;
     }
 
+    console.log("retrieving response")
     const data = await response.json();
+    console.log("logging data")
+    console.log(data)
     console.log(`Fetched coins: ${data.coins} for userId: ${userId}`);
     return data.coins;
   } catch (error) {
@@ -52,7 +54,7 @@ async function updateCoinsInDatabase(userId: string, coins: number): Promise<voi
 
   try {
     console.log(`Updating coins for userId: ${userId} with coins: ${coins}`);
-    const response = await fetch('http://13.60.215.133:3001/updateCoins', {
+    const response = await fetch(`${userManagementServer}/updateCoins`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

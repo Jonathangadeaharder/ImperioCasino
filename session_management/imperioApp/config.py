@@ -1,6 +1,7 @@
-# === config.py ===
+import os
 
 class Config:
-    SECRET_KEY = 'your-secret-key'  # Replace with a secure random value
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'  # Replace with a secure random value
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    CHERRY_CHARM_URL = 'http://localhost:5173'

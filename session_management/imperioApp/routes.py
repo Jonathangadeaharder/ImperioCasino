@@ -6,7 +6,7 @@ from .forms import LoginForm, RegistrationForm
 from .models import User
 import jwt
 import datetime
-import requests
+import logging
 
 @app.route('/')
 @app.route('/dashboard')
@@ -28,7 +28,7 @@ def login():
 
         # Generate JWT token
         token = jwt.encode(
-            {'user_id': user.id, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)},
+            {'user_id': user.username, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)},
             app.config['SECRET_KEY'],
             algorithm='HS256'
         )
@@ -73,70 +73,9 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
-        # Generate JWT token for the new user
-        token = jwt.encode(
-            {'user_id': user.id, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)},
-            app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
-
-        # Make external API call to create user
-        headers = {'Authorization': f'Bearer {token}'}
-        try:
-            response = requests.post(
-                app.config['EXTERNAL_API_URL'],
-                json={'userId': user.username},
-                headers=headers,
-                timeout=5  # Set a timeout to prevent hanging
-            )
-        except requests.exceptions.RequestException as e:
-            db.session.delete(user)
-            db.session.commit()
-            flash(f"Error connecting to external API: {str(e)}")
-            return redirect(url_for('signup'))
-        if response.status_code != 201:
-            try:
-                error_message = response.json().get('error', 'Unknown error')
-            except ValueError:
-                error_message = f"Non-JSON response: {response.text}"
-            db.session.delete(user)
-            db.session.commit()
-            flash(f"Error creating user on backend: {error_message}")
-            return redirect(url_for('signup'))
-
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('signup.html', title='Register', form=form)
-
-@app.route('/updateCoins', methods=['POST'])
-@login_required
-def update_coins():
-    data = request.get_json()
-    if not data or 'coins' not in data:
-        return jsonify({'error': 'Invalid input'}), 400
-
-    try:
-        coins = int(data['coins'])
-        if coins < 0:
-            return jsonify({'error': 'Coins cannot be negative'}), 400
-
-        current_user.coins = coins
-        db.session.commit()
-        return jsonify({'message': 'Coins updated successfully'}), 200
-    except ValueError:
-        return jsonify({'error': 'Coins must be an integer'}), 400
-    except Exception as e:
-        app.logger.error(f'Error updating coins: {e}')
-        return jsonify({'error': 'An error occurred while updating coins'}), 500
-
-@app.route('/getCoins', methods=['GET'])
-@login_required
-def get_coins():
-    try:
-        return jsonify({'coins': current_user.coins}), 200
-    except Exception as e:
-        app.logger.error(f'Error retrieving coins: {e}')
-        return jsonify({'error': 'An error occurred while retrieving coins'}), 500
 
 @app.route('/redirect-imperio')
 @login_required
@@ -146,12 +85,12 @@ def redirect_to_imperio():
     if not token:
         # Generate a new token if not present
         token = jwt.encode(
-            {'user_id': current_user.id, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)},
+            {'user_id': current_user.username, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=12)},
             app.config['SECRET_KEY'],
             algorithm='HS256'
         )
         session['token'] = token
-    return redirect(f"http://13.60.215.133:5173/?username={username}&token={token}")
+    return redirect(f"{app.config['CHERRY_CHARM_URL']}/?username={username}&token={token}")
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
@@ -164,9 +103,9 @@ def verify_token():
 
     try:
         decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.filter_by(id=decoded_token['user_id']).first()
+        user = User.query.filter_by(username=decoded_token['user_id']).first()
 
-        if user and user.username == username:
+        if user:
             return jsonify({'message': 'Token is valid'}), 200
         else:
             return jsonify({'message': 'Invalid token or username'}), 401
@@ -174,4 +113,71 @@ def verify_token():
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token has expired'}), 401
     except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+
+@app.route('/getCoins', methods=['GET'])
+def get_coins():
+    user_id = request.args.get('userId')
+    logging.debug("Received getCoins request for user_id: %s", user_id)
+    token = request.headers.get('Authorization').split(" ")[1] if request.headers.get('Authorization') else None
+
+    if not user_id or not token:
+        logging.warning("User ID or token is missing in getCoins request.")
+        return jsonify({'message': 'User ID and token are required'}), 400
+
+    try:
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        if str(decoded_token['user_id']) != user_id:
+            logging.debug(decoded_token['user_id'])
+            logging.warning("Unauthorized access attempt for user_id: %s", user_id)
+            return jsonify({'message': 'Unauthorized access'}), 401
+
+        user = User.query.filter_by(username=user_id).first()
+        if not user:
+            logging.error("User not found for user_id: %s", user_id)
+            return jsonify({'message': 'User not found'}), 404
+
+        logging.info("Successfully retrieved coins for user_id: %s", user_id)
+        return jsonify({'coins': user.coins}), 200
+
+    except jwt.ExpiredSignatureError:
+        logging.warning("Token has expired for user_id: %s", user_id)
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        logging.error("Invalid token received for user_id: %s", user_id)
+        return jsonify({'message': 'Invalid token'}), 401
+
+@app.route('/updateCoins', methods=['POST'])
+def update_coins():
+    data = request.get_json()
+    user_id = data.get('userId')
+    coins = data.get('coins')
+    logging.debug("Received updateCoins request for user_id: %s with coins: %s", user_id, coins)
+    token = request.headers.get('Authorization').split(" ")[1] if request.headers.get('Authorization') else None
+
+    if not user_id or coins is None or not token:
+        logging.warning("User ID, coins, or token is missing in updateCoins request.")
+        return jsonify({'message': 'User ID, coins, and token are required'}), 400
+
+    try:
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        if str(decoded_token['user_id']) != user_id:
+            logging.warning("Unauthorized update attempt for user_id: %s", user_id)
+            return jsonify({'message': 'Unauthorized access'}), 401
+
+        user = User.query.filter_by(username=user_id).first()
+        if not user:
+            logging.error("User not found for user_id: %s", user_id)
+            return jsonify({'message': 'User not found'}), 404
+
+        user.coins = coins
+        db.session.commit()
+        logging.info("Coins successfully updated for user_id: %s to %s coins", user_id, coins)
+        return jsonify({'message': 'Coins updated successfully'}), 200
+
+    except jwt.ExpiredSignatureError:
+        logging.warning("Token has expired for user_id: %s", user_id)
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        logging.error("Invalid token received for user_id: %s", user_id)
         return jsonify({'message': 'Invalid token'}), 401

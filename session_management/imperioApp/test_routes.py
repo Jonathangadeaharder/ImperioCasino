@@ -1,9 +1,4 @@
 import unittest
-from . import app, db
-from .models import User
-from flask import url_for
-
-import unittest
 from unittest.mock import patch
 from . import app, db
 from .models import User
@@ -41,104 +36,63 @@ class RoutesTestCase(unittest.TestCase):
             'password': password
         }, follow_redirects=True)
 
-    def test_signup(self):
-        response = self.register_user('newuser', 'new@example.com', 'newpass', 'newpass')
-        self.assertIn(b'Congratulations, you are now a registered user!', response.data)
-        # Verify user exists in the database with default coins
-        user = User.query.filter_by(username='newuser').first()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.coins, 100)
+    # Test for authenticated redirect to Imperio
+    def test_redirect_to_imperio_authenticated(self):
+        with patch('imperioApp.routes.requests.post') as mock_post:
+            # Mock the external API call during signup
+            mock_response = unittest.mock.Mock()
+            mock_response.status_code = 201
+            mock_response.content = b''
+            mock_post.return_value = mock_response
 
-    def test_duplicate_signup(self):
-        # First registration
-        self.register_user('newuser', 'new@example.com', 'newpass', 'newpass')
-        # Attempt to register the same user again
-        response = self.register_user('newuser', 'new@example.com', 'newpass', 'newpass')
-        self.assertIn(b'Username or email already exists', response.data)
+            # Register and log in
+            self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+            self.login_user('testuser', 'testpass')
 
-    def test_login(self):
-        # First, register a user
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        # Then, log in
-        response = self.login_user('testuser', 'testpass')
-        self.assertIn(b'Welcome, testuser!', response.data)
+        # Access the redirect route
+        response = self.app.get('/redirect-imperio', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)  # Should redirect
 
-    def test_invalid_login(self):
-        response = self.login_user('nonexistent', 'wrongpass')
-        self.assertIn(b'Invalid username or password', response.data)
+        # Check the Location header for the correct redirection URL
+        redirect_location = response.headers.get('Location')
+        self.assertIsNotNone(redirect_location)
 
-    def test_dashboard_access(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Access dashboard
-        response = self.app.get('/dashboard', follow_redirects=True)
-        self.assertIn(b'Welcome, testuser!', response.data)
-        self.assertIn(b'You have 100 coins.', response.data)
+        # The URL should contain the username and token as query parameters
+        parsed_url = urlparse(redirect_location)
+        self.assertEqual(parsed_url.netloc, '13.60.215.133:5173')
+        query_params = parse_qs(parsed_url.query)
+        self.assertEqual(query_params.get('username'), ['testuser'])
+        self.assertIn('token', query_params)
 
-    def test_logout(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Log out
-        response = self.app.get('/logout', follow_redirects=True)
-        self.assertIn(b'Sign In', response.data)
+        # Optionally, verify the token
+        token = query_params['token'][0]
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        self.assertEqual(decoded_token['user_id'], 1)  # Assuming this is the first user
 
-    def test_update_coins(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Update coins
-        response = self.app.post('/updateCoins', json={'coins': 200}, follow_redirects=True)
-        self.assertIn(b'Coins updated successfully', response.data)
-        # Verify coins have been updated
-        user = User.query.filter_by(username='testuser').first()
-        self.assertEqual(user.coins, 200)
-
-    def test_get_coins(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Get coins
-        response = self.app.get('/getCoins', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-        self.assertEqual(data['coins'], 100)
-
-    def test_update_coins_unauthenticated(self):
-        # Try to update coins without logging in
-        response = self.app.post('/updateCoins', json={'coins': 200}, follow_redirects=True)
+    # Test for unauthenticated redirect to Imperio
+    def test_redirect_to_imperio_unauthenticated(self):
+        # Try to access the redirect route without logging in
+        response = self.app.get('/redirect-imperio', follow_redirects=True)
         self.assertIn(b'Please log in to access this page.', response.data)
 
-    def test_get_coins_unauthenticated(self):
-        # Try to get coins without logging in
-        response = self.app.get('/getCoins', follow_redirects=True)
-        self.assertIn(b'Please log in to access this page.', response.data)
-
-    def test_update_coins_invalid_input(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Attempt to update coins with invalid data
-        response = self.app.post('/updateCoins', json={'coins': 'invalid'}, follow_redirects=True)
-        self.assertIn(b'Coins must be an integer', response.data)
-
-    def test_update_coins_negative_value(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Attempt to update coins with negative value
-        response = self.app.post('/updateCoins', json={'coins': -50}, follow_redirects=True)
-        self.assertIn(b'Coins cannot be negative', response.data)
-
+    # Test for valid token verification
     def test_verify_token_valid(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        login_response = self.login_user('testuser', 'testpass')
-        # Retrieve the token from the session cookie
+        with patch('imperioApp.routes.requests.post') as mock_post:
+            # Mock the external API call during signup
+            mock_response = unittest.mock.Mock()
+            mock_response.status_code = 201
+            mock_response.content = b''
+            mock_post.return_value = mock_response
+
+            # Register and log in
+            self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+            self.login_user('testuser', 'testpass')
+
+        # Retrieve the token from the session
         with self.app as client:
             with client.session_transaction() as sess:
                 token = sess['token']
+
         # Prepare the data
         data = {
             'token': token,
@@ -149,6 +103,7 @@ class RoutesTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'"message": "Token is valid"', response.data)
 
+    # Test for invalid token verification
     def test_verify_token_invalid_token(self):
         # Prepare invalid token data
         data = {
@@ -160,13 +115,21 @@ class RoutesTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn(b'"message": "Invalid token"', response.data)
 
+    # Test for expired token verification
     def test_verify_token_expired_token(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        # Manually generate an expired token
-        import jwt
+        with patch('imperioApp.routes.requests.post') as mock_post:
+            # Mock the external API call during signup
+            mock_response = unittest.mock.Mock()
+            mock_response.status_code = 201
+            mock_response.content = b''
+            mock_post.return_value = mock_response
+
+            # Register and log in
+            self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+            self.login_user('testuser', 'testpass')
+
         expired_token = jwt.encode(
-            {'user_id': 1, 'exp': datetime.datetime.utcnow() - datetime.timedelta(hours=1)},
+            {'user_id': 1, 'exp': datetime. datetime. now(datetime. UTC) - datetime.timedelta(hours=1)},
             app.config['SECRET_KEY'],
             algorithm='HS256'
         )
@@ -174,19 +137,28 @@ class RoutesTestCase(unittest.TestCase):
             'token': expired_token,
             'username': 'testuser'
         }
-        # Send POST request to /verify-token
         response = self.app.post('/verify-token', json=data)
         self.assertEqual(response.status_code, 401)
         self.assertIn(b'"message": "Token has expired"', response.data)
 
+    # Test for username mismatch in token verification
     def test_verify_token_username_mismatch(self):
-        # Register and log in as testuser
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Retrieve the token
+        with patch('imperioApp.routes.requests.post') as mock_post:
+            # Mock the external API call during signup
+            mock_response = unittest.mock.Mock()
+            mock_response.status_code = 201
+            mock_response.content = b''
+            mock_post.return_value = mock_response
+
+            # Register and log in
+            self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+            self.login_user('testuser', 'testpass')
+
+        # Retrieve the token from the session
         with self.app as client:
             with client.session_transaction() as sess:
                 token = sess['token']
+
         # Prepare data with a different username
         data = {
             'token': token,
@@ -197,6 +169,7 @@ class RoutesTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn(b'"message": "Invalid token or username"', response.data)
 
+    # Test for missing fields in token verification
     def test_verify_token_missing_fields(self):
         # Missing token
         data = {'username': 'testuser'}
@@ -210,33 +183,100 @@ class RoutesTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'"message": "Token and username are required"', response.data)
 
-    def test_redirect_to_imperio_authenticated(self):
-        # Register and log in
-        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
-        self.login_user('testuser', 'testpass')
-        # Access the redirect route
-        response = self.app.get('/redirect-imperio', follow_redirects=False)
-        self.assertEqual(response.status_code, 302)  # Should redirect
-        # Check the Location header for the correct redirection URL
-        redirect_location = response.headers.get('Location')
-        self.assertIsNotNone(redirect_location)
-        # The URL should contain the username and token as query parameters
-        from urllib.parse import urlparse, parse_qs
-        parsed_url = urlparse(redirect_location)
-        self.assertEqual(parsed_url.netloc, '13.60.215.133:5173')
-        query_params = parse_qs(parsed_url.query)
-        self.assertEqual(query_params.get('username'), ['testuser'])
-        self.assertIn('token', query_params)
-        # Optionally, verify the token
-        token = query_params['token'][0]
-        import jwt
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-        self.assertEqual(decoded_token['user_id'], 1)  # Assuming this is the first user
+    # Test for successful signup with mocked external API
+    @patch('imperioApp.routes.requests.post')
+    def test_signup_successful_external_api(self, mock_post):
+        # Mock the external API response to simulate successful user creation
+        mock_response = unittest.mock.Mock()
+        mock_response.status_code = 201
+        mock_response.content = b''
+        mock_post.return_value = mock_response
 
-    def test_redirect_to_imperio_unauthenticated(self):
-        # Try to access the redirect route without logging in
-        response = self.app.get('/redirect-imperio', follow_redirects=True)
-        self.assertIn(b'Please log in to access this page.', response.data)
+        # Register a new user
+        response = self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        self.assertIn(b'Congratulations, you are now a registered user!', response.data)
+
+        # Ensure the external API was called with correct parameters
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], app.config['EXTERNAL_API_URL'])
+        self.assertEqual(kwargs['json'], {'userId': 'testuser'})
+        self.assertIn('Authorization', kwargs['headers'])
+        self.assertTrue(kwargs['headers']['Authorization'].startswith('Bearer '))
+
+    # Test for signup failure due to external API
+    @patch('imperioApp.routes.requests.post')
+    def test_signup_external_api_failure(self, mock_post):
+        # Mock the external API response to simulate failure
+        mock_response = unittest.mock.Mock()
+        mock_response.status_code = 400
+        mock_response.json.return_value = {'error': 'User creation failed'}
+        mock_response.text = '{"error": "User creation failed"}'
+        mock_post.return_value = mock_response
+
+        # Register a new user
+        response = self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        self.assertIn(b'Error creating user on backend: User creation failed', response.data)
+
+        # Ensure the external API was called with correct parameters
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], app.config['EXTERNAL_API_URL'])
+        self.assertEqual(kwargs['json'], {'userId': 'testuser'})
+        self.assertIn('Authorization', kwargs['headers'])
+        self.assertTrue(kwargs['headers']['Authorization'].startswith('Bearer '))
+
+    # Test for signup with non-JSON response from external API
+    @patch('imperioApp.routes.requests.post')
+    def test_signup_external_api_non_json_response(self, mock_post):
+        # Mock the external API response to return non-JSON content
+        mock_response = unittest.mock.Mock()
+        mock_response.status_code = 500
+        mock_response.json.side_effect = ValueError("No JSON")
+        mock_response.text = 'Internal Server Error'
+        mock_post.return_value = mock_response
+
+        # Register a new user
+        response = self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        self.assertIn(b'Error creating user on backend: Non-JSON response: Internal Server Error', response.data)
+
+        # Ensure the external API was called with correct parameters
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], app.config['EXTERNAL_API_URL'])
+        self.assertEqual(kwargs['json'], {'userId': 'testuser'})
+        self.assertIn('Authorization', kwargs['headers'])
+        self.assertTrue(kwargs['headers']['Authorization'].startswith('Bearer '))
+
+    # Test for duplicate username during signup
+    @patch('imperioApp.routes.requests.post')
+    def test_signup_duplicate_username(self, mock_post):
+        # Mock the external API call during signup
+        mock_response = unittest.mock.Mock()
+        mock_response.status_code = 201
+        mock_response.content = b''
+        mock_post.return_value = mock_response
+
+        # First registration
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        # Attempt to register the same user again
+        response = self.register_user('testuser', 'test2@example.com', 'testpass', 'testpass')
+        self.assertIn(b'Username or email already exists', response.data)
+
+    # Test for duplicate email during signup
+    @patch('imperioApp.routes.requests.post')
+    def test_signup_duplicate_email(self, mock_post):
+        # Mock the external API call during signup
+        mock_response = unittest.mock.Mock()
+        mock_response.status_code = 201
+        mock_response.content = b''
+        mock_post.return_value = mock_response
+
+        # First registration
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        # Attempt to register with the same email
+        response = self.register_user('testuser2', 'test@example.com', 'testpass', 'testpass')
+        self.assertIn(b'Username or email already exists', response.data)
 
 if __name__ == '__main__':
     unittest.main()

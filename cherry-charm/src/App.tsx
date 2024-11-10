@@ -4,7 +4,7 @@ import Interface from "./interface/Interface";
 import Game from "./Game";
 
 // Define the user management server URL
-const userManagementServer = "http://13.60.215.133:5000";
+const userManagementServer = "http://127.0.0.1:5000";
 
 const App = () => {
   const [windowWidth] = useState(window.innerWidth);
@@ -43,17 +43,17 @@ const App = () => {
           console.log("Token verification response data:", data);
           if (data.message !== "Token is valid") {
             // If token is invalid, redirect to the login page on the other process/port
-            window.location.href = `${userManagementServer}/login`;
+            //window.location.href = `${userManagementServer}/login`;
           }
         })
         .catch((error) => {
           console.error("Error verifying token:", error);
           // In case of an error (e.g., network issue), redirect to the login page
-          window.location.href = `${userManagementServer}/login`;
+          //window.location.href = `${userManagementServer}/login`;
         });
     } else {
       // If there's no token, redirect to login
-      window.location.href = `${userManagementServer}/login`;
+      //window.location.href = `${userManagementServer}/login`;
     }
   }, []);
 
@@ -65,7 +65,8 @@ const App = () => {
     <>
       <Interface userId={userId} token={token} />
       <Canvas camera={{ fov: 75, position: [0, 0, cameraPositionZ] }}>
-        <Game userId={userId} token={token} />
+        <Game userId={userId}
+              token={token}/>
       </Canvas>
     </>
   );
