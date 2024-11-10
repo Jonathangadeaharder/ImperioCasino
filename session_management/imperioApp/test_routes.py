@@ -3,6 +3,15 @@ from . import app, db
 from .models import User
 from flask import url_for
 
+import unittest
+from unittest.mock import patch
+from . import app, db
+from .models import User
+from flask import url_for, session
+import jwt
+import datetime
+from urllib.parse import urlparse, parse_qs
+
 class RoutesTestCase(unittest.TestCase):
     def setUp(self):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'

@@ -82,17 +82,25 @@ def signup():
 
         # Make external API call to create user
         headers = {'Authorization': f'Bearer {token}'}
-        response = requests.post(
-            'http://13.60.215.133:3001/createUser',
-            json={'userId': user.username},
-            headers=headers
-        )
-
+        try:
+            response = requests.post(
+                app.config['EXTERNAL_API_URL'],
+                json={'userId': user.username},
+                headers=headers,
+                timeout=5  # Set a timeout to prevent hanging
+            )
+        except requests.exceptions.RequestException as e:
+            db.session.delete(user)
+            db.session.commit()
+            flash(f"Error connecting to external API: {str(e)}")
+            return redirect(url_for('signup'))
         if response.status_code != 201:
             try:
                 error_message = response.json().get('error', 'Unknown error')
             except ValueError:
                 error_message = f"Non-JSON response: {response.text}"
+            db.session.delete(user)
+            db.session.commit()
             flash(f"Error creating user on backend: {error_message}")
             return redirect(url_for('signup'))
 
