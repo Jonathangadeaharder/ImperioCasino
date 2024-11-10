@@ -93,7 +93,8 @@ class RoutesTestCase(unittest.TestCase):
         # Get coins
         response = self.app.get('/getCoins', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'"coins": 100', response.data)
+        data = response.get_json()
+        self.assertEqual(data['coins'], 100)
 
     def test_update_coins_unauthenticated(self):
         # Try to update coins without logging in

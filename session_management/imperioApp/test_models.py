@@ -23,7 +23,6 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(u.username, 'testuser')
         self.assertEqual(u.email, 'test@example.com')
         self.assertTrue(u.verify_password('testpass'))
-        # Check that coins default to 100
         self.assertEqual(u.coins, 100)
 
     def test_user_coins_assignment(self):

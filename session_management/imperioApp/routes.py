@@ -38,7 +38,8 @@ def signup():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     form = RegistrationForm()
-    if form.validate_on_submit():
+    validate_form = form.validate_on_submit()
+    if validate_form:
         # Check if username or email already exists
         existing_user = User.query.filter(
             (User.username == form.username.data) | (User.email == form.email.data)
