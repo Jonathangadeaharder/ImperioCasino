@@ -1,7 +1,6 @@
 import unittest
-from .. import app, db
-from ..models import User
-from werkzeug.security import generate_password_hash
+from . import app, db
+from .models import User
 
 class UserModelCase(unittest.TestCase):
     def setUp(self):
@@ -22,7 +21,18 @@ class UserModelCase(unittest.TestCase):
         db.session.add(u)
         db.session.commit()
         self.assertEqual(u.username, 'testuser')
+        self.assertEqual(u.email, 'test@example.com')
         self.assertTrue(u.verify_password('testpass'))
+        # Check that coins default to 100
+        self.assertEqual(u.coins, 100)
+
+    def test_user_coins_assignment(self):
+        # Create a user with a specific coins value
+        u = User(username='richuser', email='rich@example.com', coins=1000)
+        u.set_password('richpass')
+        db.session.add(u)
+        db.session.commit()
+        self.assertEqual(u.coins, 1000)
 
 if __name__ == '__main__':
     unittest.main()
