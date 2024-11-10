@@ -122,5 +122,112 @@ class RoutesTestCase(unittest.TestCase):
         response = self.app.post('/updateCoins', json={'coins': -50}, follow_redirects=True)
         self.assertIn(b'Coins cannot be negative', response.data)
 
+    def test_verify_token_valid(self):
+        # Register and log in
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        login_response = self.login_user('testuser', 'testpass')
+        # Retrieve the token from the session cookie
+        with self.app as client:
+            with client.session_transaction() as sess:
+                token = sess['token']
+        # Prepare the data
+        data = {
+            'token': token,
+            'username': 'testuser'
+        }
+        # Send POST request to /verify-token
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'"message": "Token is valid"', response.data)
+
+    def test_verify_token_invalid_token(self):
+        # Prepare invalid token data
+        data = {
+            'token': 'invalidtoken',
+            'username': 'testuser'
+        }
+        # Send POST request to /verify-token
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'"message": "Invalid token"', response.data)
+
+    def test_verify_token_expired_token(self):
+        # Register and log in
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        # Manually generate an expired token
+        import jwt
+        expired_token = jwt.encode(
+            {'user_id': 1, 'exp': datetime.datetime.utcnow() - datetime.timedelta(hours=1)},
+            app.config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+        data = {
+            'token': expired_token,
+            'username': 'testuser'
+        }
+        # Send POST request to /verify-token
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'"message": "Token has expired"', response.data)
+
+    def test_verify_token_username_mismatch(self):
+        # Register and log in as testuser
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        self.login_user('testuser', 'testpass')
+        # Retrieve the token
+        with self.app as client:
+            with client.session_transaction() as sess:
+                token = sess['token']
+        # Prepare data with a different username
+        data = {
+            'token': token,
+            'username': 'otheruser'
+        }
+        # Send POST request to /verify-token
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'"message": "Invalid token or username"', response.data)
+
+    def test_verify_token_missing_fields(self):
+        # Missing token
+        data = {'username': 'testuser'}
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'"message": "Token and username are required"', response.data)
+
+        # Missing username
+        data = {'token': 'sometoken'}
+        response = self.app.post('/verify-token', json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'"message": "Token and username are required"', response.data)
+
+    def test_redirect_to_imperio_authenticated(self):
+        # Register and log in
+        self.register_user('testuser', 'test@example.com', 'testpass', 'testpass')
+        self.login_user('testuser', 'testpass')
+        # Access the redirect route
+        response = self.app.get('/redirect-imperio', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)  # Should redirect
+        # Check the Location header for the correct redirection URL
+        redirect_location = response.headers.get('Location')
+        self.assertIsNotNone(redirect_location)
+        # The URL should contain the username and token as query parameters
+        from urllib.parse import urlparse, parse_qs
+        parsed_url = urlparse(redirect_location)
+        self.assertEqual(parsed_url.netloc, '13.60.215.133:5173')
+        query_params = parse_qs(parsed_url.query)
+        self.assertEqual(query_params.get('username'), ['testuser'])
+        self.assertIn('token', query_params)
+        # Optionally, verify the token
+        token = query_params['token'][0]
+        import jwt
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        self.assertEqual(decoded_token['user_id'], 1)  # Assuming this is the first user
+
+    def test_redirect_to_imperio_unauthenticated(self):
+        # Try to access the redirect route without logging in
+        response = self.app.get('/redirect-imperio', follow_redirects=True)
+        self.assertIn(b'Please log in to access this page.', response.data)
+
 if __name__ == '__main__':
     unittest.main()
