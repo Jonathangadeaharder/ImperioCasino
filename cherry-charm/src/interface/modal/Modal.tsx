@@ -62,7 +62,7 @@ const Modal = () => {
               <img className="modal-image" src="./images/coin.png" />
             </div>
             <div className="modal-text">
-              Ten en cuenta que las máquinas tragamonedas solo consideran un par como coincidencia si están en orden de izquierda a derecha.
+              Solo se considera un par en orden de izquierda a derecha.
             </div>
             <div>
               <div>
