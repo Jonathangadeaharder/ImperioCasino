@@ -11,7 +11,6 @@ import * as THREE from "three";
 import useGame from "./stores/store";
 import devLog from "./utils/functions/devLog";
 import segmentToFruit from "./utils/functions/segmentToFruit";
-import endgame from "./utils/functions/endgame";
 import { WHEEL_SEGMENT } from "./utils/constants";
 import Reel from "./Reel";
 import Button from "./Button";
@@ -27,6 +26,9 @@ interface SlotMachineProps {
   value: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7)[];
   userId: string;  // Assuming userId is passed as a prop
 }
+
+const userManagementServer = "http://127.0.0.1:5000";
+const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
 const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
   const fruit0 = useGame((state) => state.fruit0);
@@ -53,60 +55,75 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
     }
   }, [userId, fetchCoins]);
 
-  useEffect(() => {
-    devLog("PHASE: " + phase);
-
-    if (phase === "idle") {
-      console.log("User ID:", userId); // Überprüfen, ob userId definiert ist
-      const winnings = endgame(fruit0, fruit1, fruit2);
-      console.log("Winnings:", winnings);
-      if (userId && winnings !== 0) {  // Nur wenn userId definiert ist und winnings nicht null sind
-        console.log("Updating coins for userId:", userId, "with winnings:", winnings);
-        updateCoins(userId, winnings);
-      } else {
-        console.warn("Skipping updateCoins due to missing userId or winnings being 0.");
-      }
-    }
-  }, [phase, fruit0, fruit1, fruit2, updateCoins, userId]);
-
   const reelRefs = [
     useRef<ReelGroup>(null),
     useRef<ReelGroup>(null),
     useRef<ReelGroup>(null),
   ];
 
-  const spinSlotMachine = () => {
+  const spinSlotMachine = async () => {
     console.log("Spinning slot machine");
+
+    // Start the spinning phase
     start();
-    const min = 15;
-    const max = 30;
-    const getRandomStopSegment = () =>
-      Math.floor(Math.random() * (max - min + 1)) + min;
 
-    const spinReel = (reelIndex: number) => {
-      const reel = reelRefs[reelIndex].current;
-      if (reel) {
-        // Reset rotation
-        reel.rotation.x = 0;
-        // Reset all attributes
-        reel.reelSegment = 0;
-        reel.reelPosition = 0;
-        reel.reelSpinUntil = 0;
-        reel.reelStopSegment = 0;
-        // Clear fruits from previous spins
-        setFruit0("");
-        setFruit1("");
-        setFruit2("");
-        const stopSegment = getRandomStopSegment();
-        devLog(`Stop segment of reel ${reelIndex}: ${stopSegment}`);
+    try {
+      // Make the HTTP POST request to the spin endpoint
+      const response = await fetch(`${userManagementServer}/spin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the token for authentication
+        },
+        body: JSON.stringify({ userId }),
+      });
 
-        reel.reelSpinUntil = stopSegment;
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
       }
-    };
 
-    spinReel(0);
-    spinReel(1);
-    spinReel(2);
+      const data = await response.json();
+      console.log(data)
+      // Assume the server responds with an array of stop segments
+      const stopSegments: number[] = data.stopSegments;
+
+      if (
+          !stopSegments ||
+          !Array.isArray(stopSegments) ||
+          stopSegments.length !== reelRefs.length
+      ) {
+        throw new Error("Invalid stopSegments received from server.");
+      }
+
+      // Spin each reel to its respective stop segment
+      stopSegments.forEach((segment, index) => {
+        spinReel(index, segment);
+      });
+    } catch (error) {
+      console.error("Error spinning slot machine:", error);
+      // Optionally, revert the spinning phase if there's an error
+      end();
+    }
+  };
+
+  const spinReel = (reelIndex: number, stopSegment: number) => {
+    const reel = reelRefs[reelIndex].current;
+    if (reel) {
+      // Reset rotation
+      reel.rotation.x = 0;
+      // Reset all attributes
+      reel.reelSegment = 0;
+      reel.reelPosition = 0;
+      reel.reelSpinUntil = 0;
+      reel.reelStopSegment = 0;
+      // Clear fruits from previous spins
+      setFruit0("");
+      setFruit1("");
+      setFruit2("");
+      devLog(`Stop segment of reel ${reelIndex}: ${stopSegment}`);
+
+      reel.reelSpinUntil = stopSegment;
+    }
   };
 
   useEffect(() => {

@@ -1,0 +1,947 @@
+=== src\App.tsx ===
+
+import { useState, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
+import Interface from "./interface/Interface";
+import Game from "./Game";
+
+// Define the user management server URL
+const userManagementServer = "http://127.0.0.1:5000";
+
+const App = () => {
+  const [windowWidth] = useState(window.innerWidth);
+  const cameraPositionZ = windowWidth > 500 ? 30 : 40;
+
+  // State to hold userId (or username) and token
+  const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const id = searchParams.get('username') || "defaultUserId";
+    const token = searchParams.get('token') || null;
+
+    setUserId(id);
+    setToken(token);
+
+    if (token) {
+      // Optionally store the token in local storage
+      localStorage.setItem('authToken', token);
+
+      // Verify the token
+      fetch(`${userManagementServer}/verify-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: token, username: id }),
+      })
+        .then((response) => {
+          // Log the status and the JSON response for debugging
+          console.log("Token verification response status:", response.status);
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Token verification response data:", data);
+          if (data.message !== "Token is valid") {
+            // If token is invalid, redirect to the login page on the other process/port
+            //window.location.href = `${userManagementServer}/login`;
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token:", error);
+          // In case of an error (e.g., network issue), redirect to the login page
+          //window.location.href = `${userManagementServer}/login`;
+        });
+    } else {
+      // If there's no token, redirect to login
+      //window.location.href = `${userManagementServer}/login`;
+    }
+  }, []);
+
+  console.log("userId:", userId);
+  console.log("token:", token);
+
+  // Pass userId and token to the components
+  return (
+    <>
+      <Interface userId={userId} token={token} />
+      <Canvas camera={{ fov: 75, position: [0, 0, cameraPositionZ] }}>
+        <Game userId={userId}
+              token={token}/>
+      </Canvas>
+    </>
+  );
+};
+
+export default App;
+
+
+=== src\Bars.tsx ===
+
+
+
+import * as THREE from "three";
+
+const squareGeometry = new THREE.BoxGeometry();
+const barMaterial = new THREE.MeshStandardMaterial({ color: "#2A1558" });
+
+const Bars = () => {
+  return (
+    <>
+      <mesh
+        position={[0, 3.5, 10.5]}
+        scale={[22.5, 0.5, 0.5]}
+        geometry={squareGeometry}
+        material={barMaterial}
+      />
+      <mesh
+        position={[0, -3.75, 10.5]}
+        scale={[22.5, 0.5, 0.5]}
+        geometry={squareGeometry}
+        material={barMaterial}
+      />
+      <mesh
+        position={[-11, 0, 10.5]}
+        rotation-z={Math.PI / 2}
+        scale={[7, 0.5, 0.5]}
+        geometry={squareGeometry}
+        material={barMaterial}
+      />
+      <mesh
+        position={[11, 0, 10.5]}
+        rotation-z={Math.PI / 2}
+        scale={[7, 0.5, 0.5]}
+        geometry={squareGeometry}
+        material={barMaterial}
+      />
+    </>
+  );
+};
+
+export default Bars;
+
+
+=== src\Button.tsx ===
+
+
+
+import * as THREE from "three";
+import { useGLTF } from "@react-three/drei";
+import { GLTF } from "three-stdlib";
+
+type GLTFResult = GLTF & {
+  nodes: {
+    Cube_Subscribe_0: THREE.Mesh;
+  };
+};
+
+const Button = (props: JSX.IntrinsicElements["group"]) => {
+  const { nodes } = useGLTF("/models/button.glb") as GLTFResult;
+
+  const material = new THREE.MeshStandardMaterial({ color: "#3b0873" });
+
+  return (
+    <group {...props} dispose={null}>
+      <group
+        position={[713.17, 1157.193, -723.814]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        scale={[130.456, 19.364, 45.456]}
+      >
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={nodes.Cube_Subscribe_0.geometry}
+          material={material}
+          position={[-5.454, -37.484, -26.142]}
+        ></mesh>
+      </group>
+    </group>
+  );
+};
+
+useGLTF.preload("/models/button.glb");
+export default Button;
+
+
+=== src\Casing.tsx ===
+
+
+
+import * as THREE from "three";
+import { useGLTF } from "@react-three/drei";
+import { GLTF } from "three-stdlib";
+
+type GLTFResult = GLTF & {
+  nodes: {
+    ["Node-Mesh"]: THREE.Mesh;
+    ["Node-Mesh_1"]: THREE.Mesh;
+  };
+  materials: {
+    mat16: THREE.MeshStandardMaterial;
+    mat23: THREE.MeshStandardMaterial;
+  };
+};
+
+const Casing = (props: JSX.IntrinsicElements["group"]) => {
+  const { nodes, materials } = useGLTF("/models/casing.glb") as GLTFResult;
+  return (
+    <group {...props} dispose={null}>
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={nodes["Node-Mesh"].geometry}
+        material={materials.mat16}
+      />
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={nodes["Node-Mesh_1"].geometry}
+        material={materials.mat23}
+      />
+    </group>
+  );
+};
+
+useGLTF.preload("/models/casing.glb");
+export default Casing;
+
+
+=== src\Game.tsx ===
+
+import { useRef } from "react";
+import { OrbitControls } from "@react-three/drei";
+import Lights from "./lights/Lights";
+import SlotMachine from "./SlotMachine";
+
+interface GameProps {
+  userId: string | null;  // Accept userId as a prop
+}
+
+const Game = ({ userId }: GameProps) => {
+  const slotMachineRef = useRef();
+
+  return (
+    <>
+      <color args={["#141417"]} attach="background" />
+      <OrbitControls enableRotate={false} /> {/* Disable rotation */}
+      <Lights />
+      <SlotMachine ref={slotMachineRef} value={[1, 2, 3]} userId={userId} />  {/* Pass userId to SlotMachine */}
+    </>
+  );
+};
+
+export default Game;
+
+
+=== src\main.tsx ===
+
+
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./style.css";
+
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
+=== src\Reel.tsx ===
+
+
+
+import { useRef, forwardRef, ForwardedRef } from "react";
+import { useFrame, useLoader } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
+import * as THREE from "three";
+import { GLTF } from "three-stdlib";
+// import useGame from "./stores/store";
+import { WHEEL_SEGMENT } from "./utils/constants";
+
+type GLTFResult = GLTF & {
+  nodes: {
+    Cylinder: THREE.Mesh;
+    Cylinder_1: THREE.Mesh;
+  };
+  materials: {
+    ["Material.001"]: THREE.MeshStandardMaterial;
+    ["Material.002"]: THREE.MeshStandardMaterial;
+  };
+};
+
+type ReelProps = JSX.IntrinsicElements["group"] & {
+  value?: number;
+  reelSegment: number;
+  map: number;
+};
+
+const Reel = forwardRef(
+  (props: ReelProps, ref: ForwardedRef<THREE.Group>): JSX.Element => {
+    // const sparkles = useGame((state) => state.sparkles);
+
+    const { reelSegment } = props;
+    const { nodes, materials } = useGLTF("/models/reel.glb") as GLTFResult;
+    const reel = useRef<THREE.Group>(null);
+
+    // Color maps
+    const colorMap0 = useLoader(THREE.TextureLoader, "/images/reel_0.png");
+    const colorMap1 = useLoader(THREE.TextureLoader, "/images/reel_1.png");
+    const colorMap2 = useLoader(THREE.TextureLoader, "/images/reel_2.png");
+    let activeColorMap;
+    switch (props.map) {
+      case 0:
+        activeColorMap = colorMap0;
+        break;
+      case 1:
+        activeColorMap = colorMap1;
+        break;
+      case 2:
+        activeColorMap = colorMap2;
+        break;
+    }
+
+    useFrame(() => {
+      if (reel.current) reel.current.rotation.x += 0.025;
+    });
+
+    return (
+      <group {...props} ref={ref} dispose={null}>
+        <group
+          rotation={[reelSegment * WHEEL_SEGMENT - 0.2, 0, -Math.PI / 2]}
+          scale={[1, 0.29, 1]}
+        >
+          <mesh castShadow receiveShadow geometry={nodes.Cylinder.geometry}>
+            <meshStandardMaterial map={activeColorMap} />
+            {/* {sparkles && (
+              <Sparkles count={200} scale={2.5} size={10} speed={4} />
+            )} */}
+          </mesh>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Cylinder_1.geometry}
+            material={materials["Material.002"]}
+          />
+        </group>
+      </group>
+    );
+  }
+);
+
+useGLTF.preload("/models/reel.glb");
+export default Reel;
+
+
+=== src\SlotMachine.tsx ===
+
+import {
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+import { useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
+import * as THREE from "three";
+import useGame from "./stores/store";
+import devLog from "./utils/functions/devLog";
+import segmentToFruit from "./utils/functions/segmentToFruit";
+import endgame from "./utils/functions/endgame";
+import { WHEEL_SEGMENT } from "./utils/constants";
+import Reel from "./Reel";
+import Button from "./Button";
+
+interface ReelGroup extends THREE.Group {
+  reelSegment?: number;
+  reelPosition?: number;
+  reelSpinUntil?: number;
+  reelStopSegment?: number;
+}
+
+interface SlotMachineProps {
+  value: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7)[];
+  userId: string;  // Assuming userId is passed as a prop
+}
+
+const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
+  const fruit0 = useGame((state) => state.fruit0);
+  const fruit1 = useGame((state) => state.fruit1);
+  const fruit2 = useGame((state) => state.fruit2);
+  const setFruit0 = useGame((state) => state.setFruit0);
+  const setFruit1 = useGame((state) => state.setFruit1);
+  const setFruit2 = useGame((state) => state.setFruit2);
+  const phase = useGame((state) => state.phase);
+  const start = useGame((state) => state.start);
+  const end = useGame((state) => state.end);
+  const addSpin = useGame((state) => state.addSpin);
+  const coins = useGame((state) => state.coins);
+  const updateCoins = useGame((state) => state.updateCoins);
+  const fetchCoins = useGame((state) => state.fetchCoins);
+
+  // Fetch initial coins when the component mounts
+  useEffect(() => {
+    console.log("Component mounted, userId:", userId);
+    if (userId) {
+      fetchCoins(userId);
+    } else {
+      console.error("userId is undefined. Cannot fetch initial coins.");
+    }
+  }, [userId, fetchCoins]);
+
+  useEffect(() => {
+    devLog("PHASE: " + phase);
+
+    if (phase === "idle") {
+      console.log("User ID:", userId); // Überprüfen, ob userId definiert ist
+      const winnings = endgame(fruit0, fruit1, fruit2);
+      console.log("Winnings:", winnings);
+      if (userId && winnings !== 0) {  // Nur wenn userId definiert ist und winnings nicht null sind
+        console.log("Updating coins for userId:", userId, "with winnings:", winnings);
+        updateCoins(userId, winnings);
+      } else {
+        console.warn("Skipping updateCoins due to missing userId or winnings being 0.");
+      }
+    }
+  }, [phase, fruit0, fruit1, fruit2, updateCoins, userId]);
+
+  const reelRefs = [
+    useRef<ReelGroup>(null),
+    useRef<ReelGroup>(null),
+    useRef<ReelGroup>(null),
+  ];
+
+  const spinSlotMachine = () => {
+    console.log("Spinning slot machine");
+    start();
+    const min = 15;
+    const max = 30;
+    const getRandomStopSegment = () =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const spinReel = (reelIndex: number) => {
+      const reel = reelRefs[reelIndex].current;
+      if (reel) {
+        // Reset rotation
+        reel.rotation.x = 0;
+        // Reset all attributes
+        reel.reelSegment = 0;
+        reel.reelPosition = 0;
+        reel.reelSpinUntil = 0;
+        reel.reelStopSegment = 0;
+        // Clear fruits from previous spins
+        setFruit0("");
+        setFruit1("");
+        setFruit2("");
+        const stopSegment = getRandomStopSegment();
+        devLog(`Stop segment of reel ${reelIndex}: ${stopSegment}`);
+
+        reel.reelSpinUntil = stopSegment;
+      }
+    };
+
+    spinReel(0);
+    spinReel(1);
+    spinReel(2);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        if (phase !== "spinning") {
+          if (coins > 0) {
+            console.log("Space key pressed, spinning slot machine");
+            spinSlotMachine();
+            addSpin();
+            if (userId) {
+              updateCoins(userId, -1);
+            } else {
+              console.error("userId is undefined, cannot update coins.");
+            }
+          } else {
+            console.warn("Not enough coins to spin the slot machine.");
+          }
+        } else {
+          console.log("Slot machine is already spinning.");
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [phase, coins, userId, spinSlotMachine, addSpin, updateCoins]);
+
+  useFrame(() => {
+    for (let i = 0; i < reelRefs.length; i++) {
+      const reel = reelRefs[i].current;
+      if (reel) {
+        if (reel.reelSpinUntil !== undefined) {
+          if (reel.reelSegment === undefined) {
+            reel.reelSegment = 0;
+          }
+
+          const targetRotationX =
+            (reel.reelSpinUntil - reel.reelSegment) * WHEEL_SEGMENT;
+          const rotationSpeed = 0.1;
+
+          if (reel.rotation.x < targetRotationX) {
+            reel.rotation.x += rotationSpeed;
+            reel.reelSegment = Math.floor(reel.rotation.x / WHEEL_SEGMENT);
+          } else if (reel.rotation.x >= targetRotationX) {
+            // The reel has stopped spinning at the desired segment
+            setTimeout(() => {
+              end();
+            }, 1000);
+            const fruit = segmentToFruit(i, reel.reelSegment);
+
+            if (fruit) {
+              switch (i) {
+                case 0:
+                  setFruit0(fruit);
+                  break;
+                case 1:
+                  setFruit1(fruit);
+                  break;
+                case 2:
+                  setFruit2(fruit);
+                  break;
+              }
+            }
+
+            devLog(
+              `Reel ${i + 1} stopped at segment ${reel.reelSegment} ${fruit}`
+            );
+            reel.reelSpinUntil = undefined; // Reset reelSpinUntil to stop further logging
+          }
+        }
+      }
+    }
+  });
+
+  useImperativeHandle(ref, () => ({
+    reelRefs,
+  }));
+
+  const [buttonZ, setButtonZ] = useState(0);
+  const [buttonY, setButtonY] = useState(-13);
+
+  const [textZ, setTextZ] = useState(1.6);
+  const [textY, setTextY] = useState(-14);
+
+  return (
+    <>
+      <Reel
+        ref={reelRefs[0]}
+        value={value[0]}
+        map={0}
+        position={[-7, 0, 0]}
+        rotation={[0, 0, 0]}
+        scale={[10, 10, 10]}
+        reelSegment={0}
+      />
+      <Reel
+        ref={reelRefs[1]}
+        value={value[1]}
+        map={1}
+        position={[0, 0, 0]}
+        rotation={[0, 0, 0]}
+        scale={[10, 10, 10]}
+        reelSegment={0}
+      />
+      <Reel
+        ref={reelRefs[2]}
+        value={value[2]}
+        map={2}
+        position={[7, 0, 0]}
+        rotation={[0, 0, 0]}
+        scale={[10, 10, 10]}
+        reelSegment={0}
+      />
+      <Button
+        scale={[0.055, 0.045, 0.045]}
+        position={[0, buttonY, buttonZ]}
+        rotation={[-Math.PI / 8, 0, 0]}
+        onClick={() => {
+          if (phase !== "spinning") {
+            if (coins > 0) {
+              console.log("Button clicked, spinning slot machine");
+              spinSlotMachine();
+              addSpin();
+              if (userId) {
+                updateCoins(userId, -1);
+              } else {
+                console.error("userId is undefined, cannot update coins.");
+              }
+            } else {
+              console.warn("Not enough coins to spin the slot machine.");
+            }
+          }
+        }}
+        onPointerDown={() => {
+          setButtonZ(-1);
+          setButtonY(-13.5);
+        }}
+        onPointerUp={() => {
+          setButtonZ(0);
+          setButtonY(-13);
+        }}
+      />
+      <Text
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        position={[0, textY, textZ]}
+        rotation={[-Math.PI / 8, 0, 0]}
+        fontSize={3}
+        font="./fonts/nickname.otf"
+        onPointerDown={() => {
+          setTextZ(1.3);
+          setTextY(-14.1);
+        }}
+        onPointerUp={() => {
+          setTextZ(1.6);
+          setTextY(-14);
+        }}
+      >
+        {phase === "idle" ? "GIRAR" : "GIRANDO"}
+      </Text>
+    </>
+  );
+});
+
+export default SlotMachine;
+
+
+=== src\style.css ===
+
+@import url("https://fonts.googleapis.com/css2?family=Paytone+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: "Paytone One", sans-serif;
+  user-select: none;
+  -moz-user-drag: none;
+  -webkit-user-drag: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  box-sizing: border-box;
+  overflow: hidden;
+  touch-action: none;
+}
+
+html,
+body,
+#root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+
+=== src\interface\Interface.tsx ===
+
+
+
+import useGame from "../stores/store";
+import Modal from "./modal/Modal";
+import HelpButton from "./helpButton/HelpButton";
+import "./style.css";
+
+const Interface = () => {
+  // const phase = useGame((state) => state.phase);
+  const modal = useGame((state) => state.modal);
+  const coins = useGame((state) => state.coins);
+  const spins = useGame((state) => state.spins);
+
+  return (
+    <>
+      {/* Help Button */}
+      <HelpButton />
+
+      {/* Modal */}
+      {modal && <Modal />}
+
+      {/* Logo */}
+      <a
+        target="_blank"
+      >
+        <img className="logo" src="./images/logo.png" alt="" />
+      </a>
+
+      <div className="interface">
+        {/* Coins */}
+        <div className="coins-section">
+          <div className="coins-number">{coins}</div>
+          <img className="coins-image" src="./images/coin.png" />
+        </div>
+
+        {/* Spins */}
+        <div className="spins-section">
+          <div className="spins-number">{spins}</div>
+        </div>
+
+        {/* Phase */}
+        {/* <div >{phase.toUpperCase()}</div> */}
+      </div>
+    </>
+  );
+};
+
+export default Interface;
+
+
+=== src\interface\style.css ===
+
+.interface {
+  pointer-events: none;
+  z-index: 1;
+  position: absolute;
+  margin: 1em;
+  color: #fff;
+}
+
+.logo {
+  width: min(300px, 25vw);
+  transform: rotate(-5deg);
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0.5em;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.spins-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  margin: 1em;
+}
+
+.spins-number {
+  font-size: min(130px, 11vw);
+  text-shadow: min(7px, 1vw) min(7px, 1vw) 0px #6913c5;
+  width: 400px;
+}
+
+.coins-section {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 1em;
+}
+
+.coins-number {
+  font-size: min(130px, 11vw);
+  width: 400px;
+  text-align: right;
+  text-shadow: min(7px, 1vw) min(7px, 1vw) 0px #6913c5;
+}
+
+.coins-image {
+  margin-top: 1vw;
+  margin-left: 2vw;
+  width: min(130px, 11vw);
+}
+
+
+=== src\interface\helpButton\HelpButton.tsx ===
+
+
+
+import useGame from "../../stores/store";
+import "./style.css";
+
+const HelpButton = () => {
+  const { setModal } = useGame();
+
+  const handleHelp = () => {
+    setModal(true);
+  };
+
+  return <div onClick={handleHelp} className="help-button" />;
+};
+
+export default HelpButton;
+
+
+=== src\interface\helpButton\style.css ===
+
+.help-button {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  background-image: url("/images/help.svg");
+  height: min(40px, 10vw);
+  width: min(40px, 10vw);
+  cursor: pointer;
+  z-index: 1;
+}
+
+
+=== src\interface\modal\Modal.tsx ===
+
+// Copyright (c) 2023 Michael Kolesidis <michael.kolesidis@gmail.com>
+// Licenciado bajo la GNU Affero General Public License v3.0.
+// https://www.gnu.org/licenses/gpl-3.0.html
+
+import useGame from "../../stores/store";
+import "./style.css";
+
+const Modal = () => {
+  const { setModal } = useGame();
+
+  return (
+      <div className="modal" onClick={() => setModal(false)}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-main">
+            <div className="modal-text">
+              Haz clic en el botón SPIN o presiona ESPACIO para girar.
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/cherry.png" />
+              <img className="modal-image" src="./images/cherry.png" />
+              <img className="modal-image" src="./images/cherry.png" />
+              <span> Ganá 50 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/apple.png" />
+              <img className="modal-image" src="./images/apple.png" />
+              <img className="modal-image" src="./images/apple.png" />
+              <span> Ganá 20 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/banana.png" />
+              <img className="modal-image" src="./images/banana.png" />
+              <img className="modal-image" src="./images/banana.png" />
+              <span> Ganá 15 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/lemon.png" />
+              <img className="modal-image" src="./images/lemon.png" />
+              <img className="modal-image" src="./images/lemon.png" />
+              <span> Ganá 3 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/cherry.png" />
+              <img className="modal-image" src="./images/cherry.png" />
+              <span> Ganá 40 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/apple.png" />
+              <img className="modal-image" src="./images/apple.png" />
+              <span> Ganá 10 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              <img className="modal-image" src="./images/banana.png" />
+              <img className="modal-image" src="./images/banana.png" />
+              <span> Ganá 5 </span>
+              <img className="modal-image" src="./images/coin.png" />
+            </div>
+            <div className="modal-text">
+              Solo se considera un par en orden de izquierda a derecha.
+            </div>
+            <div>
+              <div>
+                <a>
+                  © 2024 Bar Imperio.
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  );
+};
+
+export default Modal;
+
+
+=== src\interface\modal\style.css ===
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(31, 31, 31, 0.6);
+}
+
+.modal-box {
+  background: #ffffff;
+  width: min(85vw, 550px);
+  height: fit-content;
+  padding: 2vh min(8vw, 30px);
+  border-radius: 40px;
+  z-index: 3;
+  text-align: center;
+  box-shadow: 0 0 20px #ffffff;
+}
+
+.modal-text {
+  font-family: "Inter", sans-serif;
+  margin: 2vh 0;
+  text-align: left;
+  font-size: min(4vw, 20px);
+  text-align: center;
+}
+
+.modal-image {
+  width: min(6vw, 40px);
+  margin: min(0.1em, 4px);
+}
+
+span {
+  font-size: min(6vw, 40px);
+}
+
+a,
+a:active,
+a:visited {
+  text-decoration: none;
+  color: #000;
+  font-size: min(3vw, 20px);
+}
+
+
+=== src\lights\Lights.tsx ===
+
+
+
+export default function Lights() {
+  return (
+    <>
+      <directionalLight position={[-2, 3, 2]} intensity={1} />
+      <directionalLight position={[2, 3, 2]} intensity={1} />
+      <ambientLight intensity={0.5} />
+    </>
+  );
+}
+
+

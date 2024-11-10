@@ -1,3 +1,5 @@
+import random
+
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlparse
@@ -7,7 +9,7 @@ from .models import User
 import jwt
 import datetime
 import logging
-
+from .cherrycharm import endgame,segment_to_fruit
 @app.route('/')
 @app.route('/dashboard')
 @login_required
@@ -181,3 +183,82 @@ def update_coins():
     except jwt.InvalidTokenError:
         logging.error("Invalid token received for user_id: %s", user_id)
         return jsonify({'message': 'Invalid token'}), 401
+
+@app.route('/spin', methods=['POST'])
+def spin():
+    data = request.get_json()
+    user_id = data.get('userId')
+    logging.debug("Received spin request for user_id: %s", user_id)
+
+    # Retrieve the token from the Authorization header
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(" ")[1] if auth_header else None
+
+    if not user_id or not token:
+        logging.warning("User ID or token is missing in spin request.")
+        return jsonify({'message': 'User ID and token are required'}), 400
+
+    try:
+        # Decode and verify the JWT token
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+
+        # Check if the token's user_id matches the provided user_id
+        if str(decoded_token['user_id']) != user_id:
+            logging.warning("Unauthorized spin attempt for user_id: %s", user_id)
+            return jsonify({'message': 'Unauthorized access'}), 401
+
+        # Fetch the user from the database
+        user = User.query.filter_by(username=user_id).first()
+        if not user:
+            logging.error("User not found for user_id: %s", user_id)
+            return jsonify({'message': 'User not found'}), 404
+
+        # Check if the user has enough coins to spin
+        # Each spin costs 1 coin
+        if user.coins < 1:
+            logging.warning("User %s does not have enough coins to spin.", user_id)
+            return jsonify({'message': 'Not enough coins to spin'}), 400
+
+        # Deduct a coin for spinning
+        user.coins -= 1
+        db.session.commit()
+        logging.info("User %s has spun the slot machine. Coins left: %s", user_id, user.coins)
+
+        # Generate random stop segments between 15 and 30 inclusive
+        MIN_SEGMENT = 15
+        MAX_SEGMENT = 30
+        stop_segments = [random.randint(MIN_SEGMENT, MAX_SEGMENT) for _ in range(3)]
+        logging.info("Generated stop segments for user %s: %s", user_id, stop_segments)
+
+        # Convert stop_segments to fruits
+        fruits = [segment_to_fruit(reel, segment) for reel, segment in enumerate(stop_segments)]
+        logging.info("Fruits for user %s: %s", user_id, fruits)
+
+        # Compute winnings
+        winnings = endgame(*fruits)
+        logging.info("User %s won: %s coins", user_id, winnings)
+
+        # Add winnings to user's coins
+        user.coins += winnings
+        db.session.commit()
+        logging.info("User %s new coin balance: %s", user_id, user.coins)
+
+        # Prepare the response data
+        response_data = {
+            'stopSegments': stop_segments,
+            'fruits': [fruit.value for fruit in fruits],  # Convert Enum to string
+            'winnings': winnings,
+            'totalCoins': user.coins
+        }
+
+        return jsonify(response_data), 200
+
+    except jwt.ExpiredSignatureError:
+        logging.warning("Token has expired for user_id: %s", user_id)
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        logging.error("Invalid token received for user_id: %s", user_id)
+        return jsonify({'message': 'Invalid token'}), 401
+    except Exception as e:
+        logging.error("An error occurred during spin for user_id: %s. Error: %s", user_id, str(e))
+        return jsonify({'message': 'An internal error occurred'}), 500
