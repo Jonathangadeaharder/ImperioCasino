@@ -31,9 +31,6 @@ const userManagementServer = "http://127.0.0.1:5000";
 const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
 const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
-  const fruit0 = useGame((state) => state.fruit0);
-  const fruit1 = useGame((state) => state.fruit1);
-  const fruit2 = useGame((state) => state.fruit2);
   const setFruit0 = useGame((state) => state.setFruit0);
   const setFruit1 = useGame((state) => state.setFruit1);
   const setFruit2 = useGame((state) => state.setFruit2);
@@ -99,6 +96,7 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
       stopSegments.forEach((segment, index) => {
         spinReel(index, segment);
       });
+
     } catch (error) {
       console.error("Error spinning slot machine:", error);
       // Optionally, revert the spinning phase if there's an error
@@ -134,11 +132,6 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
             console.log("Space key pressed, spinning slot machine");
             spinSlotMachine();
             addSpin();
-            if (userId) {
-              updateCoins(userId, -1);
-            } else {
-              console.error("userId is undefined, cannot update coins.");
-            }
           } else {
             console.warn("Not enough coins to spin the slot machine.");
           }
@@ -153,7 +146,7 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [phase, coins, userId, spinSlotMachine, addSpin, updateCoins]);
+  }, [phase, coins, userId, spinSlotMachine, addSpin]);
 
   useFrame(() => {
     for (let i = 0; i < reelRefs.length; i++) {

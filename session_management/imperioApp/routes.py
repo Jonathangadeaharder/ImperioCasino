@@ -246,8 +246,6 @@ def spin():
         # Prepare the response data
         response_data = {
             'stopSegments': stop_segments,
-            'fruits': [fruit.value for fruit in fruits],  # Convert Enum to string
-            'winnings': winnings,
             'totalCoins': user.coins
         }
 

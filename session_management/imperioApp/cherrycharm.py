@@ -1,22 +1,19 @@
-# cherrycharm.py
-
 from enum import Enum
 
-from enum import Enum
+def ceildiv(a, b):
+    return -(a // -b)
 
 class Fruit(Enum):
     CHERRY = "CHERRY"
     LEMON = "LEMON"
     BANANA = "BANANA"
     APPLE = "APPLE"
-    UNKNOWN = "UNKNOWN"
 
-def segment_to_fruit(reel: int, segment: int) -> Fruit:
-    mapped_segment = segment % 16
-    if mapped_segment < 8:
-        return Fruit.UNKNOWN
+def segment_to_fruit(reel_index: int, reel_segment: int) -> Fruit:
 
-    mappings = {
+    reel_segment = ceildiv(reel_segment, 2)
+    # Define the mapping for each reel
+    fruit_mappings = {
         0: {
             8: Fruit.CHERRY,
             9: Fruit.LEMON,
@@ -25,7 +22,7 @@ def segment_to_fruit(reel: int, segment: int) -> Fruit:
             12: Fruit.BANANA,
             13: Fruit.LEMON,
             14: Fruit.APPLE,
-            15: Fruit.LEMON
+            15: Fruit.LEMON,
         },
         1: {
             8: Fruit.LEMON,
@@ -35,7 +32,7 @@ def segment_to_fruit(reel: int, segment: int) -> Fruit:
             12: Fruit.CHERRY,
             13: Fruit.LEMON,
             14: Fruit.LEMON,
-            15: Fruit.APPLE
+            15: Fruit.APPLE,
         },
         2: {
             8: Fruit.LEMON,
@@ -45,11 +42,19 @@ def segment_to_fruit(reel: int, segment: int) -> Fruit:
             12: Fruit.CHERRY,
             13: Fruit.APPLE,
             14: Fruit.LEMON,
-            15: Fruit.APPLE
-        }
+            15: Fruit.APPLE,
+        },
     }
 
-    return mappings.get(reel, {}).get(mapped_segment, Fruit.UNKNOWN)
+    # Retrieve the fruit based on reel_index and reel_segment
+    fruit = fruit_mappings.get(reel_index, {}).get(reel_segment, None)
+
+    if fruit is None:
+        print(f"Warning: Unhandled segment {reel_segment} for reel {reel_index}")
+        return None
+
+    return fruit
+
 
 def endgame(fruit0: Fruit, fruit1: Fruit, fruit2: Fruit) -> int:
     """
