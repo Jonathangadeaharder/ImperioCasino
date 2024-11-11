@@ -39,7 +39,7 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
   const end = useGame((state) => state.end);
   const addSpin = useGame((state) => state.addSpin);
   const coins = useGame((state) => state.coins);
-  const updateCoins = useGame((state) => state.updateCoins);
+  const setCoins = useGame((state) => state.setCoins); // Updated to setCoins
   const fetchCoins = useGame((state) => state.fetchCoins);
 
   // Fetch initial coins when the component mounts
@@ -58,10 +58,12 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
     useRef<ReelGroup>(null),
   ];
 
+  const sleep = (ms: number): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  };
+
   const spinSlotMachine = async () => {
     console.log("Spinning slot machine");
-
-    // Start the spinning phase
     start();
 
     try {
@@ -80,10 +82,9 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
       }
 
       const data = await response.json();
-      console.log(data)
-      // Assume the server responds with an array of stop segments
-      const stopSegments: number[] = data.stopSegments;
+      const { stopSegments, totalCoins } = data;
 
+      // Validate stopSegments
       if (
           !stopSegments ||
           !Array.isArray(stopSegments) ||
@@ -96,6 +97,9 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
       stopSegments.forEach((segment, index) => {
         spinReel(index, segment);
       });
+
+      await sleep(2000);
+      setCoins(totalCoins);
 
     } catch (error) {
       console.error("Error spinning slot machine:", error);
@@ -118,7 +122,6 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
       setFruit0("");
       setFruit1("");
       setFruit2("");
-      devLog(`Stop segment of reel ${reelIndex}: ${stopSegment}`);
 
       reel.reelSpinUntil = stopSegment;
     }
@@ -158,7 +161,7 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
           }
 
           const targetRotationX =
-            (reel.reelSpinUntil - reel.reelSegment) * WHEEL_SEGMENT;
+              (reel.reelSpinUntil - reel.reelSegment) * WHEEL_SEGMENT;
           const rotationSpeed = 0.1;
 
           if (reel.rotation.x < targetRotationX) {
@@ -185,9 +188,6 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
               }
             }
 
-            devLog(
-              `Reel ${i + 1} stopped at segment ${reel.reelSegment} ${fruit}`
-            );
             reel.reelSpinUntil = undefined; // Reset reelSpinUntil to stop further logging
           }
         }
@@ -206,83 +206,79 @@ const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
   const [textY, setTextY] = useState(-14);
 
   return (
-    <>
-      <Reel
-        ref={reelRefs[0]}
-        value={value[0]}
-        map={0}
-        position={[-7, 0, 0]}
-        rotation={[0, 0, 0]}
-        scale={[10, 10, 10]}
-        reelSegment={0}
-      />
-      <Reel
-        ref={reelRefs[1]}
-        value={value[1]}
-        map={1}
-        position={[0, 0, 0]}
-        rotation={[0, 0, 0]}
-        scale={[10, 10, 10]}
-        reelSegment={0}
-      />
-      <Reel
-        ref={reelRefs[2]}
-        value={value[2]}
-        map={2}
-        position={[7, 0, 0]}
-        rotation={[0, 0, 0]}
-        scale={[10, 10, 10]}
-        reelSegment={0}
-      />
-      <Button
-        scale={[0.055, 0.045, 0.045]}
-        position={[0, buttonY, buttonZ]}
-        rotation={[-Math.PI / 8, 0, 0]}
-        onClick={() => {
-          if (phase !== "spinning") {
-            if (coins > 0) {
-              console.log("Button clicked, spinning slot machine");
-              spinSlotMachine();
-              addSpin();
-              if (userId) {
-                updateCoins(userId, -1);
-              } else {
-                console.error("userId is undefined, cannot update coins.");
+      <>
+        <Reel
+            ref={reelRefs[0]}
+            value={value[0]}
+            map={0}
+            position={[-7, 0, 0]}
+            rotation={[0, 0, 0]}
+            scale={[10, 10, 10]}
+            reelSegment={0}
+        />
+        <Reel
+            ref={reelRefs[1]}
+            value={value[1]}
+            map={1}
+            position={[0, 0, 0]}
+            rotation={[0, 0, 0]}
+            scale={[10, 10, 10]}
+            reelSegment={0}
+        />
+        <Reel
+            ref={reelRefs[2]}
+            value={value[2]}
+            map={2}
+            position={[7, 0, 0]}
+            rotation={[0, 0, 0]}
+            scale={[10, 10, 10]}
+            reelSegment={0}
+        />
+        <Button
+            scale={[0.055, 0.045, 0.045]}
+            position={[0, buttonY, buttonZ]}
+            rotation={[-Math.PI / 8, 0, 0]}
+            onClick={() => {
+              if (phase !== "spinning") {
+                if (coins > 0) {
+                  console.log("Button clicked, spinning slot machine");
+                  spinSlotMachine();
+                  addSpin();
+                  // Removed immediate coin deduction
+                } else {
+                  console.warn("Not enough coins to spin the slot machine.");
+                }
               }
-            } else {
-              console.warn("Not enough coins to spin the slot machine.");
-            }
-          }
-        }}
-        onPointerDown={() => {
-          setButtonZ(-1);
-          setButtonY(-13.5);
-        }}
-        onPointerUp={() => {
-          setButtonZ(0);
-          setButtonY(-13);
-        }}
-      />
-      <Text
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, textY, textZ]}
-        rotation={[-Math.PI / 8, 0, 0]}
-        fontSize={3}
-        font="./fonts/nickname.otf"
-        onPointerDown={() => {
-          setTextZ(1.3);
-          setTextY(-14.1);
-        }}
-        onPointerUp={() => {
-          setTextZ(1.6);
-          setTextY(-14);
-        }}
-      >
-        {phase === "idle" ? "GIRAR" : "GIRANDO"}
-      </Text>
-    </>
+            }}
+            onPointerDown={() => {
+              setButtonZ(-1);
+              setButtonY(-13.5);
+            }}
+            onPointerUp={() => {
+              setButtonZ(0);
+              setButtonY(-13);
+            }}
+        />
+        <Text
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            position={[0, textY, textZ]}
+            rotation={[-Math.PI / 8, 0, 0]}
+            fontSize={3}
+            font="./fonts/nickname.otf"
+            onPointerDown={() => {
+              setTextZ(1.3);
+              setTextY(-14.1);
+            }}
+            onPointerUp={() => {
+              setTextZ(1.6);
+              setTextY(-14);
+            }}
+        >
+          {phase === "idle" ? "GIRAR" : "GIRANDO"}
+        </Text>
+      </>
   );
 });
 

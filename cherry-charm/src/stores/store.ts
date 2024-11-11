@@ -82,82 +82,84 @@ type State = {
 
 // Create the store with Zustand
 const useGame = create<State>()(
-    subscribeWithSelector((set) => ({
-        // Modal
-        modal: false,
-        setModal: (isOpen: boolean) => {
-            set({ modal: isOpen });
-        },
+    subscribeWithSelector(set => {
+        return ({
+            // Modal
+            modal: false,
+            setModal: (isOpen: boolean) => {
+                set({modal: isOpen});
+            },
 
-        // Coins
-        coins: 0, // Default to 0 until fetched
-        fetchCoins: (userId: string) => {
-            console.log(`Triggering fetchCoins for userId: ${userId}`);
-            fetchInitialCoins(userId).then((initialCoins) => {
-                console.log(`Setting coins in state for userId: ${userId} with coins: ${initialCoins}`);
-                set({ coins: initialCoins });
-            });
-        },
-        setCoins: (newCoinTotal: number) => {
-            console.log(`Setting coins to amount: ${newCoinTotal}`);
-            set({ coins: newCoinTotal });
-        },
+            // Coins
+            coins: 0, // Default to 0 until fetched
+            fetchCoins: (userId: string) => {
+                console.log(`Triggering fetchCoins for userId: ${userId}`);
+                fetchInitialCoins(userId).then((initialCoins) => {
+                    console.log(`Setting coins in state for userId: ${userId} with coins: ${initialCoins}`);
+                    set({coins: initialCoins});
+                });
+            },
+            setCoins: (newCoinTotal: number) => {
+                console.log(`Setting coins to amount: ${newCoinTotal}`);
+                set({coins: newCoinTotal});
+            },
 
-        // Fruits (results)
-        fruit0: "",
-        setFruit0: (fr: Fruit | "") => {
-            set({ fruit0: fr });
-        },
-        fruit1: "",
-        setFruit1: (fr: Fruit | "") => {
-            set({ fruit1: fr });
-        },
-        fruit2: "",
-        setFruit2: (fr: Fruit | "") => {
-            set({ fruit2: fr });
-        },
+            // Fruits (results)
+            fruit0: "",
+            setFruit0: (fr: Fruit | "") => {
+                set({fruit0: fr});
+            },
+            fruit1: "",
+            setFruit1: (fr: Fruit | "") => {
+                set({fruit1: fr});
+            },
+            fruit2: "",
+            setFruit2: (fr: Fruit | "") => {
+                set({fruit2: fr});
+            },
 
-        // Games
-        spins: 0,
-        addSpin: () => {
-            set((state) => ({ spins: state.spins + 1 }));
-        },
+            // Games
+            spins: 0,
+            addSpin: () => {
+                set((state) => ({spins: state.spins + 1}));
+            },
 
-        // Time
-        startTime: 0,
-        endTime: 0,
+            // Time
+            startTime: 0,
+            endTime: 0,
 
-        // Phase
-        phase: "idle",
-        start: () => {
-            set((state) => {
-                if (state.phase === "idle") {
-                    return { phase: "spinning", startTime: Date.now() };
-                }
-                return {};
-            });
-        },
-        end: () => {
-            set((state) => {
-                if (state.phase === "spinning") {
-                    const endTime = Date.now();
-                    const elapsedTime = endTime - state.startTime;
-                    devLog(`Time spinning: ${elapsedTime / 1000} seconds`);
-                    return { phase: "idle", endTime };
-                }
-                return {};
-            });
-        },
+            // Phase
+            phase: "idle",
+            start: () => {
+                set((state) => {
+                    if (state.phase === "idle") {
+                        return {phase: "spinning", startTime: Date.now()};
+                    }
+                    return {};
+                });
+            },
+            end: () => {
+                set((state) => {
+                    if (state.phase === "spinning") {
+                        const endTime = Date.now();
+                        const elapsedTime = endTime - state.startTime;
+                        devLog(`Time spinning: ${elapsedTime / 1000} seconds`);
+                        return {phase: "idle", endTime};
+                    }
+                    return {};
+                });
+            },
 
-        // First time
-        firstTime: true,
-        setFirstTime: (isFirstTime: boolean) => {
-            set({ firstTime: isFirstTime });
-        },
+            // First time
+            firstTime: true,
+            setFirstTime: (isFirstTime: boolean) => {
+                set({firstTime: isFirstTime});
+            },
 
-        // Username
-        username: "defaultUser", // This can be updated dynamically based on the user
-    }))
+            // Username
+            username: "defaultUser", // This can be updated dynamically based on the user
+        });
+    })
 );
 
 export default useGame;
