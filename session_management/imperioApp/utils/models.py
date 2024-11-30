@@ -2,6 +2,42 @@ from .. import db, login_manager  # Relative imports
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from .constants import DEFAULT_COINS  # Import DEFAULT_COINS
+from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.types import JSON
+
+class BlackjackGameState(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.username'), nullable=False)
+    deck = db.Column(MutableList.as_mutable(JSON), nullable=False)
+    dealer_hand = db.Column(MutableList.as_mutable(JSON), nullable=False)
+    player_hand = db.Column(MutableList.as_mutable(JSON), nullable=False)
+    player_second_hand = db.Column(MutableList.as_mutable(JSON), nullable=True)
+    player_coins = db.Column(db.Integer, nullable=False)
+    current_wager = db.Column(db.Integer, nullable=False)
+    game_over = db.Column(db.Boolean, default=False)
+    message = db.Column(db.String(255), default='')
+    player_stood = db.Column(db.Boolean, default=False)
+    double_down = db.Column(db.Boolean, default=False)
+    split = db.Column(db.Boolean, default=False)
+    current_hand = db.Column(db.String(10), default='first')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'deck': self.deck,
+            'dealer_hand': self.dealer_hand,
+            'player_hand': self.player_hand,
+            'player_coins': self.player_coins,
+            'current_wager': self.current_wager,
+            'game_over': self.game_over,
+            'message': self.message,
+            'player_stood': self.player_stood,
+            'double_down': self.double_down,
+            'split': self.split,
+            'player_second_hand': self.player_second_hand,
+            'current_hand': self.current_hand
+        }
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

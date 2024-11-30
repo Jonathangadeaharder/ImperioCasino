@@ -1,3 +1,4 @@
+// Define the server address
 const serverAddress = 'http://127.0.0.1:5000';
 
 // Function to parse query parameters
@@ -17,16 +18,22 @@ const queryParams = getQueryParams();
 const token = queryParams.token;
 const username = queryParams.username;
 
-// Starting game board values
-var cardsInDeck;
-
-// Initialize currentChipBalance to null; it will be updated after fetching from server
+// Initialize variables
 var currentChipBalance = null;
+var currentWager = 0;
+var dealerGameBoard = $("#dealer");
+var playerGameBoard = $("#user-hand");
+var playerSplitGameBoard = $("#user-split-hand");
+var dealerHandTotalDisplay = $(".dealer-hand-total");
+var playerHandTotalDisplay = $(".hand-total");
+var playerSplitHandTotalDisplay = $(".split-hand-total");
+var dealerHandTotal = 0;
+var playerHandTotal = 0;
+var playerSplitHandTotal = 0;
 
+// Get initial coin balance
 $(document).ready(function() {
-	getCards();
-	cardsInDeck = cards;
-	getCoins(); // Fetch the coin balance from the server
+	getCoins();
 });
 
 // Function to get coins from the server
@@ -43,12 +50,7 @@ function getCoins() {
 			'Content-Type': 'application/json'
 		}
 	})
-		.then(response => {
-			if (!response.ok) {
-				throw new Error('Network response was not ok');
-			}
-			return response.json();
-		})
+		.then(response => response.json())
 		.then(data => {
 			console.log('Coins:', data.coins);
 			currentChipBalance = data.coins;
@@ -60,151 +62,242 @@ function getCoins() {
 		});
 }
 
-
-$( document ).ready(function() {
-  getCards();
-  cardsInDeck = cards;
-  updateVisibleChipBalances();
-});
-
-var currentTurn = "player";
-var currentWager = 0;
-var gameWinner = "none"; // To be declared at end of game
-var isGameOver = false;
-
-// Dealer hand and starting totals
-var dealerHand = [];
-var dealerHandTotal = 0;
-var dealerGameBoard = $("#dealer");
-var dealerStatus = "start"; // Possible statuses are start (initial gameplay), stand, hit
-
-// Player hand and starting totals
-var playerHand = [];
-var playerHandTotal = 0;
-var playerGameBoard = $("#user-hand");
-var playerHandTotalDisplay = $(".hand-total");
-var playerStatus = "start";  // Possible statuses are start (initial gameplay), stand, hit
-
-// Because aces can equal 1 or 11, need to quickly know if player has aces so we can
-// adjust value from 11 to 1 if they go over 21 (default value is 11)
-var playerHasAce = false;  
-
-// Player split game variables only used if the player splits their hand
-var splitGame = false; // default value is false, must be turned true
-var playerSplitHand = [];
-var playerSplitHandTotal = 0;
-var playerSplitGameBoard = $("#user-split-hand");
-var playerSplitHandTotalDisplay = $(".split-hand-total");
-var playerSplitStatus;
-
-// Buttons pulled from DOM
-var startButton = $("#start-game-button");
-var doubleDownButton = $("#double-down-button");
-var hitButton = $("#hit-button");
-var standButton = $("#stand-button");
-var splitButton = $(".split-button");
-var playAgainButton = $(".new-game-button"); 
-
-// Deactivates a button (both event listener and appearance)
-function disableButton(buttonName) {
-	$(buttonName).off();
-	$(buttonName).addClass("disabled-button");
-}
-
-// Activates a button (both event listener and appearance)
-function enableButton(buttonName, event) {
-	$(buttonName).click(event);
-	$(buttonName).removeClass("disabled-button");
-}
-
 // Update chip totals displayed to user throughout the game
 function updateVisibleChipBalances() {
 	$(".current-wager").text(currentWager);
 	$(".current-chip-balance").text(currentChipBalance);
 }
 
-// Update card hand totals displayed to user throughout the game
-function updateVisibleHandTotals() {
-	$(playerHandTotalDisplay).text(playerHandTotal);
-	$(playerSplitHandTotalDisplay).text(playerSplitHandTotal);
-
-	// If the dealer has not played yet or game is not over, only show value of 1st card
-	// as the player is still making their initial moves
-	if (dealerHand.length === 2 && isGameOver === false && dealerStatus === "start") {
-		$(".dealer-hand-total").text(dealerHandTotal - dealerHand[1].value);
-	} else {
-		$(".dealer-hand-total").text(dealerHandTotal);
+// Function to select a wager
+function selectWager(amount) {
+	if (currentChipBalance === null) {
+		Materialize.toast("Fetching your coin balance, please wait...", 1000);
+		return;
 	}
 
-}
+	if (currentChipBalance < amount) {
+		Materialize.toast("You don't have enough coins to select that bet", 2000);
+		return;
+	}
 
-// Called when player clicks on a chip
-function selectWager(amount){
 	currentWager = amount;
 	updateVisibleChipBalances();
 }
 
-// 	ANIMATIONS/INTERACTIVITY:
-function flipHiddenCard() {
-	// If it's just the initial round, first we need to flip/reveal the hidden dealer card when this is called
-	if (dealerHand.length === 2) {
-		$("#dealer-card-1").addClass("flipped");
-		setTimeout(function(){
-			$("#dealer-card-1").attr("src", "img/" + dealerHand[1].src);
-			updateVisibleHandTotals();
-		}, 250);	
-	} 
+// Event listeners for wager selection
+$("#chip-10").click(function() { selectWager(10); });
+$("#chip-25").click(function() { selectWager(25); });
+$("#chip-50").click(function() { selectWager(50); });
+$("#chip-100").click(function() { selectWager(100); });
+
+// Start a new game
+var startButton = $("#start-game-button");
+startButton.click(startGame);
+
+function startGame() {
+	if (currentChipBalance === null) {
+		Materialize.toast("Fetching your coin balance, please wait...", 1000);
+		return;
+	}
+
+	if (currentWager === 0) {
+		Materialize.toast("You must select a bet to play", 1000);
+		return;
+	}
+
+	if (currentChipBalance < currentWager) {
+		Materialize.toast("You don't have enough coins to place that bet", 2000);
+		return;
+	}
+
+	fetch(`${serverAddress}/blackjack/start`, {
+		method: 'POST',
+		headers: {
+			'Authorization': 'Bearer ' + token,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ wager: currentWager })
+	})
+		.then(response => response.json())
+		.then(gameState => {
+			if (gameState.message) {
+				Materialize.toast(gameState.message, 2000);
+			} else {
+				console.log(gameState)
+				currentChipBalance = gameState.player_coins;
+				updateVisibleChipBalances();
+				$("#welcome").hide();
+				$("#game-over").hide();
+				$(".brand-logo").text("ImperioJack");
+				$("#game-board").show("fade", 1000);
+				updateGameBoard(gameState);
+			}
+		})
+		.catch(error => {
+			console.error('Error starting game:', error);
+			Materialize.toast("Error starting game.", 2000);
+		});
 }
 
-// Used in split game mode, shrinks the inactive deck and totals
-function scaleDownDeck(deck, totalDisplay) {
-	$(totalDisplay).addClass("splithand-scaledown");
-	$(deck).addClass("splithand-scaledown");
+// Action buttons
+var hitButton = $("#hit-button");
+var standButton = $("#stand-button");
+var doubleDownButton = $("#double-down-button");
+var splitButton = $(".split-button");
+
+hitButton.click(function() { sendAction('hit'); });
+standButton.click(function() { sendAction('stand'); });
+doubleDownButton.click(function() { sendAction('double'); });
+splitButton.click(function() { sendAction('split'); });
+
+function sendAction(action) {
+	fetch(`${serverAddress}/blackjack/action`, {
+		method: 'POST',
+		headers: {
+			'Authorization': 'Bearer ' + token,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ action: action })
+	})
+		.then(response => response.json())
+		.then(gameState => {
+			if (gameState.message) {
+				Materialize.toast(gameState.message, 2000);
+			}
+			currentChipBalance = gameState.player_coins;
+			updateVisibleChipBalances();
+			updateGameBoard(gameState);
+		})
+		.catch(error => {
+			console.error(`Error performing action ${action}:`, error);
+			Materialize.toast(`Error performing action ${action}.`, 2000);
+		});
 }
 
-// Used in split game mode, enlarges the deck and totals when turn active or when
-// dome with gameplay
-function enlargeDeck(deck, totalDisplay) {
-	$(totalDisplay).removeClass("splithand-scaledown");
-	$(deck).removeClass("splithand-scaledown");
+function capitalizeFirstLetter(val) {
+	if (val === undefined || val === null) {
+		return 'Unknown';
+	}
+	if (!isNaN(val) || /^\d+$/.test(val)) {
+		return val;
+	}
+	return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+// Update the game board
+function updateGameBoard(gameState) {
+	// Clear current hands
+	dealerGameBoard.empty();
+	playerGameBoard.empty();
+	playerSplitGameBoard.empty();
+
+	// Reset totals
+	dealerHandTotal = 0;
+	playerHandTotal = 0;
+	playerSplitHandTotal = 0;
+
+	// Helper function to get card image URL
+	function getCardImageUrl(card) {
+		const suit = card.suit ? capitalizeFirstLetter(card.suit) : 'Unknown';
+		const name = card.name ? capitalizeFirstLetter(card.name) : 'Unknown';
+		return `img/${suit}-${name}.png`;
+	}
+
+	// Update dealer's hand
+	gameState.dealer_hand.forEach((card, index) => {
+		console.log("Dealer card:", card);
+		console.log("Dealer card suit:", card.suit);
+		console.log("Dealer card name:", card.name);
+		let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
+		cardImage.attr("id", `dealer-card-${index}`);
+		cardImage.appendTo(dealerGameBoard);
+
+		dealerHandTotal += card.value;
+	});
+
+	// Update player's hand
+	gameState.player_hand.forEach((card, index) => {
+		console.log("Player card:", card);
+		console.log("Player card suit:", card.suit);
+		console.log("Player card name:", card.name);
+		let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
+		cardImage.attr("id", `player-card-${index}`);
+		cardImage.appendTo(playerGameBoard);
+
+		playerHandTotal += card.value;
+	});
+
+	// Update split hand if applicable
+	if (gameState.split && gameState.player_second_hand) {
+		gameState.player_second_hand.forEach((card, index) => {
+			console.log("Split card:", card);
+			console.log("Split card suit:", card.suit);
+			console.log("Split card name:", card.name);
+			let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
+			cardImage.attr("id", `playerSplit-card-${index}`);
+			cardImage.appendTo(playerSplitGameBoard);
+
+			playerSplitHandTotal += card.value;
+		});
+		$(playerSplitGameBoard).show();
+		$(".split-hand-total").show();
+	} else {
+		$(playerSplitGameBoard).hide();
+		$(".split-hand-total").hide();
+	}
+
+	// Update hand totals displayed
+	updateVisibleHandTotals();
+
+	// Enable or disable action buttons based on the game state
+	if (gameState.game_over) {
+		hitButton.prop('disabled', true);
+		standButton.prop('disabled', true);
+		doubleDownButton.prop('disabled', true);
+		splitButton.prop('disabled', true);
+		setTimeout(function() {
+			announceWinner(gameState);
+		}, 2000); // 2000 milliseconds = 2 seconds
+	} else {
+		hitButton.prop('disabled', false);
+		standButton.prop('disabled', false);
+		doubleDownButton.prop('disabled', !gameState.can_double_down);
+		splitButton.prop('disabled', !gameState.can_split);
+	}
+}
+// Update hand totals displayed
+function updateVisibleHandTotals() {
+	$(playerHandTotalDisplay).text(playerHandTotal);
+	$(playerSplitHandTotalDisplay).text(playerSplitHandTotal);
+	$(".dealer-hand-total").text(dealerHandTotal);
 }
 
-// Toggling rules from main nav gives an animation effect
-$(".rules-nav").click(function(){
-	$("#rules").toggle("blind", 500);
-});
+// Announce winner
+function announceWinner(gameState) {
+	$("#game-board").hide();
+	$("#game-over").show("drop", 500);
+	$("#game-outcome").text(gameState.message);
+}
 
-// But clicking close does not provide an animation effect
-$("#rules-close").click(function(){
-	$("#rules").hide();
-});
+// Play again
+var playAgainButton = $(".new-game-button");
+playAgainButton.click(newGame);
 
-// Materialize modal
-$(".modal").modal({ 
-      dismissible: false, 
-      opacity: .40, 
-      inDuration: 300, 
-      outDuration: 200, 
-      startingTop: "10%", // Starting top style attribute
-      endingTop: "10%", // Ending top style attribute
-    }
-  );
+function newGame() {
+	currentWager = 0;
+	updateVisibleChipBalances();
+	$("#game-over").hide();
+	$("#welcome").show();
+}
 
-// EVENT LISTENERS:
-$("#chip-10").click(function(){selectWager(10)});
-$("#chip-25").click(function(){selectWager(25)});
-$("#chip-50").click(function(){selectWager(50)});
-$("#chip-100").click(function(){selectWager(100)});
+// Reset game
+$("#reset-game").click(resetGame);
 
-// Button activation
-$(startButton).click(startGame);
-$(doubleDownButton).click(doubleDown); 
-$(hitButton).click(hit);
-$(standButton).click(stand);
-$(playAgainButton).click(newGame);
-
-$(".reduce-aces-button").click(   // Can only see this if player draws 2 aces, would only be reducing in 1st deck
-	function(){
-		reduceAcesValue(playerHand);
-		disableButton(splitButton, split);
-}); 
+function resetGame() {
+	// Implement reset game logic if needed
+	currentWager = 0;
+	currentChipBalance = null;
+	getCoins();
+	$("#game-over").hide();
+	$("#game-board").hide();
+	$("#welcome").show();
+}

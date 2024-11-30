@@ -100,7 +100,7 @@ def verify_token():
 @app.route('/getCoins', methods=['GET'])
 @token_required
 def get_coins(current_user):
-    logging.debug("Received getCoins request for user_id: %s", current_user.username)
+    logging.debug("Received getCoins request for user_id: %s with coins: %s", current_user.username, current_user.coins)
     return jsonify({'coins': current_user.coins}), 200
 
 @app.route('/updateCoins', methods=['POST'])
@@ -132,3 +132,27 @@ def redirect_to_blackjack():
         token = generate_token(current_user.username)
         session['token'] = token
     return redirect(f"{app.config['BLACK_JACK_URL']}/?username={username}&token={token}")
+
+@app.route('/blackjack/start', methods=['POST'])
+@token_required
+def start_blackjack_game(current_user):
+    data = request.get_json()
+    wager = data.get('wager')
+    if wager is None:
+        return jsonify({'message': 'Wager is required'}), 400
+
+    game_state = start_game(current_user, wager)
+    logging.debug("Start Blackjack Game - Game State: %s", game_state["player_hand"])
+    return jsonify(game_state)
+
+@app.route('/blackjack/action', methods=['POST'])
+@token_required
+def blackjack_action(current_user):
+    data = request.get_json()
+    action = data.get('action')
+    if action is None:
+        return jsonify({'message': 'Action is required'}), 400
+
+    result = player_action(current_user, action)
+    logging.debug("Blackjack Action - Result: %s", result["player_hand"])
+    return jsonify(result)
