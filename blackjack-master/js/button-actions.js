@@ -1,19 +1,21 @@
 // This file contains key interactions that will occur after the player has clicked a button
 
 var startGame = function() {
-	getCards();
-	if (currentWager === 0) {
+	if (currentChipBalance === null) {
+		Materialize.toast("Fetching your coin balance, please wait...", 1000);
+	} else if (currentWager === 0) {
 		Materialize.toast("You must select a bet to play", 1000);
 	} else if (currentChipBalance < 10) {
-		Materialize.toast("You're out of chips! Reset the game to continue" , 2000);
+		Materialize.toast("You're out of chips!" , 2000);
 	} else if (currentChipBalance < currentWager) {
 		Materialize.toast("Insufficient chip balance, please select a lower bet" , 1500);
 	} else {
+		getCards();
 		currentChipBalance -= currentWager;
 		updateVisibleChipBalances();
 		$("#welcome").hide();
 		$("#game-over").hide();
-		$(".brand-logo").text("blackjack"); 
+		$(".brand-logo").text("ImperioJack");
 		$("#game-board").show("fade", 1000);
 		cardsInDeck = cards;
 		cardsInDeck.sort(function() {return 0.5 - Math.random()});
@@ -132,11 +134,4 @@ function newGame() {
 		updateVisibleHandTotals();
 		startGame(); 		
 	}
-}
-
-function resetGame() {
-	currentWager = 0;
-	currentChipBalance = 500;
-	updateVisibleChipBalances();
-	location.reload();
 }

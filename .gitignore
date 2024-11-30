@@ -14,7 +14,7 @@ backend/node_modules/.package-lock.json
 cherry-charm/yarn.lock
 
 # SQLite database
-session_management/instance/users.db
+session_management/instance/app.db
 
 # Environment files
 session_management/serverenv/
