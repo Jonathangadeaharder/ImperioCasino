@@ -1,5 +1,65 @@
+const serverAddress = 'http://127.0.0.1:5000';
+
+// Function to parse query parameters
+function getQueryParams() {
+	const params = {};
+	const queryString = window.location.search.substring(1);
+	const regex = /([^&=]+)=([^&]*)/g;
+	let match;
+	while (match = regex.exec(queryString)) {
+		params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+	}
+	return params;
+}
+
+// Extract token and username from URL
+const queryParams = getQueryParams();
+const token = queryParams.token;
+const username = queryParams.username;
+
 // Starting game board values
 var cardsInDeck;
+
+// Initialize currentChipBalance to null; it will be updated after fetching from server
+var currentChipBalance = null;
+
+$(document).ready(function() {
+	getCards();
+	cardsInDeck = cards;
+	getCoins(); // Fetch the coin balance from the server
+});
+
+// Function to get coins from the server
+function getCoins() {
+	if (!token) {
+		console.error('Token not found in URL');
+		return;
+	}
+
+	fetch(`${serverAddress}/getCoins`, {
+		method: 'GET',
+		headers: {
+			'Authorization': 'Bearer ' + token,
+			'Content-Type': 'application/json'
+		}
+	})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
+			}
+			return response.json();
+		})
+		.then(data => {
+			console.log('Coins:', data.coins);
+			currentChipBalance = data.coins;
+			updateVisibleChipBalances();
+		})
+		.catch(error => {
+			console.error('Error fetching coins:', error);
+			Materialize.toast("Error fetching your coin balance.", 2000);
+		});
+}
+
 
 $( document ).ready(function() {
   getCards();
@@ -9,7 +69,6 @@ $( document ).ready(function() {
 
 var currentTurn = "player";
 var currentWager = 0;
-var currentChipBalance = localStorage.getItem('blackjackChips') || 500;
 var gameWinner = "none"; // To be declared at end of game
 var isGameOver = false;
 
@@ -62,7 +121,6 @@ function enableButton(buttonName, event) {
 function updateVisibleChipBalances() {
 	$(".current-wager").text(currentWager);
 	$(".current-chip-balance").text(currentChipBalance);
-	localStorage.setItem('blackjackChips', currentChipBalance);
 }
 
 // Update card hand totals displayed to user throughout the game
@@ -144,7 +202,6 @@ $(doubleDownButton).click(doubleDown);
 $(hitButton).click(hit);
 $(standButton).click(stand);
 $(playAgainButton).click(newGame);
-$("#reset-game").click(resetGame);
 
 $(".reduce-aces-button").click(   // Can only see this if player draws 2 aces, would only be reducing in 1st deck
 	function(){
