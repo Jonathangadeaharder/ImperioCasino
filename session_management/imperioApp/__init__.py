@@ -2,7 +2,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from .config import Config  # Use relative import
+from .utils.config import Config  # Use relative import
 import logging
 from flask_cors import CORS
 
@@ -10,7 +10,7 @@ from flask_cors import CORS
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s',
                     handlers=[
-                        logging.FileHandler("app_debug.log"),
+                        logging.FileHandler("logs/app_debug.log"),
                         logging.StreamHandler()
                     ])
 
@@ -23,4 +23,5 @@ migrate = Migrate(app, db)  # Initialize Migrate
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from . import routes, models  # Use relative imports
+from . import routes  # Use relative imports
+from .utils import models

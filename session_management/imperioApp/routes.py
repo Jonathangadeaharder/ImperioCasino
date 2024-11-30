@@ -123,28 +123,12 @@ def update_coins(current_user):
 def spin(spin_user):
     return executeSpin(spin_user)
 
-@app.route('/blackjack', methods=['GET'])
+@app.route('/redirect-blackjack')
 @login_required
-def blackjack():
-    # Generate a token for the user
+def redirect_to_blackjack():
+    username = current_user.username
     token = session.get('token')
     if not token:
         token = generate_token(current_user.username)
         session['token'] = token
-    return render_template('blackjack.html', title='Blackjack', token=token)
-
-@app.route('/blackjack/action', methods=['POST'])
-@token_required
-def blackjack_action(current_user):
-    data = request.get_json()
-    action = data.get('action')
-    wager = data.get('wager', 0)  # Get wager amount if provided
-
-    if action == 'start':
-        response = start_game(current_user, wager)
-    elif action in ['hit', 'stand', 'double_down', 'split']:
-        response = player_action(current_user, action)
-    else:
-        return jsonify({'message': 'Invalid action'}), 400
-
-    return jsonify(response)
+    return redirect(f"{app.config['BLACK_JACK_URL']}/?username={username}&token={token}")
