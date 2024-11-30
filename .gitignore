@@ -12,7 +12,7 @@ cherry-charm/yarn.lock
 session_management/serverenv/
 
 project_sources.zip
-/session_management/concatenated_code.txt
+concatenated_code.txt
 /app_debug.log
 /session_management/myoutput.log
 /myoutput.log

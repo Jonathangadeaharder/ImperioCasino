@@ -12,3 +12,188 @@
 2024-11-30 14:34:18,199 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:34:18] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
 2024-11-30 14:34:18,254 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:34:18] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
 2024-11-30 14:34:18,299 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:34:18] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=l1V7N0dtfrYqqcg6nml9 HTTP/1.1" 200 -
+2024-11-30 14:40:26,442 INFO werkzeug MainThread : [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-11-30 14:40:26,442 INFO werkzeug MainThread : [33mPress CTRL+C to quit[0m
+2024-11-30 14:40:26,443 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:40:26,898 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:40:26,900 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:40:32,586 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:40:32] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-11-30 14:40:32,662 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:40:32] "[36mGET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-11-30 14:40:32,665 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:40:32] "[36mGET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-11-30 14:40:32,828 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:40:32] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=hur3jiTTj1FxUInHgS3p HTTP/1.1" 200 -
+2024-11-30 14:42:22,624 INFO werkzeug MainThread : [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-11-30 14:42:22,624 INFO werkzeug MainThread : [33mPress CTRL+C to quit[0m
+2024-11-30 14:42:22,625 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:42:23,079 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:42:23,081 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:42:24,471 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:24] "[32mGET / HTTP/1.1[0m" 302 -
+2024-11-30 14:42:24,495 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:24] "GET /login?next=/ HTTP/1.1" 200 -
+2024-11-30 14:42:24,541 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:24] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:42:28,182 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:28] "[32mPOST /login?next=/ HTTP/1.1[0m" 302 -
+2024-11-30 14:42:28,235 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:28] "GET /login HTTP/1.1" 200 -
+2024-11-30 14:42:28,296 INFO werkzeug Thread-7 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:28] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:42:30,182 INFO werkzeug Thread-8 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:30] "GET /signup HTTP/1.1" 200 -
+2024-11-30 14:42:30,270 INFO werkzeug Thread-9 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:30] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:42:38,444 INFO werkzeug Thread-10 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:38] "[32mPOST /signup HTTP/1.1[0m" 302 -
+2024-11-30 14:42:38,462 INFO werkzeug Thread-11 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:38] "GET /login HTTP/1.1" 200 -
+2024-11-30 14:42:38,489 INFO werkzeug Thread-12 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:38] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:42:43,377 INFO werkzeug Thread-13 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:43] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-11-30 14:42:43,401 INFO werkzeug Thread-14 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:43] "GET /dashboard HTTP/1.1" 200 -
+2024-11-30 14:42:43,485 INFO werkzeug Thread-15 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:43] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:42:45,273 INFO werkzeug Thread-16 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:42:45] "[32mGET /redirect-imperio HTTP/1.1[0m" 302 -
+2024-11-30 14:43:32,132 INFO werkzeug Thread-17 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:43:32] "GET / HTTP/1.1" 200 -
+2024-11-30 14:43:32,210 INFO werkzeug Thread-18 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:43:32] "GET /static/css/styles.css HTTP/1.1" 200 -
+2024-11-30 14:43:35,125 INFO werkzeug Thread-19 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:43:35] "[32mGET /redirect-imperio HTTP/1.1[0m" 302 -
+2024-11-30 14:44:36,467 INFO werkzeug MainThread :  * Detected change in 'C:\\Users\\Jonandrop\\IdeaProjects\\ImperioCasino\\session_management\\imperioApp\\utils\\config.py', reloading
+2024-11-30 14:44:36,539 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:44:37,016 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:44:37,019 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:45:00,604 INFO werkzeug MainThread :  * Detected change in 'C:\\Users\\Jonandrop\\IdeaProjects\\ImperioCasino\\session_management\\imperioApp\\routes.py', reloading
+2024-11-30 14:45:00,683 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:45:01,197 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:45:01,200 INFO werkzeug MainThread :  * Debugger PIN: 140-455-192
+2024-11-30 14:45:11,478 INFO werkzeug MainThread :  * Detected change in 'C:\\Users\\Jonandrop\\IdeaProjects\\ImperioCasino\\session_management\\imperioApp\\routes.py', reloading
+2024-11-30 14:45:11,546 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:45:12,020 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:45:12,022 INFO werkzeug MainThread :  * Debugger PIN: 140-455-192
+2024-11-30 14:45:34,619 INFO werkzeug MainThread :  * Detected change in 'C:\\Users\\Jonandrop\\IdeaProjects\\ImperioCasino\\session_management\\imperioApp\\routes.py', reloading
+2024-11-30 14:45:34,684 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:45:35,157 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:45:35,159 INFO werkzeug MainThread :  * Debugger PIN: 140-455-192
+2024-11-30 14:45:49,971 INFO werkzeug MainThread : [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-11-30 14:45:49,972 INFO werkzeug MainThread : [33mPress CTRL+C to quit[0m
+2024-11-30 14:45:49,972 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:45:50,428 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:45:50,429 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:45:52,229 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:45:52] "GET / HTTP/1.1" 200 -
+2024-11-30 14:45:52,275 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:45:52] "GET /static/css/styles.css HTTP/1.1" 200 -
+2024-11-30 14:46:25,573 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:25] "GET / HTTP/1.1" 200 -
+2024-11-30 14:46:25,636 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:25] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:46:28,116 INFO werkzeug Thread-7 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:28] "[35m[1mGET /redirect-blackjack HTTP/1.1[0m" 500 -
+2024-11-30 14:46:28,188 INFO werkzeug Thread-8 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:28] "GET /redirect-blackjack?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2024-11-30 14:46:28,189 INFO werkzeug Thread-9 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:28] "GET /redirect-blackjack?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2024-11-30 14:46:28,347 INFO werkzeug Thread-10 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:28] "GET /redirect-blackjack?__debugger__=yes&cmd=resource&f=console.png&s=YVlr9LUcEeavTUreAF7H HTTP/1.1" 200 -
+2024-11-30 14:46:28,358 INFO werkzeug Thread-11 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:28] "GET /redirect-blackjack?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2024-11-30 14:46:34,088 INFO werkzeug MainThread : [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-11-30 14:46:34,089 INFO werkzeug MainThread : [33mPress CTRL+C to quit[0m
+2024-11-30 14:46:34,090 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:46:34,562 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:46:34,564 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:46:36,199 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:36] "GET / HTTP/1.1" 200 -
+2024-11-30 14:46:36,238 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:36] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 14:46:37,302 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:37] "[35m[1mGET /redirect-blackjack HTTP/1.1[0m" 500 -
+2024-11-30 14:46:37,364 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:37] "[36mGET /redirect-blackjack?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-11-30 14:46:37,364 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:37] "[36mGET /redirect-blackjack?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-11-30 14:46:37,414 INFO werkzeug Thread-7 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:37] "GET /redirect-blackjack?__debugger__=yes&cmd=resource&f=console.png&s=yZJxQwp6Ex5ILI6cnP8o HTTP/1.1" 200 -
+2024-11-30 14:46:44,852 INFO werkzeug MainThread :  * Detected change in 'C:\\Users\\Jonandrop\\IdeaProjects\\ImperioCasino\\session_management\\imperioApp\\utils\\config.py', reloading
+2024-11-30 14:46:44,921 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 14:46:45,406 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 14:46:45,408 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 14:46:46,442 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:46:46] "[32mGET /redirect-blackjack HTTP/1.1[0m" 302 -
+2024-11-30 14:49:11,708 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:49:11] "OPTIONS /getCoins?userId=defaultUserId HTTP/1.1" 200 -
+2024-11-30 14:49:11,713 DEBUG root Thread-4 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 14:49:11,713 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:49:11] "GET /getCoins?userId=defaultUserId HTTP/1.1" 200 -
+2024-11-30 14:49:15,166 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:49:15] "OPTIONS /spin HTTP/1.1" 200 -
+2024-11-30 14:49:15,169 DEBUG root Thread-6 (process_request_thread) : Received spin request for user_id: Jonandrop
+2024-11-30 14:49:15,176 INFO root Thread-6 (process_request_thread) : User Jonandrop has spun the slot machine. Coins left: 99
+2024-11-30 14:49:15,176 INFO root Thread-6 (process_request_thread) : Generated stop segments for user Jonandrop: [26, 28, 15]
+2024-11-30 14:49:15,176 INFO root Thread-6 (process_request_thread) : Fruits for user Jonandrop: [<Fruit.LEMON: 'LEMON'>, <Fruit.LEMON: 'LEMON'>, <Fruit.LEMON: 'LEMON'>]
+2024-11-30 14:49:15,176 INFO root Thread-6 (process_request_thread) : User Jonandrop won: 3 coins
+2024-11-30 14:49:15,178 INFO root Thread-6 (process_request_thread) : User Jonandrop new coin balance: 102
+2024-11-30 14:49:15,179 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:49:15] "POST /spin HTTP/1.1" 200 -
+2024-11-30 14:53:07,058 INFO werkzeug Thread-7 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:53:07] "OPTIONS /getCoins?userId=defaultUserId HTTP/1.1" 200 -
+2024-11-30 14:53:07,061 DEBUG root Thread-8 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 14:53:07,062 INFO werkzeug Thread-8 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:53:07] "GET /getCoins?userId=defaultUserId HTTP/1.1" 200 -
+2024-11-30 14:53:08,278 INFO werkzeug Thread-9 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:53:08] "OPTIONS /spin HTTP/1.1" 200 -
+2024-11-30 14:53:08,282 DEBUG root Thread-10 (process_request_thread) : Received spin request for user_id: Jonandrop
+2024-11-30 14:53:08,287 INFO root Thread-10 (process_request_thread) : User Jonandrop has spun the slot machine. Coins left: 101
+2024-11-30 14:53:08,287 INFO root Thread-10 (process_request_thread) : Generated stop segments for user Jonandrop: [27, 28, 16]
+2024-11-30 14:53:08,287 INFO root Thread-10 (process_request_thread) : Fruits for user Jonandrop: [<Fruit.APPLE: 'APPLE'>, <Fruit.LEMON: 'LEMON'>, <Fruit.LEMON: 'LEMON'>]
+2024-11-30 14:53:08,287 INFO root Thread-10 (process_request_thread) : User Jonandrop won: 0 coins
+2024-11-30 14:53:08,287 INFO root Thread-10 (process_request_thread) : User Jonandrop new coin balance: 101
+2024-11-30 14:53:08,289 INFO werkzeug Thread-10 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:53:08] "POST /spin HTTP/1.1" 200 -
+2024-11-30 14:54:55,343 INFO werkzeug Thread-11 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:54:55] "OPTIONS /spin HTTP/1.1" 200 -
+2024-11-30 14:54:55,347 DEBUG root Thread-12 (process_request_thread) : Received spin request for user_id: Jonandrop
+2024-11-30 14:54:55,353 INFO root Thread-12 (process_request_thread) : User Jonandrop has spun the slot machine. Coins left: 100
+2024-11-30 14:54:55,353 INFO root Thread-12 (process_request_thread) : Generated stop segments for user Jonandrop: [27, 22, 27]
+2024-11-30 14:54:55,353 INFO root Thread-12 (process_request_thread) : Fruits for user Jonandrop: [<Fruit.APPLE: 'APPLE'>, <Fruit.APPLE: 'APPLE'>, <Fruit.LEMON: 'LEMON'>]
+2024-11-30 14:54:55,353 INFO root Thread-12 (process_request_thread) : User Jonandrop won: 10 coins
+2024-11-30 14:54:55,357 INFO root Thread-12 (process_request_thread) : User Jonandrop new coin balance: 110
+2024-11-30 14:54:55,360 INFO werkzeug Thread-12 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:54:55] "POST /spin HTTP/1.1" 200 -
+2024-11-30 14:55:02,635 INFO werkzeug Thread-13 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:55:02] "OPTIONS /spin HTTP/1.1" 200 -
+2024-11-30 14:55:02,642 DEBUG root Thread-14 (process_request_thread) : Received spin request for user_id: Jonandrop
+2024-11-30 14:55:02,649 INFO root Thread-14 (process_request_thread) : User Jonandrop has spun the slot machine. Coins left: 109
+2024-11-30 14:55:02,649 INFO root Thread-14 (process_request_thread) : Generated stop segments for user Jonandrop: [17, 27, 29]
+2024-11-30 14:55:02,649 INFO root Thread-14 (process_request_thread) : Fruits for user Jonandrop: [<Fruit.LEMON: 'LEMON'>, <Fruit.LEMON: 'LEMON'>, <Fruit.APPLE: 'APPLE'>]
+2024-11-30 14:55:02,649 INFO root Thread-14 (process_request_thread) : User Jonandrop won: 0 coins
+2024-11-30 14:55:02,649 INFO root Thread-14 (process_request_thread) : User Jonandrop new coin balance: 109
+2024-11-30 14:55:02,649 INFO werkzeug Thread-14 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 14:55:02] "POST /spin HTTP/1.1" 200 -
+2024-11-30 16:59:30,345 INFO werkzeug Thread-15 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:30] "[32mGET / HTTP/1.1[0m" 302 -
+2024-11-30 16:59:30,363 INFO werkzeug Thread-16 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:30] "GET /login?next=/ HTTP/1.1" 200 -
+2024-11-30 16:59:30,419 INFO werkzeug Thread-17 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:30] "GET /static/css/styles.css HTTP/1.1" 200 -
+2024-11-30 16:59:30,443 INFO werkzeug Thread-18 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:30] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-11-30 16:59:34,384 INFO werkzeug Thread-19 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:34] "[32mPOST /login?next=/ HTTP/1.1[0m" 302 -
+2024-11-30 16:59:34,449 INFO werkzeug Thread-20 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:34] "GET /login HTTP/1.1" 200 -
+2024-11-30 16:59:34,558 INFO werkzeug Thread-21 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:34] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 16:59:38,523 INFO werkzeug Thread-22 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:38] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-11-30 16:59:38,583 INFO werkzeug Thread-23 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:38] "GET /login HTTP/1.1" 200 -
+2024-11-30 16:59:38,658 INFO werkzeug Thread-24 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 16:59:38] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:00:00,436 INFO werkzeug Thread-25 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:00] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-11-30 17:00:00,453 INFO werkzeug Thread-26 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:00] "GET /login HTTP/1.1" 200 -
+2024-11-30 17:00:00,588 INFO werkzeug Thread-27 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:00] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:00:20,071 INFO werkzeug Thread-28 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:20] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-11-30 17:00:20,087 INFO werkzeug Thread-29 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:20] "GET /login HTTP/1.1" 200 -
+2024-11-30 17:00:20,183 INFO werkzeug Thread-30 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:20] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:00:30,036 INFO werkzeug Thread-31 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:30] "GET /signup HTTP/1.1" 200 -
+2024-11-30 17:00:30,100 INFO werkzeug Thread-32 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:30] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:00:51,453 INFO werkzeug Thread-33 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:51] "[32mPOST /signup HTTP/1.1[0m" 302 -
+2024-11-30 17:00:51,483 INFO werkzeug Thread-34 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:51] "GET /signup HTTP/1.1" 200 -
+2024-11-30 17:00:51,544 INFO werkzeug Thread-35 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:00:51] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:01:54,729 INFO werkzeug MainThread : [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-11-30 17:01:54,730 INFO werkzeug MainThread : [33mPress CTRL+C to quit[0m
+2024-11-30 17:01:54,731 INFO werkzeug MainThread :  * Restarting with stat
+2024-11-30 17:01:55,193 WARNING werkzeug MainThread :  * Debugger is active!
+2024-11-30 17:01:55,196 INFO werkzeug MainThread :  * Debugger PIN: 528-130-483
+2024-11-30 17:01:56,714 INFO werkzeug Thread-2 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:01:56] "GET / HTTP/1.1" 200 -
+2024-11-30 17:01:56,765 INFO werkzeug Thread-3 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:01:56] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:02:03,914 INFO werkzeug Thread-4 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:03] "[32mGET /logout HTTP/1.1[0m" 302 -
+2024-11-30 17:02:03,981 INFO werkzeug Thread-5 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:03] "GET /login HTTP/1.1" 200 -
+2024-11-30 17:02:04,101 INFO werkzeug Thread-6 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:04] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:02:06,895 INFO werkzeug Thread-7 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:06] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-11-30 17:02:06,927 INFO werkzeug Thread-8 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:06] "GET /dashboard HTTP/1.1" 200 -
+2024-11-30 17:02:06,950 INFO werkzeug Thread-9 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:06] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2024-11-30 17:02:13,023 INFO werkzeug Thread-10 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:02:13] "[32mGET /redirect-blackjack HTTP/1.1[0m" 302 -
+2024-11-30 17:13:46,242 INFO werkzeug Thread-11 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:46] "[32mGET /redirect-imperio HTTP/1.1[0m" 302 -
+2024-11-30 17:13:46,750 INFO werkzeug Thread-12 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:46] "OPTIONS /verify-token HTTP/1.1" 200 -
+2024-11-30 17:13:46,750 INFO werkzeug Thread-13 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:46] "OPTIONS /verify-token HTTP/1.1" 200 -
+2024-11-30 17:13:46,755 INFO werkzeug Thread-14 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:46] "POST /verify-token HTTP/1.1" 200 -
+2024-11-30 17:13:46,756 INFO werkzeug Thread-15 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:46] "POST /verify-token HTTP/1.1" 200 -
+2024-11-30 17:13:47,135 INFO werkzeug Thread-16 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:47] "OPTIONS /getCoins?userId=Jonandrop HTTP/1.1" 200 -
+2024-11-30 17:13:47,139 DEBUG root Thread-17 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 17:13:47,139 INFO werkzeug Thread-17 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:47] "GET /getCoins?userId=Jonandrop HTTP/1.1" 200 -
+2024-11-30 17:13:50,960 INFO werkzeug Thread-18 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:50] "OPTIONS /spin HTTP/1.1" 200 -
+2024-11-30 17:13:50,965 DEBUG root Thread-19 (process_request_thread) : Received spin request for user_id: Jonandrop
+2024-11-30 17:13:50,972 INFO root Thread-19 (process_request_thread) : User Jonandrop has spun the slot machine. Coins left: 108
+2024-11-30 17:13:50,972 INFO root Thread-19 (process_request_thread) : Generated stop segments for user Jonandrop: [24, 16, 23]
+2024-11-30 17:13:50,972 INFO root Thread-19 (process_request_thread) : Fruits for user Jonandrop: [<Fruit.BANANA: 'BANANA'>, <Fruit.LEMON: 'LEMON'>, <Fruit.CHERRY: 'CHERRY'>]
+2024-11-30 17:13:50,972 INFO root Thread-19 (process_request_thread) : User Jonandrop won: 0 coins
+2024-11-30 17:13:50,974 INFO root Thread-19 (process_request_thread) : User Jonandrop new coin balance: 108
+2024-11-30 17:13:50,974 INFO werkzeug Thread-19 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:50] "POST /spin HTTP/1.1" 200 -
+2024-11-30 17:13:55,530 INFO werkzeug Thread-20 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:13:55] "[32mGET /redirect-blackjack HTTP/1.1[0m" 302 -
+2024-11-30 17:15:05,644 INFO werkzeug Thread-21 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:15:05] "OPTIONS /getCoins HTTP/1.1" 200 -
+2024-11-30 17:15:05,689 DEBUG root Thread-22 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 17:15:05,690 INFO werkzeug Thread-22 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:15:05] "GET /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:22,968 INFO werkzeug Thread-23 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:22] "OPTIONS /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:23,016 DEBUG root Thread-24 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 17:17:23,017 INFO werkzeug Thread-24 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:23] "GET /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:34,392 INFO werkzeug Thread-25 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:34] "OPTIONS /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:34,476 DEBUG root Thread-26 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 17:17:34,476 INFO werkzeug Thread-26 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:34] "GET /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:50,300 INFO werkzeug Thread-27 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:50] "OPTIONS /getCoins HTTP/1.1" 200 -
+2024-11-30 17:17:50,306 DEBUG root Thread-28 (process_request_thread) : Received getCoins request for user_id: Jonandrop
+2024-11-30 17:17:50,306 INFO werkzeug Thread-28 (process_request_thread) : 127.0.0.1 - - [30/Nov/2024 17:17:50] "GET /getCoins HTTP/1.1" 200 -
