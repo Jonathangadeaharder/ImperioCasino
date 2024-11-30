@@ -7,7 +7,7 @@ from . import app, db
 from .forms import LoginForm, RegistrationForm
 from .models import User
 import jwt
-import datetime
+from datetime import datetime, timedelta, timezone
 import logging
 from .cherrycharm import endgame,segment_to_fruit
 @app.route('/')
@@ -30,7 +30,7 @@ def login():
 
         # Generate JWT token
         token = jwt.encode(
-            {'user_id': user.username, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)},
+            {'user_id': user.username, 'exp': datetime.now(timezone.utc) + timedelta(hours=12)},
             app.config['SECRET_KEY'],
             algorithm='HS256'
         )
@@ -87,7 +87,7 @@ def redirect_to_imperio():
     if not token:
         # Generate a new token if not present
         token = jwt.encode(
-            {'user_id': current_user.username, 'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=12)},
+            {'user_id': current_user.username, 'exp': datetime.now(timezone.utc) + timedelta(hours=12)},
             app.config['SECRET_KEY'],
             algorithm='HS256'
         )
