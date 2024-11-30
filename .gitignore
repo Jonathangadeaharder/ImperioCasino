@@ -1,7 +1,7 @@
 
 cherry-charm/nohup.out
 session_management/nohup.out
-session_management/app_debug.log
+app_debug.log
 
 cherry-charm/yarn.lock
 
@@ -14,5 +14,6 @@ session_management/serverenv/
 project_sources.zip
 concatenated_code.txt
 /app_debug.log
-/session_management/myoutput.log
+myoutput.log
 /myoutput.log
+/venv/
