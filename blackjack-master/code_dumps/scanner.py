@@ -7,20 +7,21 @@ code_extensions = [
     '.php', '.pl', '.cs', '.swift', '.kt', '.kts'
 ]
 
-# Specify the output file name
-output_file = 'concatenated_code.txt'
+# Specify the output file name in the current directory
+script_dir = os.path.dirname(__file__)
+output_file = os.path.join(script_dir, 'concatenated_code.txt')
 
 # Open the output file in write mode with UTF-8 encoding
 with open(output_file, 'w', encoding='utf-8') as outfile:
     # Walk through the directory tree
-    for root, dirs, files in os.walk('.'):
+    for root, dirs, files in os.walk('..'):
         for file in files:
             # Get the file extension
             _, ext = os.path.splitext(file)
             # Check if the file is a code file
             if ext.lower() in code_extensions:
                 # Get the relative file path
-                rel_dir = os.path.relpath(root, '.')
+                rel_dir = os.path.relpath(root, '..')
                 rel_file = os.path.join(rel_dir, file)
                 if rel_dir == '.':
                     rel_file = file

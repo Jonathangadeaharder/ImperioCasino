@@ -1,4 +1,22 @@
+import logging
+import random
 from enum import Enum
+
+from flask import jsonify
+
+from ..utils.services import adjust_user_coins
+
+
+def spin_reels():
+    min_segment = 15
+    max_segment = 30
+    return [random.randint(min_segment, max_segment) for _ in range(3)]
+
+def get_fruits(stop_segments):
+    return [segment_to_fruit(reel, segment) for reel, segment in enumerate(stop_segments)]
+
+def calculate_winnings(fruits):
+    return endgame(*fruits)
 
 def ceildiv(a, b):
     return -(a // -b)
@@ -93,3 +111,31 @@ def endgame(fruit0: Fruit, fruit1: Fruit, fruit2: Fruit) -> int:
         coins = 3
 
     return coins
+
+
+def executeSpin(spin_user):
+    logging.debug("Received spin request for user_id: %s", spin_user.username)
+    # Check if the user has enough coins to spin
+    if spin_user.coins < 1:
+        logging.warning("User %s does not have enough coins to spin.", spin_user.username)
+        return jsonify({'message': 'Not enough coins to spin'}), 400
+    # Deduct a coin for spinning
+    adjust_user_coins(spin_user, -1)
+    logging.info("User %s has spun the slot machine. Coins left: %s", spin_user.username, spin_user.coins)
+    # Generate stop segments and fruits
+    stop_segments = spin_reels()
+    logging.info("Generated stop segments for user %s: %s", spin_user.username, stop_segments)
+    fruits = get_fruits(stop_segments)
+    logging.info("Fruits for user %s: %s", spin_user.username, fruits)
+    # Compute winnings
+    winnings = calculate_winnings(fruits)
+    logging.info("User %s won: %s coins", spin_user.username, winnings)
+    # Add winnings to user's coins
+    adjust_user_coins(spin_user, winnings)
+    logging.info("User %s new coin balance: %s", spin_user.username, spin_user.coins)
+    # Prepare the response data
+    response_data = {
+        'stopSegments': stop_segments,
+        'totalCoins': spin_user.coins
+    }
+    return jsonify(response_data), 200

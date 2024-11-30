@@ -1,4 +1,4 @@
-from . import db  # Relative import
+from .. import db  # Relative import
 
 def reset_database():
     db.drop_all()

@@ -1,15 +1,22 @@
-import random
-
-from flask import render_template, flash, redirect, url_for, request, jsonify, session
-from flask_login import current_user, login_user, logout_user, login_required
-from urllib.parse import urlparse
-from . import app, db
-from .forms import LoginForm, RegistrationForm
-from .models import User
 import jwt
-from datetime import datetime, timedelta, timezone
+from flask import render_template, flash, redirect, url_for, request, jsonify, session
+from flask_login import current_user, login_required
+from urllib.parse import urlparse
+from . import app
+from .utils.forms import LoginForm, RegistrationForm
+from .utils.models import User
 import logging
-from .cherrycharm import endgame,segment_to_fruit
+
+# Import the new modules
+from .utils.auth import generate_token, login_user_session, logout_user_session, token_required
+from .utils.services import (
+    get_user_by_username,
+    create_user,
+    update_user_coins
+)
+from .game_logic.cherrycharm import executeSpin
+from .game_logic.blackjack import start_game, player_action
+
 @app.route('/')
 @app.route('/dashboard')
 @login_required
@@ -22,21 +29,11 @@ def login():
         return redirect(url_for('dashboard'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = get_user_by_username(form.username.data)
         if user is None or not user.verify_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
-        login_user(user, remember=form.remember_me.data)
-
-        # Generate JWT token
-        token = jwt.encode(
-            {'user_id': user.username, 'exp': datetime.now(timezone.utc) + timedelta(hours=12)},
-            app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
-        # Store token in session
-        session['token'] = token
-        session['username'] = user.username
+        login_user_session(user, remember=form.remember_me.data)
 
         next_page = request.args.get('next')
         if not next_page or urlparse(next_page).netloc != '':
@@ -46,9 +43,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    logout_user()
-    session.pop('token', None)
-    session.pop('username', None)
+    logout_user_session()
     return redirect(url_for('login'))
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -57,24 +52,13 @@ def signup():
         return redirect(url_for('dashboard'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        # Check if username or email already exists
-        existing_user = User.query.filter(
-            (User.username == form.username.data) | (User.email == form.email.data)
-        ).first()
-        if existing_user:
+        existing_user = get_user_by_username(form.username.data)
+        existing_email = User.query.filter_by(email=form.email.data).first()
+        if existing_user or existing_email:
             flash('Username or email already exists')
             return redirect(url_for('signup'))
 
-        # Create new user with starting coins
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            coins=100  # Assign starting coins here
-        )
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-
+        create_user(form.username.data, form.email.data, form.password.data)
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('signup.html', title='Register', form=form)
@@ -85,17 +69,13 @@ def redirect_to_imperio():
     username = current_user.username
     token = session.get('token')
     if not token:
-        # Generate a new token if not present
-        token = jwt.encode(
-            {'user_id': current_user.username, 'exp': datetime.now(timezone.utc) + timedelta(hours=12)},
-            app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
+        token = generate_token(current_user.username)
         session['token'] = token
     return redirect(f"{app.config['CHERRY_CHARM_URL']}/?username={username}&token={token}")
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
+    from session_management.imperioApp.utils.auth import decode_token
     data = request.get_json()
     token = data.get('token')
     username = data.get('username')
@@ -104,8 +84,8 @@ def verify_token():
         return jsonify({'message': 'Token and username are required'}), 400
 
     try:
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.filter_by(username=decoded_token['user_id']).first()
+        decoded_token = decode_token(token)
+        user = get_user_by_username(decoded_token['user_id'])
 
         if user:
             return jsonify({'message': 'Token is valid'}), 200
@@ -118,145 +98,53 @@ def verify_token():
         return jsonify({'message': 'Invalid token'}), 401
 
 @app.route('/getCoins', methods=['GET'])
-def get_coins():
-    user_id = request.args.get('userId')
-    logging.debug("Received getCoins request for user_id: %s", user_id)
-    token = request.headers.get('Authorization').split(" ")[1] if request.headers.get('Authorization') else None
-
-    if not user_id or not token:
-        logging.warning("User ID or token is missing in getCoins request.")
-        return jsonify({'message': 'User ID and token are required'}), 400
-
-    try:
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-        if str(decoded_token['user_id']) != user_id:
-            logging.debug(decoded_token['user_id'])
-            logging.warning("Unauthorized access attempt for user_id: %s", user_id)
-            return jsonify({'message': 'Unauthorized access'}), 401
-
-        user = User.query.filter_by(username=user_id).first()
-        if not user:
-            logging.error("User not found for user_id: %s", user_id)
-            return jsonify({'message': 'User not found'}), 404
-
-        logging.info("Successfully retrieved coins for user_id: %s", user_id)
-        return jsonify({'coins': user.coins}), 200
-
-    except jwt.ExpiredSignatureError:
-        logging.warning("Token has expired for user_id: %s", user_id)
-        return jsonify({'message': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        logging.error("Invalid token received for user_id: %s", user_id)
-        return jsonify({'message': 'Invalid token'}), 401
+@token_required
+def get_coins(current_user):
+    logging.debug("Received getCoins request for user_id: %s", current_user.username)
+    return jsonify({'coins': current_user.coins}), 200
 
 @app.route('/updateCoins', methods=['POST'])
-def update_coins():
+@token_required
+def update_coins(current_user):
     data = request.get_json()
-    user_id = data.get('userId')
     coins = data.get('coins')
-    logging.debug("Received updateCoins request for user_id: %s with coins: %s", user_id, coins)
-    token = request.headers.get('Authorization').split(" ")[1] if request.headers.get('Authorization') else None
+    logging.debug("Received updateCoins request for user_id: %s with coins: %s", current_user.username, coins)
 
-    if not user_id or coins is None or not token:
-        logging.warning("User ID, coins, or token is missing in updateCoins request.")
-        return jsonify({'message': 'User ID, coins, and token are required'}), 400
+    if coins is None:
+        logging.warning("Coins are missing in updateCoins request.")
+        return jsonify({'message': 'Coins are required'}), 400
 
-    try:
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-        if str(decoded_token['user_id']) != user_id:
-            logging.warning("Unauthorized update attempt for user_id: %s", user_id)
-            return jsonify({'message': 'Unauthorized access'}), 401
-
-        user = User.query.filter_by(username=user_id).first()
-        if not user:
-            logging.error("User not found for user_id: %s", user_id)
-            return jsonify({'message': 'User not found'}), 404
-
-        user.coins = coins
-        db.session.commit()
-        logging.info("Coins successfully updated for user_id: %s to %s coins", user_id, coins)
-        return jsonify({'message': 'Coins updated successfully'}), 200
-
-    except jwt.ExpiredSignatureError:
-        logging.warning("Token has expired for user_id: %s", user_id)
-        return jsonify({'message': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        logging.error("Invalid token received for user_id: %s", user_id)
-        return jsonify({'message': 'Invalid token'}), 401
+    update_user_coins(current_user, coins)
+    logging.info("Coins successfully updated for user_id: %s to %s coins", current_user.username, coins)
+    return jsonify({'message': 'Coins updated successfully'}), 200
 
 @app.route('/spin', methods=['POST'])
-def spin():
+@token_required
+def spin(spin_user):
+    return executeSpin(spin_user)
+
+@app.route('/blackjack', methods=['GET'])
+@login_required
+def blackjack():
+    # Generate a token for the user
+    token = session.get('token')
+    if not token:
+        token = generate_token(current_user.username)
+        session['token'] = token
+    return render_template('blackjack.html', title='Blackjack', token=token)
+
+@app.route('/blackjack/action', methods=['POST'])
+@token_required
+def blackjack_action(current_user):
     data = request.get_json()
-    user_id = data.get('userId')
-    logging.debug("Received spin request for user_id: %s", user_id)
+    action = data.get('action')
+    wager = data.get('wager', 0)  # Get wager amount if provided
 
-    # Retrieve the token from the Authorization header
-    auth_header = request.headers.get('Authorization')
-    token = auth_header.split(" ")[1] if auth_header else None
+    if action == 'start':
+        response = start_game(current_user, wager)
+    elif action in ['hit', 'stand', 'double_down', 'split']:
+        response = player_action(current_user, action)
+    else:
+        return jsonify({'message': 'Invalid action'}), 400
 
-    if not user_id or not token:
-        logging.warning("User ID or token is missing in spin request.")
-        return jsonify({'message': 'User ID and token are required'}), 400
-
-    try:
-        # Decode and verify the JWT token
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-
-        # Check if the token's user_id matches the provided user_id
-        if str(decoded_token['user_id']) != user_id:
-            logging.warning("Unauthorized spin attempt for user_id: %s", user_id)
-            return jsonify({'message': 'Unauthorized access'}), 401
-
-        # Fetch the user from the database
-        user = User.query.filter_by(username=user_id).first()
-        if not user:
-            logging.error("User not found for user_id: %s", user_id)
-            return jsonify({'message': 'User not found'}), 404
-
-        # Check if the user has enough coins to spin
-        # Each spin costs 1 coin
-        if user.coins < 1:
-            logging.warning("User %s does not have enough coins to spin.", user_id)
-            return jsonify({'message': 'Not enough coins to spin'}), 400
-
-        # Deduct a coin for spinning
-        user.coins -= 1
-        db.session.commit()
-        logging.info("User %s has spun the slot machine. Coins left: %s", user_id, user.coins)
-
-        # Generate random stop segments between 15 and 30 inclusive
-        MIN_SEGMENT = 15
-        MAX_SEGMENT = 30
-        stop_segments = [random.randint(MIN_SEGMENT, MAX_SEGMENT) for _ in range(3)]
-        logging.info("Generated stop segments for user %s: %s", user_id, stop_segments)
-
-        # Convert stop_segments to fruits
-        fruits = [segment_to_fruit(reel, segment) for reel, segment in enumerate(stop_segments)]
-        logging.info("Fruits for user %s: %s", user_id, fruits)
-
-        # Compute winnings
-        winnings = endgame(*fruits)
-        logging.info("User %s won: %s coins", user_id, winnings)
-
-        # Add winnings to user's coins
-        user.coins += winnings
-        db.session.commit()
-        logging.info("User %s new coin balance: %s", user_id, user.coins)
-
-        # Prepare the response data
-        response_data = {
-            'stopSegments': stop_segments,
-            'totalCoins': user.coins
-        }
-
-        return jsonify(response_data), 200
-
-    except jwt.ExpiredSignatureError:
-        logging.warning("Token has expired for user_id: %s", user_id)
-        return jsonify({'message': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        logging.error("Invalid token received for user_id: %s", user_id)
-        return jsonify({'message': 'Invalid token'}), 401
-    except Exception as e:
-        logging.error("An error occurred during spin for user_id: %s. Error: %s", user_id, str(e))
-        return jsonify({'message': 'An internal error occurred'}), 500
+    return jsonify(response)
