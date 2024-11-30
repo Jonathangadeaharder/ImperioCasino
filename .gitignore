@@ -1,20 +1,12 @@
-# Node modules
-backend/node_modules/
 
-# Log files
-backend/combined.log
-backend/nohup.out
 cherry-charm/nohup.out
 session_management/nohup.out
 session_management/app_debug.log
 
-# Package lock files (optional)
-backend/package-lock.json
-backend/node_modules/.package-lock.json
 cherry-charm/yarn.lock
 
 # SQLite database
-session_management/instance/app.db
+*.db
 
 # Environment files
 session_management/serverenv/
