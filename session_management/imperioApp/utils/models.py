@@ -1,5 +1,4 @@
 from sqlalchemy import PickleType
-
 from .. import db, login_manager  # Relative imports
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,6 +20,7 @@ class BlackjackGameState(db.Model):
     double_down = db.Column(db.Boolean, default=False)
     split = db.Column(db.Boolean, default=False)
     current_hand = db.Column(db.String(10), default='first')
+    dealer_value = db.Column(db.Integer, nullable=True)  # **New Column Added**
 
     def to_dict(self):
         return {
@@ -37,7 +37,8 @@ class BlackjackGameState(db.Model):
             'double_down': self.double_down,
             'split': self.split,
             'player_second_hand': self.player_second_hand,
-            'current_hand': self.current_hand
+            'current_hand': self.current_hand,
+            'dealer_value': self.dealer_value  # Ensure this is included
         }
 
 class User(UserMixin, db.Model):

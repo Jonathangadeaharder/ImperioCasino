@@ -35,10 +35,17 @@ def start_game(user, wager):
     if user.coins < wager:
         return {'message': 'Insufficient coins', 'game_over': True}, 400
 
+    # Terminate any existing active games for the user
+    active_games = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).all()
+    for game in active_games:
+        game.game_over = True
+    db.session.commit()
+
     # Deduct initial wager from user's coins
     user.coins -= wager
     update_user_coins(user, user.coins)
 
+    # Initialize a new game state
     game_state = BlackjackGameState(
         user_id=user.id,
         deck=shuffle_deck(),
@@ -55,6 +62,7 @@ def start_game(user, wager):
         current_hand='first'
     )
 
+    # Deal initial cards
     game_state.player_hand.append(game_state.deck.pop())
     game_state.dealer_hand.append(game_state.deck.pop())
     game_state.player_hand.append(game_state.deck.pop())
@@ -93,26 +101,29 @@ def player_hit(user, game_state):
     hand.append(game_state.deck.pop())
     player_value = calculate_hand_value(hand)
 
+    logging.debug(f"Player hit. Hand value: {player_value}")
+
     if player_value > 21:
-        game_state.message = 'Bust! You exceeded 21.'
         if game_state.split and game_state.current_hand == 'first':
             game_state.current_hand = 'second'
             game_state.player_stood = False
         else:
             game_state.game_over = True
-    elif player_value == 21:
-        game_state.message = 'You hit 21!'
-        game_state.player_stood = True
-        if game_state.split and game_state.current_hand == 'first':
-            game_state.current_hand = 'second'
-            game_state.player_stood = False
-        else:
             dealer_turn(game_state)
             determine_winner(game_state, user)
-            game_state.game_over = True
+    elif player_value == 21:
+        game_state.player_stood = True
+        game_state.game_over = True
+        dealer_turn(game_state)
+        determine_winner(game_state, user)
+    elif game_state.split and game_state.current_hand == 'first':
+        # If split and first hand, switch to second hand
+        game_state.current_hand = 'second'
+        game_state.player_stood = False
 
     db.session.commit()
     return game_state.to_dict(), 200
+
 
 def player_stand(game_state, user):
     if game_state.split and game_state.current_hand == 'first':
@@ -185,14 +196,12 @@ def player_split(game_state, user):
 
 
 def dealer_turn(game_state):
-    dealer_hand = game_state.dealer_hand
-    dealer_value = calculate_hand_value(dealer_hand)
-
+    dealer_value = calculate_hand_value(game_state.dealer_hand)
     while dealer_value < 17:
-        dealer_hand.append(game_state.deck.pop())
-        dealer_value = calculate_hand_value(dealer_hand)
-
-    game_state.dealer_value = dealer_value
+        # Dealer hits
+        game_state.dealer_hand.append(game_state.deck.pop())
+        dealer_value = calculate_hand_value(game_state.dealer_hand)
+    logging.debug(f"Dealer's final hand: {game_state.dealer_hand} with value: {dealer_value}")
 
 def determine_winner(game_state, user):
     dealer_value = calculate_hand_value(game_state.dealer_hand)

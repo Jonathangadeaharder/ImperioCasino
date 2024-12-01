@@ -141,9 +141,10 @@ def start_blackjack_game(current_user):
     if wager is None:
         return jsonify({'message': 'Wager is required'}), 400
 
-    game_state = start_game(current_user, wager)
+    game_state, status_code = start_game(current_user, wager)
     logging.debug("Start Blackjack Game - Game State: %s", game_state["player_hand"])
-    return jsonify(game_state)
+    return jsonify(game_state), status_code
+
 
 @app.route('/blackjack/action', methods=['POST'])
 @token_required
@@ -153,6 +154,6 @@ def blackjack_action(current_user):
     if action is None:
         return jsonify({'message': 'Action is required'}), 400
 
-    result = player_action(current_user, action)
+    result, status_code = player_action(current_user, action)
     logging.debug("Blackjack Action - Result: %s", result["player_hand"])
-    return jsonify(result)
+    return jsonify(result), status_code

@@ -80,7 +80,7 @@ class BlackjackTestCase(BaseTestCase):
         db.session.refresh(game_state)
         self.assertEqual(status_code, 200)
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'Bust! You exceeded 21.')
+        self.assertEqual(game_state.message,  'You lost.')
 
     def test_player_hit_blackjack(self):
         # Test hitting to reach 21
@@ -360,3 +360,46 @@ class BlackjackTestCase(BaseTestCase):
         # Since we are no longer deleting game_state, it should still exist
         self.assertIsNotNone(game_state)
         self.assertTrue(game_state.game_over)
+
+    def test_player_hits_21(self):
+        # Start the game with a wager
+        start_game(self.user, 50)
+        game_state = BlackjackGameState.query.filter_by(user_id=self.user.id).first()
+
+        # Set player's initial hand to sum to 19
+        game_state.player_hand = [
+            {'suit': 'hearts', 'name': '10', 'value': 10},
+            {'suit': 'diamonds', 'name': '9', 'value': 9}
+        ]
+
+        # Set dealer's hand to sum to 16 (so dealer must hit and won't reach 21)
+        game_state.dealer_hand = [
+            {'suit': 'clubs', 'name': '9', 'value': 9},
+            {'suit': 'spades', 'name': '7', 'value': 7}
+        ]
+
+        # Control the deck so that the player will draw a 2 to reach 21
+        game_state.deck = [
+            {'suit': 'spades', 'name': '3', 'value': 3},  # Additional card for the dealer
+            {'suit': 'hearts', 'name': '2', 'value': 2},
+
+        ]
+
+        db.session.commit()
+
+        # Perform hit action for player to reach 21
+        player_action(self.user, 'hit')
+
+        # Refresh game state to get updated data
+        db.session.refresh(game_state)
+
+        # Debug information
+        print(f"Game over: {game_state.game_over}")
+        print(f"Message: {game_state.message}")
+        print(f"Player hand: {game_state.player_hand}")
+        print(f"Player hand value: {calculate_hand_value(game_state.player_hand)}")
+
+        # Assert that the game is over and the player won
+        self.assertTrue(game_state.game_over, "Game should be over when player hits 21")
+        self.assertEqual(game_state.message, 'You won!')
+
