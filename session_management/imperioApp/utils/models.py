@@ -1,17 +1,18 @@
+from sqlalchemy import PickleType
+
 from .. import db, login_manager  # Relative imports
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from .constants import DEFAULT_COINS  # Import DEFAULT_COINS
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.types import JSON
 
 class BlackjackGameState(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.username'), nullable=False)
-    deck = db.Column(MutableList.as_mutable(JSON), nullable=False)
-    dealer_hand = db.Column(MutableList.as_mutable(JSON), nullable=False)
-    player_hand = db.Column(MutableList.as_mutable(JSON), nullable=False)
-    player_second_hand = db.Column(MutableList.as_mutable(JSON), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    deck = db.Column(MutableList.as_mutable(PickleType), nullable=False)
+    dealer_hand = db.Column(MutableList.as_mutable(PickleType), nullable=False)
+    player_hand = db.Column(MutableList.as_mutable(PickleType), nullable=False)
+    player_second_hand = db.Column(MutableList.as_mutable(PickleType), nullable=True)
     player_coins = db.Column(db.Integer, nullable=False)
     current_wager = db.Column(db.Integer, nullable=False)
     game_over = db.Column(db.Boolean, default=False)

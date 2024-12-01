@@ -5,6 +5,7 @@ from ..utils.models import BlackjackGameState
 from ..utils.services import update_user_coins
 from .. import db
 import logging
+
 # Define the card deck
 deck = [
     {'suit': suit, 'name': name, 'value': value}
@@ -30,9 +31,9 @@ def calculate_hand_value(hand):
 def start_game(user, wager):
     # Validate wager
     if wager <= 0:
-        return {'message': 'Invalid wager amount', 'game_over': True}
+        return {'message': 'Invalid wager amount', 'game_over': True}, 400
     if user.coins < wager:
-        return {'message': 'Insufficient coins', 'game_over': True}
+        return {'message': 'Insufficient coins', 'game_over': True}, 400
 
     # Deduct initial wager from user's coins
     user.coins -= wager
@@ -62,44 +63,58 @@ def start_game(user, wager):
     db.session.add(game_state)
     db.session.commit()
 
-    return game_state.to_dict()
+    return game_state.to_dict(), 200
 
 def player_action(user, action):
-    logging.info(f"User: {user}, User ID: {user.username}")
     game_state = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).first()
     if not game_state:
-        return {'message': 'No active game', 'game_over': True}
+        return {'message': 'No active game'}, 400
 
     if action == 'hit':
-        return player_hit(game_state)
+        return player_hit(user, game_state)
     elif action == 'stand':
         return player_stand(game_state, user)
     elif action == 'double_down':
         return player_double_down(game_state, user)
     elif action == 'split':
-        return player_split(game_state, user)
+        # Capture both response and status code
+        response, status_code = player_split(game_state, user)
+        return response, status_code
     else:
         return {'message': 'Invalid action'}, 400
 
-def player_hit(game_state):
-    hand = game_state.player_second_hand if game_state.split and game_state.current_hand == 'second' else game_state.player_hand
+
+def player_hit(user, game_state):
+    if game_state.split:
+        hand = game_state.player_second_hand if game_state.current_hand == 'second' else game_state.player_hand
+    else:
+        hand = game_state.player_hand
+
     hand.append(game_state.deck.pop())
     player_value = calculate_hand_value(hand)
 
     if player_value > 21:
         game_state.message = 'Bust! You exceeded 21.'
-        game_state.game_over = True
+        if game_state.split and game_state.current_hand == 'first':
+            game_state.current_hand = 'second'
+            game_state.player_stood = False
+        else:
+            game_state.game_over = True
     elif player_value == 21:
         game_state.message = 'You hit 21!'
         game_state.player_stood = True
-        dealer_turn(game_state)
+        if game_state.split and game_state.current_hand == 'first':
+            game_state.current_hand = 'second'
+            game_state.player_stood = False
+        else:
+            dealer_turn(game_state)
+            determine_winner(game_state, user)
+            game_state.game_over = True
 
     db.session.commit()
-    return game_state.to_dict()
+    return game_state.to_dict(), 200
 
 def player_stand(game_state, user):
-    game_state.player_stood = True
-
     if game_state.split and game_state.current_hand == 'first':
         game_state.current_hand = 'second'
         game_state.player_stood = False
@@ -107,13 +122,18 @@ def player_stand(game_state, user):
         # Dealer's turn
         dealer_turn(game_state)
         determine_winner(game_state, user)
+        game_state.game_over = True
 
     db.session.commit()
-    return game_state.to_dict()
+    return game_state.to_dict(), 200
+
 
 def player_double_down(game_state, user):
+    if len(game_state.player_hand) > 2 or game_state.double_down or game_state.split or game_state.player_stood:
+        return {'message': 'Cannot double down at this stage'}, 400
+
     if user.coins < game_state.current_wager:
-        return {'message': 'Insufficient coins to double down'}
+        return {'message': 'Insufficient coins to double down'}, 400
 
     user.coins -= game_state.current_wager
     update_user_coins(user, user.coins)
@@ -134,24 +154,35 @@ def player_double_down(game_state, user):
         determine_winner(game_state, user)
 
     db.session.commit()
-    return game_state.to_dict()
+    return game_state.to_dict(), 200
 
 def player_split(game_state, user):
     hand = game_state.player_hand
-    if len(hand) != 2 or hand[0]['value'] != hand[1]['value'] or user.coins < game_state.current_wager:
-        return {'message': 'Cannot split these cards or insufficient coins'}
+    # Check if hand has exactly two cards
+    if len(hand) != 2:
+        return {'message': 'Cannot split: Hand does not contain exactly two cards'}, 400
+    # Check if both cards have the same value
+    if hand[0]['value'] != hand[1]['value']:
+        return {'message': 'Cannot split: Cards do not have the same value'}, 400
+    # Check if user has enough coins
+    if user.coins < game_state.current_wager:
+        return {'message': 'Cannot split: Insufficient coins'}, 400
 
     user.coins -= game_state.current_wager
     update_user_coins(user, user.coins)
     game_state.player_coins = user.coins
     game_state.split = True
 
-    game_state.player_second_hand = [hand.pop()]
-    hand.append(game_state.deck.pop())
-    game_state.player_second_hand.append(game_state.deck.pop())
+    # Move one card to player_second_hand
+    card_to_move = game_state.player_hand.pop()
+    if game_state.player_second_hand is None:
+        game_state.player_second_hand = []
+    game_state.player_second_hand.append(card_to_move)
 
     db.session.commit()
-    return game_state.to_dict()
+    return game_state.to_dict(), 200
+
+
 
 def dealer_turn(game_state):
     dealer_hand = game_state.dealer_hand
@@ -169,8 +200,9 @@ def determine_winner(game_state, user):
 
     if game_state.split:
         outcomes = []
-        for hand in ['player_hand', 'player_second_hand']:
-            player_value = calculate_hand_value(game_state[hand])
+        for hand_attr in ['player_hand', 'player_second_hand']:
+            hand = getattr(game_state, hand_attr)
+            player_value = calculate_hand_value(hand)
             outcome = compare_hands(player_value, dealer_value)
             outcomes.append(outcome)
             if outcome == 'win':
@@ -198,10 +230,6 @@ def determine_winner(game_state, user):
         game_state.player_coins = user.coins
 
     game_state.game_over = True
-    db.session.commit()
-
-    # Clean up the game state from the database
-    db.session.delete(game_state)
     db.session.commit()
 
 def compare_hands(player_value, dealer_value):
