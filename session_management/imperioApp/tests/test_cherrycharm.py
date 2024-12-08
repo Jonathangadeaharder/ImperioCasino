@@ -1,4 +1,4 @@
-from ..game_logic.cherrycharm import spin_reels, get_fruits, calculate_winnings, executeSpin, Fruit, segment_to_fruit
+from ..game_logic.cherrycharm import spin_reels, get_fruits, calculate_winnings, cherryAction, Fruit, segment_to_fruit
 from ..utils.services import create_user
 from .. import db
 from .base_test import BaseTestCase
@@ -40,7 +40,7 @@ class CherryCharmTestCase(BaseTestCase):
     def test_executeSpin(self):
         self.user.coins = 10
         db.session.commit()
-        response, status_code = executeSpin(self.user)
+        response, status_code = cherryAction(self.user)
         self.assertEqual(status_code, 200)
         data = response.get_json()
         self.assertIn('stopSegments', data)
@@ -50,7 +50,7 @@ class CherryCharmTestCase(BaseTestCase):
     def test_executeSpin_not_enough_coins(self):
         self.user.coins = 0
         db.session.commit()
-        response, status_code = executeSpin(self.user)
+        response, status_code = cherryAction(self.user)
         self.assertEqual(status_code, 400)
         data = response.get_json()
         self.assertEqual(data['message'], 'Not enough coins to spin')

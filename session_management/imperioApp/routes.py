@@ -14,7 +14,7 @@ from .utils.services import (
     create_user,
     update_user_coins
 )
-from .game_logic.cherrycharm import executeSpin
+from .game_logic.cherrycharm import cherryAction
 from .game_logic.blackjack import start_game, player_action
 
 @app.route('/')
@@ -121,7 +121,7 @@ def update_coins(current_user):
 @app.route('/spin', methods=['POST'])
 @token_required
 def spin(spin_user):
-    return executeSpin(spin_user)
+    return cherryAction(spin_user)
 
 @app.route('/redirect-blackjack')
 @login_required

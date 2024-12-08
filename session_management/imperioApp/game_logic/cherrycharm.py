@@ -4,7 +4,7 @@ from enum import Enum
 
 from flask import jsonify
 
-from ..utils.services import adjust_user_coins
+from ..utils.services import increase_user_coins, reduce_user_coins
 
 
 def spin_reels():
@@ -113,14 +113,14 @@ def endgame(fruit0: Fruit, fruit1: Fruit, fruit2: Fruit) -> int:
     return coins
 
 
-def executeSpin(spin_user):
+def cherryAction(spin_user):
     logging.debug("Received spin request for user_id: %s", spin_user.username)
     # Check if the user has enough coins to spin
     if spin_user.coins < 1:
         logging.warning("User %s does not have enough coins to spin.", spin_user.username)
         return jsonify({'message': 'Not enough coins to spin'}), 400
     # Deduct a coin for spinning
-    adjust_user_coins(spin_user, -1)
+    reduce_user_coins(spin_user, 1)
     logging.info("User %s has spun the slot machine. Coins left: %s", spin_user.username, spin_user.coins)
     # Generate stop segments and fruits
     stop_segments = spin_reels()
@@ -131,7 +131,7 @@ def executeSpin(spin_user):
     winnings = calculate_winnings(fruits)
     logging.info("User %s won: %s coins", spin_user.username, winnings)
     # Add winnings to user's coins
-    adjust_user_coins(spin_user, winnings)
+    increase_user_coins(spin_user, winnings)
     logging.info("User %s new coin balance: %s", spin_user.username, spin_user.coins)
     # Prepare the response data
     response_data = {
