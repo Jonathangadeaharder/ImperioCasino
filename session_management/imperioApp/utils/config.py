@@ -6,3 +6,4 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CHERRY_CHARM_URL = 'http://localhost:5173'
     BLACK_JACK_URL = 'http://localhost:5174'
+    ROULETTE_URL = 'http://localhost:5175'

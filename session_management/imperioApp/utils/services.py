@@ -19,6 +19,10 @@ def update_user_coins(user, coins):
     user.coins = coins
     db.session.commit()
 
-def adjust_user_coins(user, amount):
+def increase_user_coins(user, amount):
     user.coins += amount
     db.session.commit()
+
+def reduce_user_coins(user, amount):
+    increase_user_coins(user, -amount)
+

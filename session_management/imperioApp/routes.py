@@ -16,6 +16,7 @@ from .utils.services import (
 )
 from .game_logic.cherrycharm import cherryAction
 from .game_logic.blackjack import start_game, player_action
+from .game_logic.roulette import rouletteAction
 
 @app.route('/')
 @app.route('/dashboard')
@@ -156,4 +157,25 @@ def blackjack_action(current_user):
 
     result, status_code = player_action(current_user, action)
     logging.debug("Blackjack Action - Result: %s", result["player_hand"])
+    return jsonify(result), status_code
+
+@app.route('/redirect-roulette')
+@login_required
+def redirect_to_roulette():
+    username = current_user.username
+    token = session.get('token')
+    if not token:
+        token = generate_token(current_user.username)
+        session['token'] = token
+    return redirect(f"{app.config['ROULETTE_URL']}/?username={username}&token={token}")
+
+@app.route('/roulette/action', methods=['POST'])
+@token_required
+def roulette_action(current_user):
+    data = request.get_json()
+    action = data.get('action')
+    if not action:
+        return jsonify({"message": "Action is required"}), 400
+
+    result, status_code = rouletteAction(current_user, data)
     return jsonify(result), status_code
