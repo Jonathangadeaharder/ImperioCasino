@@ -531,8 +531,7 @@ function setBet(e, n, t, o){
 function spin(){
 	// Instead of determining winningSpin locally, request from server
 	const payload = {
-		action: 'spin',
-		bets: bet // sending all bets to the server
+		bet // sending all bets to the server
 	};
 
 	fetch(`${serverAddress}/roulette/action`, {

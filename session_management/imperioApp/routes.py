@@ -173,9 +173,6 @@ def redirect_to_roulette():
 @token_required
 def roulette_action(current_user):
     data = request.get_json()
-    action = data.get('action')
-    if not action:
-        return jsonify({"message": "Action is required"}), 400
-
+    print(data)
     result, status_code = rouletteAction(current_user, data)
     return jsonify(result), status_code
