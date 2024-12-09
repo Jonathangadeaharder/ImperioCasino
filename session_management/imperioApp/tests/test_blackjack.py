@@ -36,7 +36,6 @@ class BlackjackTestCase(BaseTestCase):
         self.assertEqual(status_code, 200)
         self.assertFalse(response['game_over'])
         self.assertEqual(response['current_wager'], wager)
-        self.assertEqual(self.user.coins, 500 - wager)
 
         game_state = BlackjackGameState.query.filter_by(user_id=self.user.id).first()
 

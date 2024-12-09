@@ -11,17 +11,16 @@ def rouletteAction(current_user, data):
 
     total_bet = 0
 
-    # First, validate and check if user has enough coins for all bets
+    # First validate funds
     for bet in bet_info:
         amt = bet.get("amt")
         if amt is None or amt <= 0:
             return {"message": "Invalid bet amount"}, 400
 
-        # Check user's coin balance for each bet
         if current_user.coins < amt:
             return {"message": "Not enough coins"}, 400
 
-    # Deduct coins for all bets now that they are validated
+    # Deduct the coins for all bets now
     for bet in bet_info:
         amt = bet.get("amt")
         reduce_user_coins(current_user, amt)
@@ -31,34 +30,40 @@ def rouletteAction(current_user, data):
     winning_number = random.choice(ROULETTE_NUMBERS)
     total_win = 0
 
-    # Evaluate each bet
     for bet in bet_info:
         numbers_str = bet.get("numbers", "")
         odds = bet.get("odds", 0)
         amt = bet.get("amt")
 
-        try:
-            bet_numbers = [int(x.strip()) for x in numbers_str.split(",") if x.strip().isdigit()]
-        except ValueError:
-            return {"message": "Invalid bet numbers"}, 400
+        # Attempt to parse numbers
+        if numbers_str.strip() == "":
+            # If empty string, consider it as no numbers chosen, no error.
+            bet_numbers = []
+        else:
+            # Non-empty string that should represent numbers
+            raw_numbers = [x.strip() for x in numbers_str.split(",")]
+            # Validate that all entries are digits
+            if any(not n.isdigit() for n in raw_numbers):
+                # Invalid format like 'abc' found
+                return {"message": "Invalid bet numbers"}, 400
+            bet_numbers = [int(x) for x in raw_numbers]
+
+        # With bet_numbers parsed, if empty and originally empty, it's valid but no win scenario
+        # If originally empty: bet_numbers = []
+        # This is allowed and not an error.
 
         # Check if this bet wins
         if winning_number in bet_numbers:
-            # Payout = (odds * amt) + original bet
             payout = (odds * amt) + amt
             total_win += payout
 
-    # Increase user coins if any bet won
+    # Increase user coins if won
     if total_win > 0:
         increase_user_coins(current_user, total_win)
-
-    logging.debug(
-        "Roulette spin result for user %s: Winning number %s. Total Bet: %d, Total Win: %d, New coin balance: %d",
-        current_user, winning_number, total_bet, total_win, current_user.coins
-    )
 
     return {
         "winning_number": winning_number,
         "total_bet": total_bet,
         "total_win": total_win,
-        "new_coins": current_user.coins    }, 200
+        "new_coins": current_user.coins
+    }, 200

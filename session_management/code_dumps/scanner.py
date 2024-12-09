@@ -7,6 +7,12 @@ code_extensions = [
     '.php', '.pl', '.cs', '.swift', '.kt', '.kts'
 ]
 
+# Define the list of directories to skip
+dirs_to_skip = ['code_dumps', 'logs','migrations']
+
+# Define the list of files to skip
+files_to_skip = ['zipme.ps1']
+
 # Specify the output file name in the current directory
 script_dir = os.path.dirname(__file__)
 output_file = os.path.join(script_dir, 'concatenated_code.txt')
@@ -15,7 +21,12 @@ output_file = os.path.join(script_dir, 'concatenated_code.txt')
 with open(output_file, 'w', encoding='utf-8') as outfile:
     # Walk through the directory tree
     for root, dirs, files in os.walk('..'):
+        # Skip directories
+        dirs[:] = [d for d in dirs if d not in dirs_to_skip]
         for file in files:
+            # Skip files
+            if file in files_to_skip:
+                continue
             # Get the file extension
             _, ext = os.path.splitext(file)
             # Check if the file is a code file
