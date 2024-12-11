@@ -25,7 +25,6 @@ A JavaScript based Blackjack game. Beat the dealer by getting as close to 21 wit
 1. Stubbed out overall game board structure and integrated initial card data.
     * Plotted out rules, dealer/player decks, hand totals, and key action buttons.
     * Installed Materialize framework and created grid system, which I utilized throughout the whole project to routinely check for how the integrated content was scaling smaller screen sizes.
-    * Created cards.js file to store full deck of cards including images, value, and name.
 1. Generated start game functionality to get the cards on the board.
     * Randomly sort the array to "shuffle" the deck.
     * Loop through the original deck and push/pop cards into both the dealer and player hands.
