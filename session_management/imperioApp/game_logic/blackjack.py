@@ -228,12 +228,12 @@ def determine_winner(game_state, user):
 
         if outcome == 'win':
             user.coins += game_state.current_wager * 2
-            game_state.message = 'You won!'
+            game_state.message = 'Ganaste!'
         elif outcome == 'tie':
             user.coins += game_state.current_wager
             game_state.message = 'It\'s a tie.'
         else:
-            game_state.message = 'You lost.'
+            game_state.message = 'Perdiste.'
 
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins

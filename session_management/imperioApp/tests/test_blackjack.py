@@ -152,7 +152,7 @@ class BlackjackTestCase(BaseTestCase):
 
         db.session.refresh(game_state)
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'You lost.')
+        self.assertEqual(game_state.message, 'Perdiste.')
         # Player's coins should remain at 500 - wager = 450
         self.assertEqual(self.user.coins, 500 - wager)
 
@@ -186,7 +186,7 @@ class BlackjackTestCase(BaseTestCase):
 
         # Assertions
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         self.assertEqual(len(game_state.player_hand), 3)
         self.assertEqual(game_state.player_hand[-1], {'suit': 'clubs', 'name': 'Queen', 'value': 10})
         self.assertEqual(len(game_state.dealer_hand), 4)
@@ -230,7 +230,7 @@ class BlackjackTestCase(BaseTestCase):
         # Dealer hits and gets '2', total becomes 18
         # Player's total: 17
         # Dealer wins
-        self.assertEqual(response['message'], 'You lost.')
+        self.assertEqual(response['message'], 'Perdiste.')
         # Player's coins should remain at 500 - wager = 450
         self.assertEqual(self.user.coins, 500 - wager)
 
@@ -273,7 +273,7 @@ class BlackjackTestCase(BaseTestCase):
         # Player's total becomes 21 (5 + 6 + 10)
         # Dealer's total is 16, must hit and reach 19 (9 + 7 + 3)
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         # Player's coins should increase by double the wager
         self.assertEqual(self.user.coins, initial_coins - wager + wager * 4)  # 450 - 50 + 200 = 600
 
@@ -406,7 +406,7 @@ class BlackjackTestCase(BaseTestCase):
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
 
     def test_determine_winner_tie(self):
@@ -499,7 +499,7 @@ class BlackjackTestCase(BaseTestCase):
         # Dealer's total is 19 (9 + 7 + 3)
         # Player wins
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         self.assertEqual(self.user.coins, initial_coins - wager + wager * 4)  # 450 - 50 + 200 = 600
 
     def test_player_hit_after_double_down(self):
@@ -652,11 +652,11 @@ class BlackjackTestCase(BaseTestCase):
             {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
         ]
         game_state = self.set_game_state(
-            wager, player_hand, dealer_hand, deck, game_over=True, message='You won!'
+            wager, player_hand, dealer_hand, deck, game_over=True, message='Ganaste!'
         )
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
 
     def test_player_busts(self):
@@ -680,11 +680,11 @@ class BlackjackTestCase(BaseTestCase):
             {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
         ]
         game_state = self.set_game_state(
-            wager, player_hand, dealer_hand, deck, game_over=True, message='You lost.'
+            wager, player_hand, dealer_hand, deck, game_over=True, message='Perdiste.'
         )
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'You lost.')
+        self.assertEqual(game_state.message, 'Perdiste.')
         self.assertEqual(self.user.coins, 500 - wager)  # 500 - 50 = 450
 
     def test_player_hits_21(self):
@@ -719,7 +719,7 @@ class BlackjackTestCase(BaseTestCase):
 
         # Assertions
         self.assertTrue(game_state.game_over, "Game should be over when player hits 21")
-        self.assertEqual(game_state.message, 'You won!')
+        self.assertEqual(game_state.message, 'Ganaste!')
         self.assertEqual(len(game_state.player_hand), 3)
         self.assertEqual(game_state.player_hand[-1], {'suit': 'hearts', 'name': '2', 'value': 2})
         # Player's coins should increase by the wager amount (assuming double payout)

@@ -58,7 +58,7 @@ function getCoins() {
 		})
 		.catch(error => {
 			console.error('Error fetching coins:', error);
-			Materialize.toast("Error fetching your coin balance.", 2000);
+			Materialize.toast("Error al obtener tu saldo de fichas.", 2000);
 		});
 }
 
@@ -71,12 +71,12 @@ function updateVisibleChipBalances() {
 // Function to select a wager
 function selectWager(amount) {
 	if (currentChipBalance === null) {
-		Materialize.toast("Fetching your coin balance, please wait...", 1000);
+		Materialize.toast("Obteniendo tu saldo de fichas, por favor espera...", 1000);
 		return;
 	}
 
 	if (currentChipBalance < amount) {
-		Materialize.toast("You don't have enough coins to select that bet", 2000);
+		Materialize.toast("No tienes suficientes fichas para esta apuesta.", 2000);
 		return;
 	}
 
@@ -96,17 +96,17 @@ startButton.click(startGame);
 
 function startGame() {
 	if (currentChipBalance === null) {
-		Materialize.toast("Fetching your coin balance, please wait...", 1000);
+		Materialize.toast("Obteniendo tu saldo de fichas, por favor espera...", 1000);
 		return;
 	}
 
 	if (currentWager === 0) {
-		Materialize.toast("You must select a bet to play", 1000);
+		Materialize.toast("Debes seleccionar una apuesta para jugar.", 1000);
 		return;
 	}
 
 	if (currentChipBalance < currentWager) {
-		Materialize.toast("You don't have enough coins to place that bet", 2000);
+		Materialize.toast("No tienes suficientes fichas para esta apuesta.", 2000);
 		return;
 	}
 
@@ -135,7 +135,7 @@ function startGame() {
 		})
 		.catch(error => {
 			console.error('Error starting game:', error);
-			Materialize.toast("Error starting game.", 2000);
+			Materialize.toast("Error al iniciar el juego.", 2000);
 		});
 }
 
@@ -170,7 +170,7 @@ function sendAction(action) {
 		})
 		.catch(error => {
 			console.error(`Error performing action ${action}:`, error);
-			Materialize.toast(`Error performing action ${action}.`, 2000);
+			Materialize.toast(`Error al realizar la acción ${action}.`, 2000);
 		});
 }
 
