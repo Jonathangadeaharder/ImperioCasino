@@ -183,7 +183,28 @@ function capitalizeFirstLetter(val) {
 	}
 	return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
-// Update the game board
+
+function calculateHandTotal(hand) {
+	let total = 0;
+	let aceCount = 0;
+
+	// Calculate the initial total and count the Aces
+	hand.forEach(card => {
+		total += card.value;
+		if (card.name && card.name.toLowerCase() === 'ace') {
+			aceCount++;
+		}
+	});
+
+	// Adjust for Aces: reduce the total by 10 for each Ace as long as the total exceeds 21
+	while (total > 21 && aceCount > 0) {
+		total -= 10;
+		aceCount--;
+	}
+
+	return total;
+}
+
 function updateGameBoard(gameState) {
 	// Clear current hands
 	dealerGameBoard.empty();
@@ -211,7 +232,7 @@ function updateGameBoard(gameState) {
 		cardImage.attr("id", `dealer-card-${index}`);
 		cardImage.appendTo(dealerGameBoard);
 
-		dealerHandTotal += card.value;
+		dealerHandTotal = calculateHandTotal(gameState.dealer_hand);
 	});
 
 	// Update player's hand
@@ -223,7 +244,7 @@ function updateGameBoard(gameState) {
 		cardImage.attr("id", `player-card-${index}`);
 		cardImage.appendTo(playerGameBoard);
 
-		playerHandTotal += card.value;
+		playerHandTotal = calculateHandTotal(gameState.player_hand);
 	});
 
 	// Update split hand if applicable
@@ -236,7 +257,7 @@ function updateGameBoard(gameState) {
 			cardImage.attr("id", `playerSplit-card-${index}`);
 			cardImage.appendTo(playerSplitGameBoard);
 
-			playerSplitHandTotal += card.value;
+			playerSplitHandTotal = calculateHandTotal(gameState.player_second_hand);
 		});
 		$(playerSplitGameBoard).show();
 		$(".split-hand-total").show();
