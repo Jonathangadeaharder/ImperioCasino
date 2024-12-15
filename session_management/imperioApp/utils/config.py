@@ -7,3 +7,6 @@ class Config:
     CHERRY_CHARM_URL = 'http://localhost:5173'
     BLACK_JACK_URL = 'http://localhost:5174'
     ROULETTE_URL = 'http://localhost:5175'
+    SESSION_TYPE = 'filesystem'  # Store sessions on the server
+    SESSION_PERMANENT = True
+

@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from .utils.config import Config  # Use relative import
 import logging
 from flask_cors import CORS
+from flask_session import Session  # Import Flask-Session
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG,
@@ -16,6 +17,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 app = Flask(__name__)
 app.config.from_object(Config)
+Session(app)  # Initialize Flask-Session
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 db = SQLAlchemy(app)

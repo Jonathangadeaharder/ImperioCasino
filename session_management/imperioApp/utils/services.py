@@ -1,9 +1,16 @@
 from .models import User
 from .. import db
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def get_user_by_username(username):
-    return User.query.filter_by(username=username).first()
-
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        logging.warning(f"User {username} not found in database")
+    else:
+        logging.debug(f"User {username} retrieved successfully from database")
+    return user
 def create_user(username, email, password, starting_coins=None):
     user = User(
         username=username,
