@@ -1,17 +1,81 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
 <head>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
-	<title>Javascript Roulette</title>
-	<meta name="title" content="Javascript Roulette">
+	<title>ImperioRoulette</title>
+	<meta name="title" content="ImperioRoulette">
 	<meta name="description" content="A fully functioning roulette game made using Javascript and CSS">
 	<meta name="author" content="ozboware">
 	<meta property="og:url" content="/">
-	<meta property="og:title" content="Javascript Roulette">
+	<meta property="og:title" content="ImperioRoulette">
 	<meta property="og:description" content="A fully functioning roulette game made using Javascript and CSS">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="../assets/css/style.css" rel="stylesheet" type="text/css">
 </head>
-
 <body>
-	<script src="../assets/js/app.js"></script>
+<div class="navbar-fixed z-depth-0">
+	<nav>
+		<div class="nav-wrapper">
+			<div class="nav-content">
+				<span class="brand-logo">ImperioRoulette</span>
+				<a href="#" class="rules-nav">
+					<i class="material-icons" id="rules-button">help</i>
+				</a>
+			</div>
+		</div>
+	</nav>
+</div>
+
+<!-- Rules Modal -->
+<div id="rules-modal" class="modal">
+	<div class="modal-content">
+		<h4>Reglas de la Ruleta</h4>
+		<p>
+			La ruleta es un juego de azar clásico. Las reglas básicas son:
+		<ol>
+			<li>El jugador coloca apuestas en un número, color (rojo/negro), o grupos de números (por ejemplo, pares o impares).</li>
+			<li>El crupier gira la rueda de la ruleta y lanza la bola.</li>
+			<li>La bola caerá en una de las casillas numeradas y coloreadas.</li>
+			<li>Si la casilla corresponde a tu apuesta, ganas según el tipo de apuesta que hiciste.</li>
+		</ol>
+		<div>
+			<b>Apuestas comunes:</b>
+			<ul>
+				<li><b>Pleno:</b> Apostar a un número específico. Pagos 35:1.</li>
+				<li><b>Mitades:</b> Apostar entre 1-18 o 19-36.</li>
+				<li><b>Colores:</b> Apostar al rojo o negro.</li>
+				<li><b>Pares/Impares:</b> Apostar a números pares o impares.</li>
+			</ul>
+		</div>
+		</p>
+	</div>
+	<div class="modal-footer">
+		<button id="close-rules" class="modal-close">Cerrar</button>
+	</div>
+</div>
+
+<script src="../assets/js/app.js"></script>
+<script>
+	$(document).ready(function () {
+		// Open rules modal
+		$('#rules-button').on('click', function () {
+			$('#rules-modal').fadeIn();
+		});
+
+		// Close rules modal
+		$('#close-rules').on('click', function () {
+			$('#rules-modal').fadeOut();
+		});
+
+		// Close modal when clicking outside of it
+		$(window).on('click', function (e) {
+			if ($(e.target).is('#rules-modal')) {
+				$('#rules-modal').fadeOut();
+			}
+		});
+	});
+</script>
+
 </body>
+</html>

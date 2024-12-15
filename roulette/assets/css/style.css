@@ -1,18 +1,31 @@
-html, body{
-	font-family: arial;
-	cursor: default;
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
+html, body {
+    font-family: Arial, sans-serif;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background: #1f513b; /* Dark green */
+    color: #fff;
+}
+
+header {
+    background-color: #000; /* Black title bar */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 2em;
+    font-family: 'Lato', sans-serif;
+    text-transform: uppercase;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #container{
 	display: flex;
 	justify-content: center;
-	background-color: #016D29;
 	height: 470px;
 	padding: 20px;
 	color: #fff;
@@ -796,3 +809,86 @@ html, body{
 	margin-top: -25px;
 }
 /*chip end*/
+/* Navbar styles */
+.navbar-fixed {
+	margin-bottom: 25px;
+}
+
+.nav-wrapper {
+	background-color: #000; /* Solid black background */
+	height: 60px; /* Adjust height for a sleeker navbar */
+	display: flex;
+	align-items: center; /* Center content vertically */
+	justify-content: space-between; /* Spread items across the navbar */
+	padding: 0 20px; /* Add padding for better spacing */
+}
+
+.brand-logo {
+	font-family: 'Arvo', serif; /* Match the font style from the second image */
+	font-size: 1.75em; /* Slightly larger font size */
+	color: white; /* Ensure contrast against black background */
+	margin: 0; /* Reset margins */
+	text-transform: none; /* Remove uppercase if not needed */
+}
+
+.rules-nav {
+	color: white; /* White color for icons */
+	font-size: 1.5em; /* Match size to second image */
+	margin-right: 10px; /* Space it from the right */
+}
+
+/* Materialize icons */
+i.material-icons {
+	font-family: 'Material Icons';
+	font-size: 24px;
+	display: inline-block;
+	line-height: 1;
+	text-transform: none;
+	letter-spacing: normal;
+	word-wrap: normal;
+	white-space: nowrap;
+	direction: ltr;
+}
+
+/* Modal styles */
+.modal {
+	display: none; /* Initially hidden */
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.8); /* Transparent background */
+	overflow: auto; /* Enable scroll if needed */
+}
+
+.modal-content {
+	background-color: #fff;
+	margin: 10% auto;
+	padding: 20px;
+	border-radius: 10px;
+	width: 80%;
+	max-width: 500px;
+	color: black;
+	font-family: Arial, sans-serif;
+	text-align: left;
+}
+
+.modal-footer {
+	text-align: right;
+	padding: 10px 20px;
+}
+
+.modal-close {
+	background-color: #d60438;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	padding: 10px 15px;
+	cursor: pointer;
+}
+
+.modal-close:hover {
+	background-color: #a6032e;
+}

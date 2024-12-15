@@ -375,10 +375,10 @@ function buildBettingBoard(){
 
 	let otoBoard = document.createElement('div');
 	otoBoard.setAttribute('class', 'oto_board');
-	let otoBlocks = ['EVEN', 'RED', 'BLACK', 'ODD'];
+	let otoBlocks = ['PAR', 'ROJO', 'NEGRO', 'IMPAR'];
 	for(let i = 0; i < otoBlocks.length; i++){
 		let d = i;
-		var colourClass = (otoBlocks[i] == 'RED')? ' redNum' : ((otoBlocks[i] == 'BLACK')? ' blackNum' : '');
+		var colourClass = (otoBlocks[i] == 'ROJO')? ' redNum' : ((otoBlocks[i] == 'NEGRO')? ' blackNum' : '');
 		var otoBlock = document.createElement('div');
 		otoBlock.setAttribute('class', 'oto_block' + colourClass);
 		otoBlock.onclick = function(){
@@ -400,7 +400,7 @@ function buildBettingBoard(){
 	let chipValues = [1, 5, 10, 100, 'clear'];
 	for(let i = 0; i < chipValues.length; i++){
 		let cvi = i;
-		let chipColour = (i == 0)? 'red' : ((i == 1)? 'blue cdChipActive' : ((i == 2)? 'orange' : ((i == 3)? 'gold' : 'clearBet')));
+		let chipColour = (i == 0)? 'ROJO' : ((i == 1)? 'blue cdChipActive' : ((i == 2)? 'orange' : ((i == 3)? 'gold' : 'clearBet')));
 		let chip = document.createElement('div');
 		chip.setAttribute('class', 'cdChip ' + chipColour);
 		chip.onclick = function(){
@@ -492,7 +492,7 @@ function setBet(e, n, t, o){
 		for(let i = 0; i < bet.length; i++){
 			if(bet[i].numbers == n && bet[i].type == t){
 				bet[i].amt = bet[i].amt + wager;
-				let chipColour = (bet[i].amt < 5)? 'red' : ((bet[i].amt < 10)? 'blue' : ((bet[i].amt < 100)? 'orange' : 'gold'));
+				let chipColour = (bet[i].amt < 5)? 'ROJO' : ((bet[i].amt < 10)? 'blue' : ((bet[i].amt < 100)? 'orange' : 'gold'));
 				e.querySelector('.chip').style.cssText = '';
 				e.querySelector('.chip').setAttribute('class', 'chip ' + chipColour);
 				let chipSpan = e.querySelector('.chipSpan');
@@ -516,7 +516,7 @@ function setBet(e, n, t, o){
 		}
 
 		if(!e.querySelector('.chip')){
-			let chipColour = (wager < 5)? 'red' : ((wager < 10)? 'blue' : ((wager < 100)? 'orange' : 'gold'));
+			let chipColour = (wager < 5)? 'ROJO' : ((wager < 10)? 'blue' : ((wager < 100)? 'orange' : 'gold'));
 			let chip = document.createElement('div');
 			chip.setAttribute('class', 'chip ' + chipColour);
 			let chipSpan = document.createElement('span');
@@ -643,7 +643,7 @@ function removeBet(e, n, t, o){
 				if(bet[i].amt == 0){
 					e.querySelector('.chip').style.cssText = 'display:none';
 				}else{
-					let chipColour = (bet[i].amt < 5)? 'red' : ((bet[i].amt < 10)? 'blue' : ((bet[i].amt < 100)? 'orange' : 'gold'));
+					let chipColour = (bet[i].amt < 5)? 'ROJO' : ((bet[i].amt < 10)? 'blue' : ((bet[i].amt < 100)? 'orange' : 'gold'));
 					e.querySelector('.chip').setAttribute('class', 'chip ' + chipColour);
 					let chipSpan = e.querySelector('.chipSpan');
 					chipSpan.innerText = bet[i].amt;
