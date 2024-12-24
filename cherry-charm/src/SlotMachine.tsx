@@ -9,6 +9,7 @@ import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import useGame from "./stores/store";
+import devLog from "./utils/functions/devLog";
 import segmentToFruit from "./utils/functions/segmentToFruit";
 import { WHEEL_SEGMENT } from "./utils/constants";
 import Reel from "./Reel";

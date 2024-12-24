@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+import devLog from "../utils/functions/devLog";
+
 import { Fruit } from "../utils/enums";
 
 // Helper function to fetch initial coins
