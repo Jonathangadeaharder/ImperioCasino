@@ -1,12 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Welcome, {{ current_user.username }}!</h2>
-<p>This is your dashboard.</p>
-<p>You have {{ current_user.coins }} coins.</p>
-<a href="{{ url_for('logout') }}">Logout</a>
-<br>
-<a href="{{ url_for('redirect_to_imperio') }}">Go to Imperio</a>
-<a href="{{ url_for('redirect_to_blackjack') }}">Go to BlackJack</a>
-<a href="{{ url_for('redirect_to_roulette') }}">Go to Roulette</a>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1 class="display-4">Welcome, {{ current_user.username }}!</h1>
+            <p class="lead">
+                This is your dashboard. You have
+                <span class="font-weight-bold">{{ current_user.coins }}</span> coins.
+            </p>
 
+            <hr class="my-4">
+
+            <div class="btn-group mb-3" role="group" aria-label="Casino Navigation">
+                <a class="btn btn-primary" href="{{ url_for('redirect_to_imperio') }}">Go to Imperio</a>
+                <a class="btn btn-success" href="{{ url_for('redirect_to_blackjack') }}">Go to BlackJack</a>
+                <a class="btn btn-danger" href="{{ url_for('redirect_to_roulette') }}">Go to Roulette</a>
+            </div>
+            <br>
+            <a class="btn btn-outline-secondary" href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

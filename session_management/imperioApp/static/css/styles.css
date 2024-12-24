@@ -2,14 +2,15 @@ body {
     font-family: Arial, sans-serif;
     margin: 20px;
 }
-h2 {
-    color: #333;
-}
+
 .flashes {
+    /* Old styling; can be removed if you prefer Bootstrap alerts */
     list-style-type: none;
     padding: 0;
 }
+
 .flashes li {
+    /* Old styling; can be removed if you prefer Bootstrap alerts */
     background-color: #f2dede;
     color: #a94442;
     padding: 10px;

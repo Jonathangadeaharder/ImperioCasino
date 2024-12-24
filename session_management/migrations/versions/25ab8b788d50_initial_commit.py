@@ -1,8 +1,8 @@
-"""Add dealer_value to BlackjackGameState
+"""Initial commit
 
-Revision ID: d3d771659237
-Revises: 37501917f986
-Create Date: 2024-12-01 17:04:19.622892
+Revision ID: 25ab8b788d50
+Revises: 
+Create Date: 2024-12-24 10:47:17.203784
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd3d771659237'
-down_revision = '37501917f986'
+revision = '25ab8b788d50'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -22,7 +22,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('username', sa.String(length=64), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
-    sa.Column('password_hash', sa.String(length=128), nullable=False),
+    sa.Column('password', sa.String(length=128), nullable=True),
     sa.Column('coins', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
