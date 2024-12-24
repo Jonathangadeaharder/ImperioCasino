@@ -7,10 +7,10 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Define paths and commands
-BLACKJACK_PATH="/home/ec2-user/ImperioCasino/blackjack-master"
-CHERRY_CHARM_PATH="/home/ec2-user/ImperioCasino/cherry-charm"
-ROULETTE_PATH="/home/ec2-user/ImperioCasino/roulette"
-SESSION_MANAGEMENT_PATH="/home/ec2-user/ImperioCasino/session_management"
+BLACKJACK_PATH="./blackjack-master"
+CHERRY_CHARM_PATH="./cherry-charm"
+ROULETTE_PATH="./roulette"
+SESSION_MANAGEMENT_PATH="./session_management"
 
 FLASK_COMMAND="flask run"
 CHERRY_CHARM_COMMAND="yarn dev"
