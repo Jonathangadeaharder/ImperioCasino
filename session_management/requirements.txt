@@ -12,3 +12,4 @@ unittest2
 python-dotenv
 email_validator
 flask_cors
+flask_session
