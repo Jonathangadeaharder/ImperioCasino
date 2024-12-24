@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Check if the script is run with elevated privileges
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Please run as root or use sudo."
-    exit 1
-fi
-
 # Define paths and commands
 BLACKJACK_PATH="./blackjack-master"
 CHERRY_CHARM_PATH="./cherry-charm"
