@@ -2,7 +2,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('username');
 const token = urlParams.get('token');
 
-const serverAddress = 'http://127.0.0.1:5000';
+const serverAddress = 'http://13.61.3.232:5000';
 
 let bankValue = 0;       // Will be updated from server on load
 let currentBet = 0;

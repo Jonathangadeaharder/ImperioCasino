@@ -1,5 +1,5 @@
 // Define the server address
-const serverAddress = 'http://127.0.0.1:5000';
+const serverAddress = 'http://13.61.3.232:5000';
 
 // Function to parse query parameters
 function getQueryParams() {

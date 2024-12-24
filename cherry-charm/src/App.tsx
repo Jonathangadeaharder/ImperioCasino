@@ -4,7 +4,7 @@ import Interface from "./interface/Interface";
 import Game from "./Game";
 
 // Define the user management server URL
-const userManagementServer = "http://127.0.0.1:5000";
+const userManagementServer = "http://13.61.3.232:5000";
 
 const App = () => {
   const [windowWidth] = useState(window.innerWidth);

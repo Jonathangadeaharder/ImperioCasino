@@ -9,7 +9,6 @@ import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import useGame from "./stores/store";
-import devLog from "./utils/functions/devLog";
 import segmentToFruit from "./utils/functions/segmentToFruit";
 import { WHEEL_SEGMENT } from "./utils/constants";
 import Reel from "./Reel";
@@ -27,7 +26,7 @@ interface SlotMachineProps {
   userId: string;  // Assuming userId is passed as a prop
 }
 
-const userManagementServer = "http://127.0.0.1:5000";
+const userManagementServer = "http://13.61.3.232:5000";
 const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
 const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {

@@ -1,10 +1,9 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import devLog from "../utils/functions/devLog";
 import { Fruit } from "../utils/enums";
 
 // Helper function to fetch initial coins
-const userManagementServer = "http://127.0.0.1:5000";
+const userManagementServer = "http://13.61.3.232:5000";
 
 async function fetchInitialCoins(userId: string): Promise<number> {
     const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
