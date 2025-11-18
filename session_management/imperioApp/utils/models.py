@@ -6,8 +6,12 @@ from .constants import DEFAULT_COINS  # Import DEFAULT_COINS
 from sqlalchemy.ext.mutable import MutableList
 
 class BlackjackGameState(db.Model):
+    __tablename__ = 'blackjack_game_state'
+    __table_args__ = (
+        db.Index('idx_user_game_state', 'user_id', 'game_over'),
+    )
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     deck = db.Column(MutableList.as_mutable(PickleType), nullable=False)
     dealer_hand = db.Column(MutableList.as_mutable(PickleType), nullable=False)
     player_hand = db.Column(MutableList.as_mutable(PickleType), nullable=False)
@@ -43,9 +47,13 @@ class BlackjackGameState(db.Model):
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
+    __table_args__ = (
+        db.Index('idx_username', 'username'),
+        db.Index('idx_email', 'email'),
+    )
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password = db.Column(db.String(128), nullable=True)
     coins = db.Column(db.Integer, nullable=False)  # Remove default here
 
@@ -55,10 +63,10 @@ class User(UserMixin, db.Model):
             self.coins = DEFAULT_COINS  # Use DEFAULT_COINS here
 
     def set_password(self, password):
-        self.password = password  # plain assignment
+        self.password = generate_password_hash(password)
 
     def verify_password(self, password):
-        return self.password == password
+        return check_password_hash(self.password, password)
 
     def __repr__(self):
         return f'<User {self.username}>'

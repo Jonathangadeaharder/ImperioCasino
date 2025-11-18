@@ -32,7 +32,16 @@ def start_game(user, wager):
     # Validate wager
     if wager <= 0:
         return {'message': 'Invalid wager amount', 'game_over': True}, 400
-    if user.coins < wager:
+
+    # Lock user row for update to prevent race conditions
+    from sqlalchemy.orm import with_for_update
+    from ..utils.models import User
+    locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+    if not locked_user:
+        return {'message': 'User not found', 'game_over': True}, 404
+
+    if locked_user.coins < wager:
         return {'message': 'Insufficient coins', 'game_over': True}, 400
 
     # Terminate any existing active games for the user
@@ -42,16 +51,16 @@ def start_game(user, wager):
     db.session.commit()
 
     # Deduct initial wager from user's coins
-    user.coins -= wager
-    update_user_coins(user, user.coins)
+    locked_user.coins -= wager
+    db.session.commit()
 
     # Initialize a new game state
     game_state = BlackjackGameState(
-        user_id=user.id,
+        user_id=locked_user.id,
         deck=shuffle_deck(),
         dealer_hand=[],
         player_hand=[],
-        player_coins=user.coins,
+        player_coins=locked_user.coins,
         current_wager=wager,
         game_over=False,
         message='',
