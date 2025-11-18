@@ -114,28 +114,45 @@ def endgame(fruit0: Fruit, fruit1: Fruit, fruit2: Fruit) -> int:
 
 
 def cherryAction(spin_user):
+    from .. import db
+    from ..utils.models import User
+
     logging.debug("Received spin request for user_id: %s", spin_user.username)
+
+    # Lock user row for update to prevent race conditions
+    locked_user = db.session.query(User).with_for_update().filter_by(id=spin_user.id).first()
+
+    if not locked_user:
+        return jsonify({'message': 'User not found'}), 404
+
     # Check if the user has enough coins to spin
-    if spin_user.coins < 1:
-        logging.warning("User %s does not have enough coins to spin.", spin_user.username)
+    if locked_user.coins < 1:
+        logging.warning("User %s does not have enough coins to spin.", locked_user.username)
         return jsonify({'message': 'Not enough coins to spin'}), 400
+
     # Deduct a coin for spinning
-    reduce_user_coins(spin_user, 1)
-    logging.info("User %s has spun the slot machine. Coins left: %s", spin_user.username, spin_user.coins)
+    locked_user.coins -= 1
+    logging.info("User %s has spun the slot machine. Coins left: %s", locked_user.username, locked_user.coins)
+
     # Generate stop segments and fruits
     stop_segments = spin_reels()
-    logging.info("Generated stop segments for user %s: %s", spin_user.username, stop_segments)
+    logging.info("Generated stop segments for user %s: %s", locked_user.username, stop_segments)
     fruits = get_fruits(stop_segments)
-    logging.info("Fruits for user %s: %s", spin_user.username, fruits)
+    logging.info("Fruits for user %s: %s", locked_user.username, fruits)
+
     # Compute winnings
     winnings = calculate_winnings(fruits)
-    logging.info("User %s won: %s coins", spin_user.username, winnings)
+    logging.info("User %s won: %s coins", locked_user.username, winnings)
+
     # Add winnings to user's coins
-    increase_user_coins(spin_user, winnings)
-    logging.info("User %s new coin balance: %s", spin_user.username, spin_user.coins)
+    locked_user.coins += winnings
+    logging.info("User %s new coin balance: %s", locked_user.username, locked_user.coins)
+
+    db.session.commit()
+
     # Prepare the response data
     response_data = {
         'stopSegments': stop_segments,
-        'totalCoins': spin_user.coins
+        'totalCoins': locked_user.coins
     }
     return jsonify(response_data), 200

@@ -12,7 +12,7 @@ A multi-game online casino platform featuring Blackjack, Roulette, and a 3D Slot
 
 ```
 ImperioCasino/
-├── session_management/      # Flask backend (Port 5011)
+├── session_management/      # Flask backend (Port 5000)
 │   ├── imperioApp/          # Main application
 │   │   ├── game_logic/      # Game implementations
 │   │   ├── utils/           # Models, auth, services
@@ -56,7 +56,7 @@ flask db upgrade
 python run.py
 ```
 
-The backend will run on `http://localhost:5011`
+The backend will run on `http://localhost:5000`
 
 ### 2. Generate Secret Key
 
@@ -170,7 +170,7 @@ LOG_LEVEL=INFO                     # DEBUG, INFO, WARNING, ERROR, CRITICAL
 ### Frontend (cherry-charm/.env)
 
 ```bash
-VITE_API_URL=http://localhost:5011
+VITE_API_URL=http://localhost:5000
 VITE_PORT=5173
 VITE_DEV_LOG=true
 ```
@@ -301,7 +301,7 @@ python run.py
 1. **Use Production WSGI Server**
    ```bash
    pip install gunicorn
-   gunicorn -w 4 -b 0.0.0.0:5011 'session_management.run:app'
+   gunicorn -w 4 -b 0.0.0.0:5000 'session_management.run:app'
    ```
 
 2. **Set up Nginx Reverse Proxy**
@@ -320,7 +320,7 @@ python run.py
        ssl_certificate_key /path/to/key.pem;
 
        location / {
-           proxy_pass http://127.0.0.1:5011;
+           proxy_pass http://127.0.0.1:5000;
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr;
        }

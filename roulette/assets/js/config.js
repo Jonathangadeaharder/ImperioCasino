@@ -3,7 +3,7 @@
 
 const CONFIG = {
     // Backend API server URL
-    serverAddress: 'http://13.61.3.232:5000',
+    serverAddress: 'http://localhost:5000',
 
     // Game settings
     minBet: 1,

@@ -1,5 +1,5 @@
 // Define the server address (can be overridden by config.js)
-const serverAddress = window.BLACKJACK_CONFIG?.serverAddress || 'http://13.61.3.232:5000';
+const serverAddress = window.BLACKJACK_CONFIG?.serverAddress || 'http://localhost:5000';
 
 // Function to parse query parameters
 function getQueryParams() {

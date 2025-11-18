@@ -117,14 +117,22 @@ def player_hit(user, game_state):
             game_state.current_hand = 'second'
             game_state.player_stood = False
         else:
+            # Lock user for coin updates
+            from ..utils.models import User
+            locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+            if locked_user:
+                game_state.game_over = True
+                dealer_turn(game_state)
+                determine_winner(game_state, locked_user)
+    elif player_value == 21:
+        # Lock user for coin updates
+        from ..utils.models import User
+        locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+        if locked_user:
+            game_state.player_stood = True
             game_state.game_over = True
             dealer_turn(game_state)
-            determine_winner(game_state, user)
-    elif player_value == 21:
-        game_state.player_stood = True
-        game_state.game_over = True
-        dealer_turn(game_state)
-        determine_winner(game_state, user)
+            determine_winner(game_state, locked_user)
     elif game_state.split and game_state.current_hand == 'first':
         # If split and first hand, switch to second hand
         game_state.current_hand = 'second'
@@ -139,10 +147,14 @@ def player_stand(game_state, user):
         game_state.current_hand = 'second'
         game_state.player_stood = False
     else:
-        # Dealer's turn
-        dealer_turn(game_state)
-        determine_winner(game_state, user)
-        game_state.game_over = True
+        # Lock user for coin updates
+        from ..utils.models import User
+        locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+        if locked_user:
+            # Dealer's turn
+            dealer_turn(game_state)
+            determine_winner(game_state, locked_user)
+            game_state.game_over = True
 
     db.session.commit()
     return game_state.to_dict(), 200
@@ -152,13 +164,19 @@ def player_double_down(game_state, user):
     if len(game_state.player_hand) > 2 or game_state.double_down or game_state.split or game_state.player_stood:
         return {'message': 'Cannot double down at this stage'}, 400
 
-    if user.coins < game_state.current_wager:
+    # Lock user row for update to prevent race conditions
+    from ..utils.models import User
+    locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+    if not locked_user:
+        return {'message': 'User not found'}, 404
+
+    if locked_user.coins < game_state.current_wager:
         return {'message': 'Insufficient coins to double down'}, 400
 
-    user.coins -= game_state.current_wager
-    update_user_coins(user, user.coins)
+    locked_user.coins -= game_state.current_wager
     game_state.current_wager *= 2
-    game_state.player_coins = user.coins
+    game_state.player_coins = locked_user.coins
     game_state.double_down = True
 
     game_state.player_hand.append(game_state.deck.pop())
@@ -171,7 +189,7 @@ def player_double_down(game_state, user):
         game_state.player_stood = True
         dealer_turn(game_state)
         # Determine outcome
-        determine_winner(game_state, user)
+        determine_winner(game_state, locked_user)
 
     db.session.commit()
     return game_state.to_dict(), 200
@@ -184,13 +202,20 @@ def player_split(game_state, user):
     # Check if both cards have the same value
     if hand[0]['value'] != hand[1]['value']:
         return {'message': 'Cannot split: Cards do not have the same value'}, 400
+
+    # Lock user row for update to prevent race conditions
+    from ..utils.models import User
+    locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+    if not locked_user:
+        return {'message': 'User not found'}, 404
+
     # Check if user has enough coins
-    if user.coins < game_state.current_wager:
+    if locked_user.coins < game_state.current_wager:
         return {'message': 'Cannot split: Insufficient coins'}, 400
 
-    user.coins -= game_state.current_wager
-    update_user_coins(user, user.coins)
-    game_state.player_coins = user.coins
+    locked_user.coins -= game_state.current_wager
+    game_state.player_coins = locked_user.coins
     game_state.split = True
 
     # Move one card to player_second_hand

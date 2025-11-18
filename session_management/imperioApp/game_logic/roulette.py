@@ -3,6 +3,9 @@ import random
 from ..utils.services import increase_user_coins, reduce_user_coins
 
 def rouletteAction(current_user, data):
+    from .. import db
+    from ..utils.models import User
+
     ROULETTE_NUMBERS = list(range(0, 37))
 
     bet_info = data.get('bet')
@@ -27,14 +30,18 @@ def rouletteAction(current_user, data):
 
         total_bet += amt
 
+    # Lock user row for update to prevent race conditions
+    locked_user = db.session.query(User).with_for_update().filter_by(id=current_user.id).first()
+
+    if not locked_user:
+        return {"message": "User not found"}, 404
+
     # Check if user has enough coins for all bets
-    if current_user.coins < total_bet:
+    if locked_user.coins < total_bet:
         return {"message": "Not enough coins for all bets"}, 400
 
     # Deduct the coins for all bets now
-    for bet in bet_info:
-        amt = bet.get("amt")
-        reduce_user_coins(current_user, amt)
+    locked_user.coins -= total_bet
 
     # Perform the spin
     winning_number = random.choice(ROULETTE_NUMBERS)
@@ -62,22 +69,20 @@ def rouletteAction(current_user, data):
             if any(num < 0 or num > 36 for num in bet_numbers):
                 return {"message": "Bet numbers must be between 0 and 36"}, 400
 
-        # With bet_numbers parsed, if empty and originally empty, it's valid but no win scenario
-        # If originally empty: bet_numbers = []
-        # This is allowed and not an error.
-
         # Check if this bet wins
         if winning_number in bet_numbers:
             payout = (odds * amt) + amt
             total_win += payout
 
-    # Increase user coins if won
+    # Add winnings to user coins
     if total_win > 0:
-        increase_user_coins(current_user, total_win)
+        locked_user.coins += total_win
+
+    db.session.commit()
 
     return {
         "winning_number": winning_number,
         "total_bet": total_bet,
         "total_win": total_win,
-        "new_coins": current_user.coins
+        "new_coins": locked_user.coins
     }, 200

@@ -21,12 +21,12 @@ class Config:
     }
 
     # Game URLs - use environment variables
-    CHERRY_CHARM_URL = os.environ.get('CHERRY_CHARM_URL', 'http://13.61.3.232:5173')
-    BLACK_JACK_URL = os.environ.get('BLACK_JACK_URL', 'http://13.61.3.232:5174')
-    ROULETTE_URL = os.environ.get('ROULETTE_URL', 'http://13.61.3.232:5175')
+    CHERRY_CHARM_URL = os.environ.get('CHERRY_CHARM_URL', 'http://localhost:5173')
+    BLACK_JACK_URL = os.environ.get('BLACK_JACK_URL', 'http://localhost:5174')
+    ROULETTE_URL = os.environ.get('ROULETTE_URL', 'http://localhost:5175')
 
     # CORS allowed origins
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://13.61.3.232:5173,http://13.61.3.232:5174,http://13.61.3.232:5175').split(',')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:5174,http://localhost:5175').split(',')
 
     # Session configuration
     SESSION_TYPE = 'filesystem'
