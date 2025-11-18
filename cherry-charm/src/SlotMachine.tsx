@@ -27,7 +27,7 @@ interface SlotMachineProps {
   userId: string;  // Assuming userId is passed as a prop
 }
 
-const userManagementServer = "http://13.61.3.232:5000";
+const userManagementServer = import.meta.env.VITE_API_URL || "http://13.61.3.232:5000";
 const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
 const SlotMachine = forwardRef(({ value, userId }: SlotMachineProps, ref) => {
