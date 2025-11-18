@@ -2,7 +2,7 @@ import jwt
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 from flask_login import current_user, login_required
 from urllib.parse import urlparse
-from . import app
+from . import app, limiter
 from .utils.forms import LoginForm, RegistrationForm
 from .utils.models import User
 import logging
@@ -25,6 +25,7 @@ def dashboard():
     return render_template('dashboard.html', title='Dashboard')
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
@@ -48,6 +49,7 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/signup', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")
 def signup():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
@@ -121,6 +123,7 @@ def update_coins(current_user):
 
 @app.route('/spin', methods=['POST'])
 @token_required
+@limiter.limit("60 per minute")
 def spin(spin_user):
     return cherryAction(spin_user)
 
@@ -173,6 +176,29 @@ def redirect_to_roulette():
 @token_required
 def roulette_action(current_user):
     data = request.get_json()
-    print(data)
+    logging.debug(f"Roulette action data: {data}")
     result, status_code = rouletteAction(current_user, data)
     return jsonify(result), status_code
+
+# Global error handlers
+@app.errorhandler(404)
+def not_found(error):
+    logging.warning(f"404 error: {request.url}")
+    return jsonify({'message': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    from . import db
+    db.session.rollback()
+    logging.error(f"Internal error: {error}", exc_info=True)
+    return jsonify({'message': 'Internal server error'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    logging.warning(f"Bad request: {error}")
+    return jsonify({'message': 'Bad request'}), 400
+
+@app.errorhandler(401)
+def unauthorized(error):
+    logging.warning(f"Unauthorized access attempt: {error}")
+    return jsonify({'message': 'Unauthorized'}), 401
