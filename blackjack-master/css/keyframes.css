@@ -53,7 +53,7 @@
 /* Card animations called using keyframes */
 /* Animation angle different for each */
 #dealer .card {
-	animation: deal-dealer .25s linear;
+	animation: deal-dealer 0.5s linear;
 }
 
 #user-hand .card {
