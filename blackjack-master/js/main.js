@@ -130,6 +130,10 @@ function startGame() {
 				$("#game-over").hide();
 				$(".brand-logo").text("ImperioJack");
 				$("#game-board").show("fade", 1000);
+				// Clear all cards from previous game
+				dealerGameBoard.empty();
+				playerGameBoard.empty();
+				playerSplitGameBoard.empty();
 				updateGameBoard(gameState);
 			}
 		})
@@ -206,16 +210,6 @@ function calculateHandTotal(hand) {
 }
 
 function updateGameBoard(gameState) {
-	// Clear current hands
-	dealerGameBoard.empty();
-	playerGameBoard.empty();
-	playerSplitGameBoard.empty();
-
-	// Reset totals
-	dealerHandTotal = 0;
-	playerHandTotal = 0;
-	playerSplitHandTotal = 0;
-
 	// Helper function to get card image URL
 	function getCardImageUrl(card) {
 		const suit = card.suit ? capitalizeFirstLetter(card.suit) : 'Unknown';
@@ -223,42 +217,45 @@ function updateGameBoard(gameState) {
 		return `img/${suit}-${name}.png`;
 	}
 
-	// Update dealer's hand
-	gameState.dealer_hand.forEach((card, index) => {
+	// Update dealer's hand - only add new cards
+	const currentDealerCards = dealerGameBoard.find('.card').length;
+	for (let i = currentDealerCards; i < gameState.dealer_hand.length; i++) {
+		const card = gameState.dealer_hand[i];
 		console.log("Dealer card:", card);
 		console.log("Dealer card suit:", card.suit);
 		console.log("Dealer card name:", card.name);
 		let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
-		cardImage.attr("id", `dealer-card-${index}`);
+		cardImage.attr("id", `dealer-card-${i}`);
 		cardImage.appendTo(dealerGameBoard);
+	}
+	dealerHandTotal = calculateHandTotal(gameState.dealer_hand);
 
-		dealerHandTotal = calculateHandTotal(gameState.dealer_hand);
-	});
-
-	// Update player's hand
-	gameState.player_hand.forEach((card, index) => {
+	// Update player's hand - only add new cards
+	const currentPlayerCards = playerGameBoard.find('.card').length;
+	for (let i = currentPlayerCards; i < gameState.player_hand.length; i++) {
+		const card = gameState.player_hand[i];
 		console.log("Player card:", card);
 		console.log("Player card suit:", card.suit);
 		console.log("Player card name:", card.name);
 		let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
-		cardImage.attr("id", `player-card-${index}`);
+		cardImage.attr("id", `player-card-${i}`);
 		cardImage.appendTo(playerGameBoard);
+	}
+	playerHandTotal = calculateHandTotal(gameState.player_hand);
 
-		playerHandTotal = calculateHandTotal(gameState.player_hand);
-	});
-
-	// Update split hand if applicable
+	// Update split hand if applicable - only add new cards
 	if (gameState.split && gameState.player_second_hand) {
-		gameState.player_second_hand.forEach((card, index) => {
+		const currentSplitCards = playerSplitGameBoard.find('.card').length;
+		for (let i = currentSplitCards; i < gameState.player_second_hand.length; i++) {
+			const card = gameState.player_second_hand[i];
 			console.log("Split card:", card);
 			console.log("Split card suit:", card.suit);
 			console.log("Split card name:", card.name);
 			let cardImage = $("<img>").attr("class", "card").attr("src", getCardImageUrl(card));
-			cardImage.attr("id", `playerSplit-card-${index}`);
+			cardImage.attr("id", `playerSplit-card-${i}`);
 			cardImage.appendTo(playerSplitGameBoard);
-
-			playerSplitHandTotal = calculateHandTotal(gameState.player_second_hand);
-		});
+		}
+		playerSplitHandTotal = calculateHandTotal(gameState.player_second_hand);
 		$(playerSplitGameBoard).show();
 		$(".split-hand-total").show();
 	} else {
