@@ -148,7 +148,7 @@ class TestJWTTokens:
         assert 'exp' in decoded  # Expiration claim
 
     @pytest.mark.unit
-    def test_decode_invalid_token(self):
+    def test_decode_invalid_token(self, app_context):
         """Test decoding an invalid JWT token."""
         with pytest.raises(jwt.InvalidTokenError):
             decode_token('invalid.token.here')
@@ -213,11 +213,17 @@ class TestPasswordSecurity:
     @pytest.mark.security
     def test_password_hashing(self, test_user):
         """Test that passwords are properly hashed."""
-        # Password should not be stored in plain text
-        assert test_user.password != 'testpass123'
+        # Password should not be readable (raises AttributeError)
+        with pytest.raises(AttributeError):
+            _ = test_user.password
 
-        # Should be a bcrypt hash (starts with $2b$)
-        assert test_user.password.startswith('$2b$') or test_user.password.startswith('pbkdf2:')
+        # Should be a valid hash format (bcrypt, pbkdf2, or scrypt)
+        assert (test_user._password.startswith('$2b$') or
+                test_user._password.startswith('pbkdf2:') or
+                test_user._password.startswith('scrypt:'))
+
+        # Password should not be stored in plain text
+        assert test_user._password != 'testpass123'
 
     @pytest.mark.unit
     @pytest.mark.security
@@ -266,16 +272,16 @@ class TestSessionManagement:
     @pytest.mark.unit
     def test_session_destruction_on_logout(self, authenticated_client):
         """Test that session is destroyed on logout."""
-        with authenticated_client:
-            # Verify session exists
-            assert 'user_id' in session or '_user_id' in session
+        # Verify session exists
+        with authenticated_client.session_transaction() as sess:
+            assert 'user_id' in sess or '_user_id' in sess
 
-            # Logout
-            response = authenticated_client.get('/logout', follow_redirects=True)
+        # Logout
+        response = authenticated_client.get('/logout', follow_redirects=True)
 
-            # Session should be cleared
-            # (Note: Some session data may persist but user should be logged out)
-            assert response.status_code == 200
+        # Session should be cleared
+        # (Note: Some session data may persist but user should be logged out)
+        assert response.status_code == 200
 
 
 class TestAuthIntegration:

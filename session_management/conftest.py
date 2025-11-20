@@ -14,6 +14,7 @@ os.environ['FLASK_ENV'] = 'testing'
 os.environ['DATABASE_URI'] = 'sqlite:///:memory:'
 os.environ['SECRET_KEY'] = 'test-secret-key-for-testing-only'
 os.environ['RATELIMIT_STORAGE_URL'] = 'memory://'
+os.environ['RATELIMIT_ENABLED'] = 'False'
 
 from imperioApp import app as flask_app, db
 from imperioApp.utils.models import User, BlackjackGameState

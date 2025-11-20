@@ -463,7 +463,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password = db.Column(db.String(128), nullable=True)
+    _password = db.Column("password", db.String(128), nullable=True)
     coins = db.Column(db.Integer, nullable=False)  # Remove default here
 
     def __init__(self, **kwargs):
@@ -471,11 +471,19 @@ class User(UserMixin, db.Model):
         if self.coins is None:
             self.coins = DEFAULT_COINS  # Use DEFAULT_COINS here
 
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+
+    @password.setter
+    def password(self, password):
+        self._password = generate_password_hash(password)
+
     def set_password(self, password):
-        self.password = generate_password_hash(password)
+        self._password = generate_password_hash(password)
 
     def verify_password(self, password):
-        return check_password_hash(self.password, password)
+        return check_password_hash(self._password, password)
 
     def __repr__(self):
         return f"<User {self.username}>"

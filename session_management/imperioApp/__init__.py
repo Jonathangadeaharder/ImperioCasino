@@ -37,7 +37,8 @@ limiter = Limiter(
     storage_options={"socket_connect_timeout": 30},
     strategy="fixed-window",  # Options: "fixed-window", "moving-window"
     headers_enabled=True,  # Add rate limit headers to responses
-    swallow_errors=True  # Don't crash if Redis is unavailable
+    swallow_errors=True,  # Don't crash if Redis is unavailable
+    enabled=app.config.get('RATELIMIT_ENABLED', True)  # Respect config
 )
 
 db = SQLAlchemy(app)

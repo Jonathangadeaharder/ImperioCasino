@@ -59,6 +59,7 @@ class Config:
 
     # Rate limiter storage - use Redis in production, memory in development
     RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', REDIS_URL if os.environ.get('FLASK_ENV') == 'production' else 'memory://')
+    RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', 'True').lower() == 'true'
 
     # Game URLs - use environment variables
     CHERRY_CHARM_URL = os.environ.get('CHERRY_CHARM_URL', 'http://localhost:5173')

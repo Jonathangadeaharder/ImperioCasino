@@ -65,7 +65,7 @@ class TestAchievementModel:
         data = achievement.to_dict()
 
         assert 'id' in data
-        assert data['achievement_type'] == 'first_win'
+        assert data['type'] == 'first_win'
         assert data['name'] == 'First Win'
         assert data['icon'] == '🏆'
         assert data['reward_coins'] == 25
@@ -171,7 +171,7 @@ class TestUserAchievement:
 
         assert 'id' in data
         assert 'achievement' in data
-        assert data['achievement']['achievement_type'] == 'big_win_100'
+        assert data['achievement']['type'] == 'big_win_100'
         assert 'unlocked_at' in data
         assert data['seen'] is False
 
@@ -186,7 +186,7 @@ class TestNotificationModel:
 
         notification = Notification.create_notification(
             user=test_user,
-            notification_type=NotificationType.SYSTEM,
+            notification_type=NotificationType.SYSTEM_MESSAGE,
             title="Test Notification",
             message="This is a test message",
             icon="📢"
@@ -194,7 +194,7 @@ class TestNotificationModel:
 
         assert notification is not None
         assert notification.user_id == test_user.id
-        assert notification.notification_type == NotificationType.SYSTEM
+        assert notification.notification_type == NotificationType.SYSTEM_MESSAGE
         assert notification.title == "Test Notification"
         assert notification.read is False
 
@@ -213,7 +213,7 @@ class TestNotificationModel:
         data = notification.to_dict()
 
         assert 'id' in data
-        assert data['notification_type'] == 'achievement_unlocked'
+        assert data['type'] == 'achievement_unlocked'
         assert data['title'] == "Achievement Unlocked!"
         assert data['read'] is False
         assert data['extra_data']['achievement_type'] == 'first_spin'
@@ -606,7 +606,7 @@ class TestLeaderboardAPI:
 
         # Should be sorted by coins descending
         for i in range(len(leaderboard) - 1):
-            assert leaderboard[i]['coins'] >= leaderboard[i + 1]['coins']
+            assert leaderboard[i]['value'] >= leaderboard[i + 1]['value']
 
     @pytest.mark.api
     def test_get_leaderboard_by_net_profit(self, client, multiple_users):
@@ -617,8 +617,9 @@ class TestLeaderboardAPI:
         data = response.get_json()
         leaderboard = data['leaderboard']
 
-        # Verify net_profit is included
-        assert 'net_profit' in leaderboard[0]
+        # Verify value is included (net_profit value)
+        assert 'value' in leaderboard[0]
+        assert leaderboard[0]['metric'] == 'net_profit'
 
     @pytest.mark.api
     def test_get_leaderboard_timeframe(self, client, multiple_users):
@@ -683,8 +684,8 @@ class TestAchievementAPI:
 
         assert response.status_code == 200
         data = response.get_json()
-        assert 'unlocked' in data
-        assert len(data['unlocked']) == 2
+        assert 'achievements' in data
+        assert len(data['achievements']) == 2
 
     @pytest.mark.api
     def test_get_achievement_progress(self, client, test_user, auth_headers, initialized_achievements_api, app_context):
