@@ -751,7 +751,7 @@ class TestNotificationAPI:
         for i in range(5):
             Notification.create_notification(
                 user=test_user,
-                notification_type=NotificationType.SYSTEM,
+                notification_type=NotificationType.SYSTEM_MESSAGE,
                 title=f"Test {i}",
                 message="Test message",
                 icon="📢"
@@ -774,7 +774,7 @@ class TestNotificationAPI:
 
         notification = Notification.create_notification(
             user=test_user,
-            notification_type=NotificationType.SYSTEM,
+            notification_type=NotificationType.SYSTEM_MESSAGE,
             title="Test",
             message="Test message",
             icon="📢"
@@ -803,7 +803,7 @@ class TestNotificationAPI:
         for i in range(3):
             Notification.create_notification(
                 user=test_user,
-                notification_type=NotificationType.SYSTEM,
+                notification_type=NotificationType.SYSTEM_MESSAGE,
                 title=f"Test {i}",
                 message="Test message",
                 icon="📢"
