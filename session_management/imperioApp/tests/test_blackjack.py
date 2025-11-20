@@ -724,3 +724,80 @@ class BlackjackTestCase(BaseTestCase):
         self.assertEqual(game_state.player_hand[-1], {'suit': 'hearts', 'name': '2', 'value': 2})
         # Player's coins should increase by the wager amount (assuming double payout)
         self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
+
+    def test_multiple_concurrent_games(self):
+        """
+        Test that multiple concurrent games can be played simultaneously.
+        This ensures that actions on one game don't affect another game.
+        """
+        # Start first game
+        wager1 = 50
+        response1, status_code1 = start_game(self.user, wager1)
+        self.assertEqual(status_code1, 200)
+        game_id_1 = response1['id']
+        
+        # Start second game
+        wager2 = 25
+        response2, status_code2 = start_game(self.user, wager2)
+        self.assertEqual(status_code2, 200)
+        game_id_2 = response2['id']
+        
+        # Verify both games are different
+        self.assertNotEqual(game_id_1, game_id_2)
+        
+        # Get both game states
+        game_state_1 = BlackjackGameState.query.filter_by(id=game_id_1).first()
+        game_state_2 = BlackjackGameState.query.filter_by(id=game_id_2).first()
+        
+        # Set up specific hands for each game
+        game_state_1.player_hand = [
+            {'suit': 'hearts', 'name': '5', 'value': 5},
+            {'suit': 'diamonds', 'name': '6', 'value': 6}
+        ]
+        game_state_1.dealer_hand = [
+            {'suit': 'clubs', 'name': '9', 'value': 9},
+            {'suit': 'spades', 'name': '7', 'value': 7}
+        ]
+        game_state_1.deck = [
+            {'suit': 'hearts', 'name': '3', 'value': 3}  # Next card for game 1
+        ]
+        
+        game_state_2.player_hand = [
+            {'suit': 'hearts', 'name': '10', 'value': 10},
+            {'suit': 'diamonds', 'name': '9', 'value': 9}
+        ]
+        game_state_2.dealer_hand = [
+            {'suit': 'clubs', 'name': '5', 'value': 5},
+            {'suit': 'spades', 'name': '6', 'value': 6}
+        ]
+        game_state_2.deck = [
+            {'suit': 'spades', 'name': '8', 'value': 8}  # Next card for game 2
+        ]
+        
+        db.session.commit()
+        
+        # Perform hit on game 1 with game_id
+        response, status_code = player_action(self.user, 'hit', game_id_1)
+        self.assertEqual(status_code, 200)
+        
+        # Verify game 1 was affected
+        db.session.refresh(game_state_1)
+        self.assertEqual(len(game_state_1.player_hand), 3)
+        self.assertEqual(game_state_1.player_hand[-1], {'suit': 'hearts', 'name': '3', 'value': 3})
+        
+        # Verify game 2 was NOT affected
+        db.session.refresh(game_state_2)
+        self.assertEqual(len(game_state_2.player_hand), 2)  # Should still have 2 cards
+        
+        # Perform hit on game 2 with game_id
+        response, status_code = player_action(self.user, 'hit', game_id_2)
+        self.assertEqual(status_code, 200)
+        
+        # Verify game 2 was affected
+        db.session.refresh(game_state_2)
+        self.assertEqual(len(game_state_2.player_hand), 3)
+        self.assertEqual(game_state_2.player_hand[-1], {'suit': 'spades', 'name': '8', 'value': 8})
+        
+        # Verify game 1 was NOT affected by game 2's action
+        db.session.refresh(game_state_1)
+        self.assertEqual(len(game_state_1.player_hand), 3)  # Should still have 3 cards

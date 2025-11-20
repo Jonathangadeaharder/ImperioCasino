@@ -155,11 +155,12 @@ def start_blackjack_game(current_user):
 def blackjack_action(current_user):
     data = request.get_json()
     action = data.get('action')
+    game_id = data.get('game_id')  # Extract game_id from request
     if action is None:
         return jsonify({'message': 'Action is required'}), 400
 
-    result, status_code = player_action(current_user, action)
-    logging.debug("Blackjack Action - Result: %s", result["player_hand"])
+    result, status_code = player_action(current_user, action, game_id)
+    logging.debug("Blackjack Action - Result: %s", result.get("player_hand", "N/A"))
     return jsonify(result), status_code
 
 @app.route('/redirect-roulette')

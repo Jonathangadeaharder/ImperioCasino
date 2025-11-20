@@ -82,8 +82,14 @@ def start_game(user, wager):
 
     return game_state.to_dict(), 200
 
-def player_action(user, action):
-    game_state = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).first()
+def player_action(user, action, game_id=None):
+    # If game_id is provided, use it to find the specific game
+    if game_id:
+        game_state = BlackjackGameState.query.filter_by(id=game_id, user_id=user.id, game_over=False).first()
+    else:
+        # Fallback to the old behavior for backward compatibility
+        game_state = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).first()
+    
     if not game_state:
         return {'message': 'No active game'}, 400
 
