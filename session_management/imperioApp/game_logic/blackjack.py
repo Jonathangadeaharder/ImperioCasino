@@ -300,7 +300,7 @@ def determine_winner(game_state, user):
                     amount=payout,
                     game_type=GameType.BLACKJACK,
                     description=f"Blackjack win - {hand_name} hand",
-                    metadata={
+                    extra_data={
                         'outcome': outcome,
                         'player_value': player_value,
                         'dealer_value': dealer_value,
@@ -320,7 +320,7 @@ def determine_winner(game_state, user):
                     amount=refund,
                     game_type=GameType.BLACKJACK,
                     description=f"Blackjack tie - {hand_name} hand (bet returned)",
-                    metadata={
+                    extra_data={
                         'outcome': outcome,
                         'player_value': player_value,
                         'dealer_value': dealer_value,
@@ -349,7 +349,7 @@ def determine_winner(game_state, user):
                 amount=payout,
                 game_type=GameType.BLACKJACK,
                 description=f"Blackjack win: {payout} coins",
-                metadata={
+                extra_data={
                     'outcome': outcome,
                     'player_value': player_value,
                     'dealer_value': dealer_value,
@@ -370,7 +370,7 @@ def determine_winner(game_state, user):
                 amount=refund,
                 game_type=GameType.BLACKJACK,
                 description=f"Blackjack tie (bet returned): {refund} coins",
-                metadata={
+                extra_data={
                     'outcome': outcome,
                     'player_value': player_value,
                     'dealer_value': dealer_value

@@ -104,7 +104,7 @@ class Transaction(db.Model):
 
     # Metadata
     description = db.Column(db.String(255), nullable=True)
-    metadata = db.Column(db.JSON, nullable=True)  # Additional game-specific data
+    extra_data = db.Column(db.JSON, nullable=True)  # Additional game-specific data
     reference_id = db.Column(db.String(64), nullable=True, index=True)  # For linking related transactions
 
     # Timestamps
@@ -127,14 +127,14 @@ class Transaction(db.Model):
             'balance_before': self.balance_before,
             'balance_after': self.balance_after,
             'description': self.description,
-            'metadata': self.metadata,
+            'extra_data': self.extra_data,
             'reference_id': self.reference_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
     @staticmethod
     def create_transaction(user, transaction_type, amount, game_type=None,
-                          description=None, metadata=None, reference_id=None):
+                          description=None, extra_data=None, reference_id=None):
         """
         Create a new transaction record.
 
@@ -144,7 +144,7 @@ class Transaction(db.Model):
             amount: Transaction amount (positive for credits, negative for debits)
             game_type: GameType enum (optional)
             description: Human-readable description (optional)
-            metadata: Additional JSON data (optional)
+            extra_data: Additional JSON data (optional)
             reference_id: Reference to link related transactions (optional)
 
         Returns:
@@ -158,7 +158,7 @@ class Transaction(db.Model):
             balance_before=user.coins,
             balance_after=user.coins + amount,
             description=description,
-            metadata=metadata,
+            extra_data=extra_data,
             reference_id=reference_id
         )
         db.session.add(transaction)
@@ -379,7 +379,7 @@ class Notification(db.Model):
     title = db.Column(db.String(100), nullable=False)
     message = db.Column(db.String(500), nullable=False)
     icon = db.Column(db.String(50), nullable=True)  # Emoji or icon identifier
-    metadata = db.Column(db.JSON, nullable=True)  # Additional data (achievement_id, amount, etc.)
+    extra_data = db.Column(db.JSON, nullable=True)  # Additional data (achievement_id, amount, etc.)
     read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
 
@@ -398,13 +398,13 @@ class Notification(db.Model):
             'title': self.title,
             'message': self.message,
             'icon': self.icon,
-            'metadata': self.metadata,
+            'extra_data': self.extra_data,
             'read': self.read,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
     @staticmethod
-    def create_notification(user, notification_type, title, message, icon=None, metadata=None):
+    def create_notification(user, notification_type, title, message, icon=None, extra_data=None):
         """
         Create a new notification for a user and send real-time update via SocketIO.
 
@@ -414,7 +414,7 @@ class Notification(db.Model):
             title: Notification title
             message: Notification message
             icon: Optional icon/emoji
-            metadata: Optional additional data
+            extra_data: Optional additional data
 
         Returns:
             Notification: Created notification object
@@ -425,7 +425,7 @@ class Notification(db.Model):
             title=title,
             message=message,
             icon=icon,
-            metadata=metadata
+            extra_data=extra_data
         )
         db.session.add(notification)
         db.session.flush()  # Get notification ID

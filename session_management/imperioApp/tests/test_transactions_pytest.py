@@ -65,7 +65,7 @@ class TestTransactionModel:
             amount=-5,
             game_type=GameType.ROULETTE,
             description="Test serialization",
-            metadata={'test': 'data'}
+            extra_data={'test': 'data'}
         )
 
         data = transaction.to_dict()
@@ -76,7 +76,7 @@ class TestTransactionModel:
         assert data['game_type'] == 'roulette'
         assert data['amount'] == -5
         assert data['description'] == "Test serialization"
-        assert data['metadata'] == {'test': 'data'}
+        assert data['extra_data'] == {'test': 'data'}
         assert 'created_at' in data
 
 

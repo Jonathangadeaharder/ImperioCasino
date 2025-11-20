@@ -8,7 +8,7 @@ This module handles:
 """
 
 from datetime import datetime, timedelta
-from . import db
+from .. import db
 from .models import (
     User, Achievement, UserAchievement, Transaction, Notification,
     AchievementType, TransactionType, GameType, NotificationType
@@ -200,7 +200,7 @@ def unlock_achievement(user, achievement_type):
             amount=achievement.reward_coins,
             game_type=GameType.NONE,
             description=f"Achievement reward: {achievement.name}",
-            metadata={'achievement_type': achievement_type.value}
+            extra_data={'achievement_type': achievement_type.value}
         )
 
     # Create notification
@@ -210,7 +210,7 @@ def unlock_achievement(user, achievement_type):
         title=f"Achievement Unlocked: {achievement.name}",
         message=f"{achievement.description} +{achievement.reward_coins} coins!",
         icon=achievement.icon,
-        metadata={'achievement_id': achievement.id, 'achievement_type': achievement_type.value}
+        extra_data={'achievement_id': achievement.id, 'achievement_type': achievement_type.value}
     )
 
     db.session.commit()

@@ -207,7 +207,7 @@ class TestNotificationModel:
             title="Achievement Unlocked!",
             message="You unlocked First Spin",
             icon="🏆",
-            metadata={'achievement_type': 'first_spin'}
+            extra_data={'achievement_type': 'first_spin'}
         )
 
         data = notification.to_dict()
@@ -216,7 +216,7 @@ class TestNotificationModel:
         assert data['notification_type'] == 'achievement_unlocked'
         assert data['title'] == "Achievement Unlocked!"
         assert data['read'] is False
-        assert data['metadata']['achievement_type'] == 'first_spin'
+        assert data['extra_data']['achievement_type'] == 'first_spin'
         assert 'created_at' in data
 
     @pytest.mark.unit

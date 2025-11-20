@@ -54,7 +54,7 @@ def rouletteAction(current_user, data):
         amount=-total_bet,
         game_type=GameType.ROULETTE,
         description=f"Roulette spin: {len(bet_info)} bet(s) totaling {total_bet} coins",
-        metadata={
+        extra_data={
             'num_bets': len(bet_info),
             'bets': [
                 {
@@ -117,7 +117,7 @@ def rouletteAction(current_user, data):
             amount=total_win,
             game_type=GameType.ROULETTE,
             description=f"Roulette win: {total_win} coins on number {winning_number}",
-            metadata={
+            extra_data={
                 'winning_number': winning_number,
                 'total_payout': total_win,
                 'winning_bets': winning_bets,

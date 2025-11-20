@@ -171,7 +171,7 @@ def cherryAction(spin_user):
             amount=winnings,
             game_type=GameType.SLOTS,
             description=f"Slot machine win: {[f.value for f in fruits]}",
-            metadata={
+            extra_data={
                 'fruits': [f.value for f in fruits],
                 'stop_segments': stop_segments,
                 'payout': winnings
