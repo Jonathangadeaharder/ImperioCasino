@@ -36,13 +36,12 @@ class Config:
             }
         })
     else:
-        # SQLite configuration
-        engine_options.update({
-            'pool_size': int(os.environ.get('DB_POOL_SIZE', 10)),
+        # SQLite configuration - simpler options for testing/development
+        engine_options = {
             'connect_args': {
                 'check_same_thread': False,  # Allow SQLite to be used across threads
             }
-        })
+        }
 
     SQLALCHEMY_ENGINE_OPTIONS = engine_options
 
