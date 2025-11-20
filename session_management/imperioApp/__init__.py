@@ -9,6 +9,8 @@ from flask_cors import CORS
 from flask_session import Session  # Import Flask-Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_socketio import SocketIO
+from flask_caching import Cache
 
 # Create logs directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -42,6 +44,26 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # Initialize Migrate
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Initialize SocketIO for real-time features (Month 5)
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=app.config['CORS_ORIGINS'],
+    async_mode='eventlet',
+    logger=True,
+    engineio_logger=False,
+    manage_session=False,  # We handle sessions ourselves
+    ping_timeout=60,
+    ping_interval=25
+)
+
+# Initialize caching (Month 5)
+cache = Cache(app, config={
+    'CACHE_TYPE': app.config.get('CACHE_TYPE', 'RedisCache'),
+    'CACHE_REDIS_URL': app.config.get('REDIS_URL'),
+    'CACHE_DEFAULT_TIMEOUT': 300,  # 5 minutes default
+    'CACHE_KEY_PREFIX': 'imperiocasino_'
+})
 
 # Configure middleware (Month 2 - Enhanced Logging & Monitoring)
 from .utils.middleware import (
@@ -83,3 +105,6 @@ def add_security_headers(response):
 
 from . import routes  # Use relative imports
 from .utils import models
+
+# Import SocketIO event handlers (Month 5)
+from . import socketio_events

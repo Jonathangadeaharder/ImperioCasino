@@ -202,6 +202,18 @@ def cherryAction(spin_user):
 
     db.session.commit()
 
+    # Real-time features (Month 5) - Broadcast updates via SocketIO
+    from ..socketio_events import broadcast_big_win, broadcast_leaderboard_update
+
+    # Broadcast big win if significant
+    if winnings >= 500:
+        broadcast_big_win(locked_user, winnings, 'slots')
+
+    # Broadcast leaderboard update (all metrics, all timeframes)
+    for metric in ['coins', 'net_profit', 'total_wins']:
+        for timeframe in ['daily', 'weekly', 'all_time']:
+            broadcast_leaderboard_update(locked_user, metric, timeframe)
+
     # Prepare the response data
     response_data = {
         'stopSegments': stop_segments,

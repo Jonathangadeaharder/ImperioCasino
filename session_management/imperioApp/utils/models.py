@@ -406,7 +406,7 @@ class Notification(db.Model):
     @staticmethod
     def create_notification(user, notification_type, title, message, icon=None, metadata=None):
         """
-        Create a new notification for a user.
+        Create a new notification for a user and send real-time update via SocketIO.
 
         Args:
             user: User object
@@ -428,6 +428,17 @@ class Notification(db.Model):
             metadata=metadata
         )
         db.session.add(notification)
+        db.session.flush()  # Get notification ID
+
+        # Send real-time notification via SocketIO (Month 5)
+        try:
+            from ..socketio_events import send_notification_to_user
+            send_notification_to_user(user.id, notification.to_dict())
+        except Exception as e:
+            # Don't fail notification creation if SocketIO fails
+            import logging
+            logging.warning(f"Failed to send real-time notification: {e}")
+
         return notification
 
 

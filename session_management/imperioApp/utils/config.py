@@ -78,3 +78,8 @@ class Config:
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 
+    # Caching configuration (Month 5)
+    CACHE_TYPE = os.environ.get('CACHE_TYPE', 'RedisCache' if os.environ.get('FLASK_ENV') == 'production' else 'SimpleCache')
+    CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', 300))  # 5 minutes
+    CACHE_KEY_PREFIX = 'imperiocasino_'
+

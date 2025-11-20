@@ -34,3 +34,12 @@ faker==21.0.0
 # Structured logging (Month 2)
 structlog==23.2.0
 python-json-logger==2.0.7
+
+# Real-time features with WebSocket (Month 5)
+flask-socketio==5.3.5
+python-socketio==5.10.0
+eventlet==0.33.3
+python-engineio==4.8.0
+
+# API caching and optimization (Month 5)
+Flask-Caching==2.1.0
