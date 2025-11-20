@@ -2,11 +2,9 @@ import jwt
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 from flask_login import current_user, login_required
 from urllib.parse import urlparse
-from datetime import datetime, timedelta
-from sqlalchemy import func
-from . import app, limiter, cache, db
+from . import app, limiter, cache
 from .utils.forms import LoginForm, RegistrationForm
-from .utils.models import User, Transaction
+from .utils.models import User
 import logging
 
 # Import the new modules
@@ -30,7 +28,10 @@ def health_check():
 
     # Check database connection
     try:
-        db.session.execute("SELECT 1")
+        from . import db
+        from sqlalchemy import text
+
+        db.session.execute(text("SELECT 1"))
         health_status["checks"]["database"] = "ok"
     except Exception as e:
         health_status["checks"]["database"] = f"error: {str(e)}"
@@ -88,7 +89,6 @@ def metrics():
     Basic metrics endpoint for monitoring.
     Returns application statistics.
     """
-    from . import db
     from .utils.models import User
 
     try:
@@ -413,7 +413,8 @@ def get_leaderboard():
     """
     from .utils.models import Transaction, TransactionType
     from sqlalchemy import func
-    from datetime import timedelta
+    from datetime import timedelta, datetime
+    from . import db
 
     timeframe = request.args.get("timeframe", "all_time")
     metric = request.args.get("metric", "coins")
@@ -554,6 +555,8 @@ def mark_achievement_seen(current_user, achievement_id):
     if not user_achievement:
         return jsonify({"message": "Achievement not found"}), 404
 
+    from . import db
+
     user_achievement.seen = True
     db.session.commit()
 
@@ -564,7 +567,7 @@ def mark_achievement_seen(current_user, achievement_id):
 @token_required
 def get_achievement_progress(current_user):
     """Get user's progress towards all achievements."""
-    from .utils.models import Achievement, Transaction, TransactionType
+    from .utils.models import Achievement, Transaction
     from .utils.achievement_service import has_achievement
 
     # Get user stats
@@ -676,6 +679,8 @@ def mark_notification_read(current_user, notification_id):
     if not notification:
         return jsonify({"message": "Notification not found"}), 404
 
+    from . import db
+
     notification.read = True
     db.session.commit()
 
@@ -687,6 +692,7 @@ def mark_notification_read(current_user, notification_id):
 def mark_all_notifications_read(current_user):
     """Mark all notifications as read."""
     from .utils.models import Notification
+    from . import db
 
     Notification.query.filter_by(user_id=current_user.id, read=False).update({"read": True})
 
@@ -703,7 +709,7 @@ def mark_all_notifications_read(current_user):
 def get_user_profile(current_user):
     """Get current user's complete profile with statistics."""
     from .utils.models import Transaction, UserAchievement, Achievement, TransactionType
-    from datetime import timedelta
+    from datetime import timedelta, datetime
 
     # Get basic stats
     stats = Transaction.get_user_statistics(current_user.id)
