@@ -37,13 +37,20 @@ Session(app)  # Initialize Flask-Session
 # Configure CORS with specific origins
 CORS(app, resources={r"/*": {"origins": app.config['CORS_ORIGINS']}}, supports_credentials=True)
 
-# Configure rate limiting
+# Configure rate limiting with Redis (or memory in development)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    storage_uri=app.config.get('RATELIMIT_STORAGE_URL'),
+    storage_options={"socket_connect_timeout": 30},
+    strategy="fixed-window",  # Options: "fixed-window", "moving-window"
+    headers_enabled=True,  # Add rate limit headers to responses
+    swallow_errors=True  # Don't crash if Redis is unavailable
 )
+
+# Log rate limiting configuration
+logging.info(f"Rate limiting configured with storage: {app.config.get('RATELIMIT_STORAGE_URL')}")
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # Initialize Migrate

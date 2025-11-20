@@ -14,11 +14,52 @@ class Config:
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': int(os.environ.get('DB_POOL_SIZE', 10)),
-        'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', 3600)),
-        'pool_pre_ping': True,
+
+    # Determine if we're using PostgreSQL
+    is_postgres = SQLALCHEMY_DATABASE_URI.startswith('postgresql')
+
+    # SQLAlchemy engine options
+    engine_options = {
+        'pool_pre_ping': True,  # Verify connections before using them
+        'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', 3600)),  # Recycle connections after 1 hour
     }
+
+    # PostgreSQL-specific configuration
+    if is_postgres:
+        engine_options.update({
+            'pool_size': int(os.environ.get('DB_POOL_SIZE', 20)),  # Larger pool for PostgreSQL
+            'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', 10)),  # Extra connections if pool is full
+            'pool_timeout': 30,  # Timeout for getting connection from pool
+            'connect_args': {
+                'connect_timeout': 10,  # Connection timeout in seconds
+                'options': '-c statement_timeout=30000',  # Statement timeout (30 seconds)
+            }
+        })
+    else:
+        # SQLite configuration
+        engine_options.update({
+            'pool_size': int(os.environ.get('DB_POOL_SIZE', 10)),
+            'connect_args': {
+                'check_same_thread': False,  # Allow SQLite to be used across threads
+            }
+        })
+
+    SQLALCHEMY_ENGINE_OPTIONS = engine_options
+
+    # Redis configuration for rate limiting and caching
+    REDIS_HOST = os.environ.get('REDIS_HOST', '127.0.0.1')
+    REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+    REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
+    REDIS_DB = int(os.environ.get('REDIS_DB', 0))
+
+    # Build Redis URL
+    if REDIS_PASSWORD:
+        REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+    else:
+        REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+
+    # Rate limiter storage - use Redis in production, memory in development
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', REDIS_URL if os.environ.get('FLASK_ENV') == 'production' else 'memory://')
 
     # Game URLs - use environment variables
     CHERRY_CHARM_URL = os.environ.get('CHERRY_CHARM_URL', 'http://localhost:5173')

@@ -1,0 +1,43 @@
+[Unit]
+Description=ImperioCasino Flask Application
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/imperiocasino/session_management
+Environment="PATH=/var/www/imperiocasino/venv/bin"
+EnvironmentFile=/var/www/imperiocasino/.env
+
+# Start Gunicorn with configuration
+ExecStart=/var/www/imperiocasino/venv/bin/gunicorn \
+    --config gunicorn_config.py \
+    run:app
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=600
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/imperiocasino/session_management/logs
+ReadWritePaths=/var/www/imperiocasino/session_management/flask_session
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imperiocasino
+
+[Install]
+WantedBy=multi-user.target

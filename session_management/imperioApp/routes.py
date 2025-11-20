@@ -18,6 +18,99 @@ from .game_logic.cherrycharm import cherryAction
 from .game_logic.blackjack import start_game, player_action
 from .game_logic.roulette import rouletteAction
 
+# Health check and monitoring endpoints
+
+@app.route('/health')
+def health_check():
+    """
+    Health check endpoint for load balancers and monitoring systems.
+    Returns 200 if the application is healthy.
+    """
+    from . import db
+    health_status = {
+        'status': 'healthy',
+        'checks': {}
+    }
+    http_status = 200
+
+    # Check database connection
+    try:
+        db.session.execute('SELECT 1')
+        health_status['checks']['database'] = 'ok'
+    except Exception as e:
+        health_status['checks']['database'] = f'error: {str(e)}'
+        health_status['status'] = 'unhealthy'
+        http_status = 503
+
+    # Check Redis connection (for rate limiting)
+    try:
+        import redis
+        redis_url = app.config.get('REDIS_URL')
+        if redis_url and redis_url != 'memory://':
+            r = redis.from_url(redis_url, socket_connect_timeout=5)
+            r.ping()
+            health_status['checks']['redis'] = 'ok'
+        else:
+            health_status['checks']['redis'] = 'not configured (using memory)'
+    except Exception as e:
+        health_status['checks']['redis'] = f'error: {str(e)}'
+        # Redis is not critical, so don't mark as unhealthy
+        # health_status['status'] = 'degraded'
+
+    return jsonify(health_status), http_status
+
+
+@app.route('/health/live')
+def liveness_check():
+    """
+    Kubernetes liveness probe endpoint.
+    Returns 200 if the application process is running.
+    """
+    return jsonify({'status': 'alive'}), 200
+
+
+@app.route('/health/ready')
+def readiness_check():
+    """
+    Kubernetes readiness probe endpoint.
+    Returns 200 if the application is ready to serve traffic.
+    """
+    from . import db
+
+    try:
+        # Check if database is accessible
+        db.session.execute('SELECT 1')
+        return jsonify({'status': 'ready'}), 200
+    except Exception as e:
+        logging.error(f"Readiness check failed: {e}")
+        return jsonify({'status': 'not ready', 'reason': str(e)}), 503
+
+
+@app.route('/metrics')
+def metrics():
+    """
+    Basic metrics endpoint for monitoring.
+    Returns application statistics.
+    """
+    from . import db
+    from .utils.models import User
+
+    try:
+        # Get some basic metrics
+        user_count = User.query.count()
+
+        metrics_data = {
+            'total_users': user_count,
+            'app_version': '2.0.0',
+            'environment': app.config.get('FLASK_ENV', 'unknown')
+        }
+
+        return jsonify(metrics_data), 200
+    except Exception as e:
+        logging.error(f"Metrics endpoint error: {e}")
+        return jsonify({'error': 'Unable to retrieve metrics'}), 500
+
+
 @app.route('/')
 @app.route('/dashboard')
 @login_required
