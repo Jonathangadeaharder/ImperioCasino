@@ -1,28 +1,23 @@
 #!/bin/bash
-# ImperioCasino Database Backup Script
 #
-# This script creates backups of the PostgreSQL database and uploads them to S3 (optional).
-# Add to crontab for automated backups: 0 2 * * * /path/to/backup_database.sh
+# Database backup script for ImperioCasino
 #
-# Requirements:
-# - PostgreSQL client tools (pg_dump)
-# - AWS CLI (optional, for S3 uploads)
-# - .env file with database credentials
+# Usage:
+#   ./backup_database.sh              # Full backup
+#   ./backup_database.sh --restore    # Restore from latest backup
+#   ./backup_database.sh --list       # List available backups
+#   ./backup_database.sh --clean      # Clean old backups
+#
 
-set -e  # Exit on error
+set -e
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/imperiocasino}"
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="$BACKUP_DIR/imperiocasino_backup_$DATE.sql"
-RETENTION_DAYS=${RETENTION_DAYS:-30}
-
-# Load environment variables
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
-fi
+BACKUP_DIR="${BACKUP_DIR:-/backups/imperiocasino/database}"
+DB_NAME="${DB_NAME:-imperiocasino_prod}"
+DB_USER="${DB_USER:-imperio_user}"
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+RETENTION_DAYS=30
 
 # Colors for output
 RED='\033[0;31m'
@@ -30,7 +25,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Logging functions
+# Functions
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -43,101 +38,94 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if DATABASE_URI is set
-if [ -z "$DATABASE_URI" ]; then
-    log_error "DATABASE_URI environment variable is not set"
-    exit 1
-fi
+create_backup() {
+    log_info "Starting database backup..."
 
-# Parse DATABASE_URI
-if [[ $DATABASE_URI =~ postgresql://([^:]+):([^@]+)@([^/]+)/(.+) ]]; then
-    DB_USER="${BASH_REMATCH[1]}"
-    DB_PASS="${BASH_REMATCH[2]}"
-    DB_HOST_PORT="${BASH_REMATCH[3]}"
-    DB_NAME="${BASH_REMATCH[4]}"
+    # Create backup directory
+    mkdir -p "$BACKUP_DIR"
 
-    # Split host and port
-    if [[ $DB_HOST_PORT =~ ([^:]+):([0-9]+) ]]; then
-        DB_HOST="${BASH_REMATCH[1]}"
-        DB_PORT="${BASH_REMATCH[2]}"
+    # Generate filename with timestamp
+    DATE=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILE="$BACKUP_DIR/db_backup_$DATE.sql"
+
+    log_info "Backup file: $BACKUP_FILE"
+
+    # Create SQL backup
+    log_info "Creating SQL format backup..."
+    pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" > "$BACKUP_FILE"
+
+    # Compress backup
+    log_info "Compressing backup..."
+    gzip -f "$BACKUP_FILE"
+
+    # Verify backup
+    if [ -f "$BACKUP_FILE.gz" ] && [ -s "$BACKUP_FILE.gz" ]; then
+        SIZE=$(du -h "$BACKUP_FILE.gz" | cut -f1)
+        log_info "✓ Backup created successfully: $SIZE"
     else
-        DB_HOST="$DB_HOST_PORT"
-        DB_PORT="5432"
+        log_error "Backup verification failed"
+        exit 1
     fi
-else
-    log_error "Invalid DATABASE_URI format"
-    exit 1
-fi
 
-log_info "Starting backup for database: $DB_NAME"
+    log_info "Backup completed: $BACKUP_FILE.gz"
+}
 
-# Create backup directory if it doesn't exist
-mkdir -p "$BACKUP_DIR"
+list_backups() {
+    log_info "Available backups in $BACKUP_DIR:"
+    echo ""
 
-# Set PostgreSQL password
-export PGPASSWORD="$DB_PASS"
-
-# Create backup
-log_info "Creating backup: $BACKUP_FILE"
-if pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-           --format=plain \
-           --no-owner \
-           --no-acl \
-           --verbose \
-           > "$BACKUP_FILE" 2>&1; then
-    log_info "Backup created successfully"
-else
-    log_error "Backup failed!"
-    exit 1
-fi
-
-# Compress backup
-log_info "Compressing backup..."
-if gzip -f "$BACKUP_FILE"; then
-    BACKUP_FILE="${BACKUP_FILE}.gz"
-    log_info "Backup compressed: $BACKUP_FILE"
-
-    # Get file size
-    FILE_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-    log_info "Backup size: $FILE_SIZE"
-else
-    log_error "Compression failed!"
-    exit 1
-fi
-
-# Upload to S3 (optional)
-if [ ! -z "$S3_BACKUP_BUCKET" ] && command -v aws &> /dev/null; then
-    log_info "Uploading backup to S3: s3://$S3_BACKUP_BUCKET/"
-    if aws s3 cp "$BACKUP_FILE" "s3://$S3_BACKUP_BUCKET/database/$(basename $BACKUP_FILE)"; then
-        log_info "Backup uploaded to S3 successfully"
-    else
-        log_warn "Failed to upload backup to S3"
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_warn "Backup directory does not exist"
+        return
     fi
-else
-    log_info "Skipping S3 upload (S3_BACKUP_BUCKET not set or AWS CLI not available)"
-fi
 
-# Delete old backups (keep last N days)
-log_info "Cleaning up old backups (keeping last $RETENTION_DAYS days)..."
-find "$BACKUP_DIR" -name "imperiocasino_backup_*.sql.gz" -mtime +$RETENTION_DAYS -delete
-OLD_COUNT=$(find "$BACKUP_DIR" -name "imperiocasino_backup_*.sql.gz" | wc -l)
-log_info "Remaining backups: $OLD_COUNT"
+    BACKUPS=$(ls -t "$BACKUP_DIR"/*.sql.gz 2>/dev/null || true)
 
-# Create a 'latest' symlink
-ln -sf "$(basename $BACKUP_FILE)" "$BACKUP_DIR/latest.sql.gz"
+    if [ -z "$BACKUPS" ]; then
+        log_warn "No backups found"
+        return
+    fi
 
-# Unset password
-unset PGPASSWORD
+    for backup in $BACKUPS; do
+        FILENAME=$(basename "$backup")
+        SIZE=$(du -h "$backup" | cut -f1)
+        echo "  $FILENAME ($SIZE)"
+    done
+}
 
-log_info "Backup completed successfully!"
-log_info "Backup location: $BACKUP_FILE"
+clean_old_backups() {
+    log_info "Cleaning backups older than $RETENTION_DAYS days..."
 
-# Send notification (optional)
-if [ ! -z "$BACKUP_NOTIFICATION_URL" ]; then
-    curl -X POST "$BACKUP_NOTIFICATION_URL" \
-         -H "Content-Type: application/json" \
-         -d "{\"text\":\"Database backup completed: $BACKUP_FILE (size: $FILE_SIZE)\"}" \
-         > /dev/null 2>&1 || true
-fi
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_warn "Backup directory does not exist"
+        return
+    fi
 
-exit 0
+    find "$BACKUP_DIR" -name "*.gz" -mtime +$RETENTION_DAYS -delete
+
+    log_info "Cleanup completed"
+}
+
+# Main script
+case "${1:-backup}" in
+    backup)
+        create_backup
+        ;;
+    --list)
+        list_backups
+        ;;
+    --clean)
+        clean_old_backups
+        ;;
+    --help|-h)
+        echo "Usage: $0 [OPTIONS]"
+        echo "  backup       Create a new backup (default)"
+        echo "  --list       List available backups"
+        echo "  --clean      Remove old backups"
+        echo "  --help       Show this help message"
+        ;;
+    *)
+        log_error "Unknown option: $1"
+        exit 1
+        ;;
+esac

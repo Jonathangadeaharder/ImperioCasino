@@ -1,0 +1,146 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual deployment
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run pre-deployment checks
+        run: |
+          echo "Running pre-deployment checks..."
+          cd session_management
+          pip install -r requirements.txt
+          python -m py_compile imperioApp/*.py
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "=== Starting deployment ==="
+
+            # Navigate to application directory
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/imperiocasino' }}
+
+            # Create backup before deployment
+            echo "Creating backup..."
+            BACKUP_DIR="/backups/imperiocasino/$(date +%Y%m%d_%H%M%S)"
+            mkdir -p "$BACKUP_DIR"
+            cp -r session_management "$BACKUP_DIR/" || true
+
+            # Pull latest code
+            echo "Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            # Activate virtual environment
+            echo "Activating virtual environment..."
+            source venv/bin/activate
+
+            # Install/update dependencies
+            echo "Installing dependencies..."
+            cd session_management
+            pip install --upgrade pip
+            pip install -r requirements.txt
+
+            # Run database migrations
+            echo "Running database migrations..."
+            flask db upgrade
+
+            # Restart application
+            echo "Restarting application..."
+            sudo systemctl restart imperiocasino
+
+            # Reload nginx (if needed)
+            sudo systemctl reload nginx || true
+
+            # Wait for application to start
+            echo "Waiting for application to start..."
+            sleep 5
+
+            # Health check
+            echo "Running health check..."
+            curl -f http://localhost:5011/health || exit 1
+
+            echo "=== Deployment completed successfully ==="
+
+      - name: Run post-deployment tests
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/imperiocasino' }}/session_management
+            source ../venv/bin/activate
+
+            # Run smoke tests
+            pytest imperioApp/tests/test_auth_pytest.py -v -k "test_login" || true
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi
+
+  rollback:
+    name: Rollback (Manual)
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Rollback to previous version
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "=== Starting rollback ==="
+
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/imperiocasino' }}
+
+            # Find latest backup
+            LATEST_BACKUP=$(ls -t /backups/imperiocasino/ | head -1)
+
+            if [ -z "$LATEST_BACKUP" ]; then
+              echo "❌ No backup found for rollback"
+              exit 1
+            fi
+
+            echo "Rolling back to: $LATEST_BACKUP"
+
+            # Restore from backup
+            cp -r "/backups/imperiocasino/$LATEST_BACKUP/session_management" .
+
+            # Restart application
+            sudo systemctl restart imperiocasino
+
+            echo "=== Rollback completed ==="
