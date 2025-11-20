@@ -758,20 +758,26 @@ class BlackjackTestCase(BaseTestCase):
             {'suit': 'clubs', 'name': '9', 'value': 9},
             {'suit': 'spades', 'name': '7', 'value': 7}
         ]
+        # Deck for game 1 - player will have 5+6+3=14, won't trigger end game
         game_state_1.deck = [
+            {'suit': 'hearts', 'name': '4', 'value': 4},  # Buffer
+            {'suit': 'diamonds', 'name': '5', 'value': 5},  # Buffer
             {'suit': 'hearts', 'name': '3', 'value': 3}  # Next card for game 1
         ]
         
         game_state_2.player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '9', 'value': 9}
+            {'suit': 'hearts', 'name': '8', 'value': 8},
+            {'suit': 'diamonds', 'name': '7', 'value': 7}
         ]
         game_state_2.dealer_hand = [
             {'suit': 'clubs', 'name': '5', 'value': 5},
             {'suit': 'spades', 'name': '6', 'value': 6}
         ]
+        # Deck for game 2 - player will have 8+7+2=17, won't trigger end game
         game_state_2.deck = [
-            {'suit': 'spades', 'name': '8', 'value': 8}  # Next card for game 2
+            {'suit': 'hearts', 'name': '9', 'value': 9},  # Buffer
+            {'suit': 'diamonds', 'name': '10', 'value': 10},  # Buffer
+            {'suit': 'spades', 'name': '2', 'value': 2}  # Next card for game 2
         ]
         
         db.session.commit()
@@ -796,7 +802,7 @@ class BlackjackTestCase(BaseTestCase):
         # Verify game 2 was affected
         db.session.refresh(game_state_2)
         self.assertEqual(len(game_state_2.player_hand), 3)
-        self.assertEqual(game_state_2.player_hand[-1], {'suit': 'spades', 'name': '8', 'value': 8})
+        self.assertEqual(game_state_2.player_hand[-1], {'suit': 'spades', 'name': '2', 'value': 2})
         
         # Verify game 1 was NOT affected by game 2's action
         db.session.refresh(game_state_1)

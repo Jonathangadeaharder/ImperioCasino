@@ -34,7 +34,6 @@ def start_game(user, wager):
         return {'message': 'Invalid wager amount', 'game_over': True}, 400
 
     # Lock user row for update to prevent race conditions
-    from sqlalchemy.orm import with_for_update
     from ..utils.models import User
     locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
 
@@ -44,11 +43,8 @@ def start_game(user, wager):
     if locked_user.coins < wager:
         return {'message': 'Insufficient coins', 'game_over': True}, 400
 
-    # Terminate any existing active games for the user
-    active_games = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).all()
-    for game in active_games:
-        game.game_over = True
-    db.session.commit()
+    # Note: We no longer terminate existing active games to support multiple concurrent games
+    # Each game is now tracked by its unique game_id
 
     # Deduct initial wager from user's coins
     locked_user.coins -= wager
