@@ -2,7 +2,7 @@ import jwt
 from flask import render_template, flash, redirect, url_for, request, jsonify, session
 from flask_login import current_user, login_required
 from urllib.parse import urlparse
-from . import app, limiter
+from . import app, limiter, cache
 from .utils.forms import LoginForm, RegistrationForm
 from .utils.models import User
 import logging
@@ -325,13 +325,25 @@ def get_user_statistics(current_user):
     - Total wins and amount won
     - Net profit/loss
     - Statistics broken down by game type
+
+    Cached for 2 minutes to improve performance.
     """
     from .utils.models import Transaction
 
-    stats = Transaction.get_user_statistics(current_user.id)
+    # Try to get from cache
+    cache_key = f"user_stats:{current_user.id}"
+    stats = cache.get(cache_key)
 
-    # Add current balance
-    stats['current_balance'] = current_user.coins
+    if stats is None:
+        # Cache miss - query database
+        stats = Transaction.get_user_statistics(current_user.id)
+        stats['current_balance'] = current_user.coins
+
+        # Cache for 2 minutes
+        cache.set(cache_key, stats, timeout=120)
+    else:
+        # Update current balance (always fresh)
+        stats['current_balance'] = current_user.coins
 
     return jsonify(stats), 200
 
@@ -502,13 +514,28 @@ def get_my_leaderboard_rank(current_user):
 
 @app.route('/achievements', methods=['GET'])
 def get_all_achievements():
-    """Get all available achievements."""
+    """
+    Get all available achievements.
+
+    Cached for 10 minutes since achievement definitions rarely change.
+    """
     from .utils.models import Achievement
 
-    achievements = Achievement.query.all()
-    return jsonify({
-        'achievements': [a.to_dict() for a in achievements]
-    }), 200
+    # Try to get from cache
+    cache_key = "all_achievements"
+    result = cache.get(cache_key)
+
+    if result is None:
+        # Cache miss - query database
+        achievements = Achievement.query.all()
+        result = {
+            'achievements': [a.to_dict() for a in achievements]
+        }
+
+        # Cache for 10 minutes
+        cache.set(cache_key, result, timeout=600)
+
+    return jsonify(result), 200
 
 
 @app.route('/achievements/user', methods=['GET'])
