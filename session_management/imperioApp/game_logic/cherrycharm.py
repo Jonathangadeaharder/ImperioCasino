@@ -179,6 +179,27 @@ def cherryAction(spin_user):
             reference_id=reference_id
         )
 
+    # Check and unlock achievements
+    from ..utils.achievement_service import (
+        check_achievements,
+        check_single_bet_achievements,
+        check_single_win_achievements,
+        check_winning_streak
+    )
+
+    # Check bet-based achievements
+    check_single_bet_achievements(locked_user, bet_amount)
+
+    # Check win-based achievements
+    if winnings > 0:
+        check_single_win_achievements(locked_user, winnings)
+
+    # Check general achievements (total spins, wins, etc.)
+    check_achievements(locked_user)
+
+    # Check winning streak
+    check_winning_streak(locked_user)
+
     db.session.commit()
 
     # Prepare the response data

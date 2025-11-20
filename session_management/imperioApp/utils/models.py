@@ -255,6 +255,182 @@ class Transaction(db.Model):
         }
 
 
+class AchievementType(enum.Enum):
+    """Enumeration for achievement types."""
+    FIRST_SPIN = 'first_spin'
+    FIRST_WIN = 'first_win'
+    TOTAL_SPINS_10 = 'total_spins_10'
+    TOTAL_SPINS_100 = 'total_spins_100'
+    TOTAL_SPINS_1000 = 'total_spins_1000'
+    BIG_WIN_100 = 'big_win_100'
+    BIG_WIN_500 = 'big_win_500'
+    WINNING_STREAK_3 = 'winning_streak_3'
+    WINNING_STREAK_5 = 'winning_streak_5'
+    NET_PROFIT_1000 = 'net_profit_1000'
+    NET_PROFIT_5000 = 'net_profit_5000'
+    BLACKJACK_MASTER_10 = 'blackjack_master_10'
+    ROULETTE_MASTER_10 = 'roulette_master_10'
+    SLOTS_MASTER_10 = 'slots_master_10'
+    LUCKY_DAY = 'lucky_day'  # Won 10 times in a day
+    HIGH_ROLLER = 'high_roller'  # Bet 1000+ coins in single game
+
+
+class Achievement(db.Model):
+    """
+    Achievement model for tracking player milestones and rewards.
+
+    Achievements are unlocked based on player actions and statistics:
+    - Game-specific achievements (slots/blackjack/roulette mastery)
+    - Milestone achievements (total spins, wins, profits)
+    - Special achievements (streaks, lucky days, etc.)
+    """
+    __tablename__ = 'achievements'
+    __table_args__ = (
+        db.Index('idx_achievement_type', 'achievement_type'),
+        db.UniqueConstraint('achievement_type', name='unique_achievement_type'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    achievement_type = db.Column(db.Enum(AchievementType), nullable=False, unique=True, index=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    icon = db.Column(db.String(50), nullable=True)  # Emoji or icon identifier
+    reward_coins = db.Column(db.Integer, default=0)  # Coin reward for unlocking
+
+    def __repr__(self):
+        return f'<Achievement {self.achievement_type.value}: {self.name}>'
+
+    def to_dict(self):
+        """Convert achievement to dictionary."""
+        return {
+            'id': self.id,
+            'type': self.achievement_type.value,
+            'name': self.name,
+            'description': self.description,
+            'icon': self.icon,
+            'reward_coins': self.reward_coins
+        }
+
+
+class UserAchievement(db.Model):
+    """
+    Tracks which achievements users have unlocked.
+    """
+    __tablename__ = 'user_achievements'
+    __table_args__ = (
+        db.Index('idx_user_achievement', 'user_id', 'unlocked_at'),
+        db.UniqueConstraint('user_id', 'achievement_id', name='unique_user_achievement'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
+    unlocked_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    seen = db.Column(db.Boolean, default=False)  # Has user seen the achievement notification
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('user_achievements', lazy='dynamic'))
+    achievement = db.relationship('Achievement', backref='unlocked_by')
+
+    def __repr__(self):
+        return f'<UserAchievement user={self.user_id} achievement={self.achievement_id}>'
+
+    def to_dict(self):
+        """Convert user achievement to dictionary."""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'achievement': self.achievement.to_dict() if self.achievement else None,
+            'unlocked_at': self.unlocked_at.isoformat() if self.unlocked_at else None,
+            'seen': self.seen
+        }
+
+
+class NotificationType(enum.Enum):
+    """Enumeration for notification types."""
+    ACHIEVEMENT_UNLOCKED = 'achievement_unlocked'
+    BIG_WIN = 'big_win'
+    LEVEL_UP = 'level_up'
+    DAILY_BONUS = 'daily_bonus'
+    SYSTEM_MESSAGE = 'system_message'
+    PROMO = 'promo'
+
+
+class Notification(db.Model):
+    """
+    Notification model for user notifications and alerts.
+
+    Supports various notification types:
+    - Achievement unlocks
+    - Big wins
+    - Daily bonuses
+    - System messages
+    - Promotional offers
+    """
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        db.Index('idx_user_notifications', 'user_id', 'created_at'),
+        db.Index('idx_unread_notifications', 'user_id', 'read'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    notification_type = db.Column(db.Enum(NotificationType), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    icon = db.Column(db.String(50), nullable=True)  # Emoji or icon identifier
+    metadata = db.Column(db.JSON, nullable=True)  # Additional data (achievement_id, amount, etc.)
+    read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    # Relationship
+    user = db.relationship('User', backref=db.backref('notifications', lazy='dynamic', order_by='Notification.created_at.desc()'))
+
+    def __repr__(self):
+        return f'<Notification {self.id}: {self.notification_type.value} for user {self.user_id}>'
+
+    def to_dict(self):
+        """Convert notification to dictionary."""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'type': self.notification_type.value,
+            'title': self.title,
+            'message': self.message,
+            'icon': self.icon,
+            'metadata': self.metadata,
+            'read': self.read,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    @staticmethod
+    def create_notification(user, notification_type, title, message, icon=None, metadata=None):
+        """
+        Create a new notification for a user.
+
+        Args:
+            user: User object
+            notification_type: NotificationType enum
+            title: Notification title
+            message: Notification message
+            icon: Optional icon/emoji
+            metadata: Optional additional data
+
+        Returns:
+            Notification: Created notification object
+        """
+        notification = Notification(
+            user_id=user.id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            icon=icon,
+            metadata=metadata
+        )
+        db.session.add(notification)
+        return notification
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     __table_args__ = (

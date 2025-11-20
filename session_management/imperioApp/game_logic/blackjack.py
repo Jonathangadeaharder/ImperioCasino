@@ -384,6 +384,22 @@ def determine_winner(game_state, user):
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins
 
+    # Check and unlock achievements
+    from ..utils.achievement_service import (
+        check_achievements,
+        check_single_bet_achievements,
+        check_winning_streak
+    )
+
+    # Check bet achievements (using initial wager from message/reference_id)
+    check_single_bet_achievements(user, game_state.current_wager // 2 if game_state.double_down else game_state.current_wager)
+
+    # Check general achievements
+    check_achievements(user)
+
+    # Check winning streak
+    check_winning_streak(user)
+
     game_state.game_over = True
     db.session.commit()
 

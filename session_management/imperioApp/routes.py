@@ -380,6 +380,404 @@ def get_game_statistics(current_user, game_type):
 
 # ========== End Transaction History Endpoints ==========
 
+# ========== Leaderboard Endpoints (Month 4) ==========
+
+@app.route('/leaderboard', methods=['GET'])
+def get_leaderboard():
+    """
+    Get global leaderboard.
+
+    Query parameters:
+    - timeframe: 'daily', 'weekly', or 'all_time' (default: 'all_time')
+    - metric: 'coins', 'net_profit', or 'total_wins' (default: 'coins')
+    - limit: Number of results (default: 10, max: 100)
+    """
+    from .utils.models import Transaction, TransactionType
+    from sqlalchemy import func
+    from datetime import timedelta
+
+    timeframe = request.args.get('timeframe', 'all_time')
+    metric = request.args.get('metric', 'coins')
+    limit = min(int(request.args.get('limit', 10)), 100)
+
+    # Calculate date filter for timeframe
+    date_filter = None
+    if timeframe == 'daily':
+        date_filter = datetime.utcnow() - timedelta(days=1)
+    elif timeframe == 'weekly':
+        date_filter = datetime.utcnow() - timedelta(days=7)
+
+    if metric == 'coins':
+        # Leaderboard by current coins
+        users = User.query.order_by(User.coins.desc()).limit(limit).all()
+        leaderboard = [
+            {
+                'rank': idx + 1,
+                'username': user.username,
+                'value': user.coins,
+                'metric': 'coins'
+            }
+            for idx, user in enumerate(users)
+        ]
+
+    elif metric == 'net_profit':
+        # Leaderboard by net profit
+        query = db.session.query(
+            Transaction.user_id,
+            func.sum(Transaction.amount).label('net_profit')
+        )
+
+        if date_filter:
+            query = query.filter(Transaction.created_at >= date_filter)
+
+        rankings = query.group_by(Transaction.user_id).order_by(
+            func.sum(Transaction.amount).desc()
+        ).limit(limit).all()
+
+        leaderboard = []
+        for idx, (user_id, net_profit) in enumerate(rankings):
+            user = User.query.get(user_id)
+            if user:
+                leaderboard.append({
+                    'rank': idx + 1,
+                    'username': user.username,
+                    'value': int(net_profit) if net_profit else 0,
+                    'metric': 'net_profit'
+                })
+
+    elif metric == 'total_wins':
+        # Leaderboard by total wins
+        query = db.session.query(
+            Transaction.user_id,
+            func.count(Transaction.id).label('win_count')
+        ).filter(Transaction.transaction_type == TransactionType.WIN)
+
+        if date_filter:
+            query = query.filter(Transaction.created_at >= date_filter)
+
+        rankings = query.group_by(Transaction.user_id).order_by(
+            func.count(Transaction.id).desc()
+        ).limit(limit).all()
+
+        leaderboard = []
+        for idx, (user_id, win_count) in enumerate(rankings):
+            user = User.query.get(user_id)
+            if user:
+                leaderboard.append({
+                    'rank': idx + 1,
+                    'username': user.username,
+                    'value': win_count,
+                    'metric': 'total_wins'
+                })
+    else:
+        return jsonify({'message': 'Invalid metric'}), 400
+
+    return jsonify({
+        'leaderboard': leaderboard,
+        'timeframe': timeframe,
+        'metric': metric
+    }), 200
+
+
+@app.route('/leaderboard/me', methods=['GET'])
+@token_required
+def get_my_leaderboard_rank(current_user):
+    """Get current user's rank on the leaderboard."""
+    # Get rank by coins
+    users_above = User.query.filter(User.coins > current_user.coins).count()
+    rank = users_above + 1
+
+    # Get percentile
+    total_users = User.query.count()
+    percentile = ((total_users - rank) / total_users * 100) if total_users > 0 else 0
+
+    return jsonify({
+        'rank': rank,
+        'total_users': total_users,
+        'percentile': round(percentile, 1),
+        'coins': current_user.coins
+    }), 200
+
+# ========== Achievement Endpoints (Month 4) ==========
+
+@app.route('/achievements', methods=['GET'])
+def get_all_achievements():
+    """Get all available achievements."""
+    from .utils.models import Achievement
+
+    achievements = Achievement.query.all()
+    return jsonify({
+        'achievements': [a.to_dict() for a in achievements]
+    }), 200
+
+
+@app.route('/achievements/user', methods=['GET'])
+@token_required
+def get_user_achievements(current_user):
+    """Get current user's unlocked achievements."""
+    from .utils.models import UserAchievement
+
+    user_achievements = UserAchievement.query.filter_by(
+        user_id=current_user.id
+    ).order_by(UserAchievement.unlocked_at.desc()).all()
+
+    return jsonify({
+        'achievements': [ua.to_dict() for ua in user_achievements],
+        'total_unlocked': len(user_achievements)
+    }), 200
+
+
+@app.route('/achievements/<int:achievement_id>/mark-seen', methods=['POST'])
+@token_required
+def mark_achievement_seen(current_user, achievement_id):
+    """Mark an achievement as seen by the user."""
+    from .utils.models import UserAchievement
+
+    user_achievement = UserAchievement.query.filter_by(
+        user_id=current_user.id,
+        achievement_id=achievement_id
+    ).first()
+
+    if not user_achievement:
+        return jsonify({'message': 'Achievement not found'}), 404
+
+    user_achievement.seen = True
+    db.session.commit()
+
+    return jsonify({'message': 'Achievement marked as seen'}), 200
+
+
+@app.route('/achievements/progress', methods=['GET'])
+@token_required
+def get_achievement_progress(current_user):
+    """Get user's progress towards all achievements."""
+    from .utils.models import Achievement, Transaction, TransactionType
+    from .utils.achievement_service import has_achievement
+
+    # Get user stats
+    stats = Transaction.get_user_statistics(current_user.id)
+
+    progress = []
+
+    # Calculate progress for each achievement
+    all_achievements = Achievement.query.all()
+    for achievement in all_achievements:
+        unlocked = has_achievement(current_user.id, achievement.achievement_type)
+
+        # Calculate progress percentage
+        progress_pct = 0
+        current_value = 0
+        target_value = 0
+
+        achievement_type = achievement.achievement_type.value
+
+        if 'total_spins' in achievement_type:
+            current_value = stats['total_bets_count']
+            if '10' in achievement_type:
+                target_value = 10
+            elif '100' in achievement_type:
+                target_value = 100
+            elif '1000' in achievement_type:
+                target_value = 1000
+
+        elif 'net_profit' in achievement_type:
+            current_value = max(0, stats['net_profit'])
+            if '1000' in achievement_type:
+                target_value = 1000
+            elif '5000' in achievement_type:
+                target_value = 5000
+
+        elif 'master' in achievement_type:
+            game_type = achievement_type.split('_')[0]
+            for game_stat in stats['wins_by_game']:
+                if game_stat['game'] == game_type:
+                    current_value = game_stat['count']
+                    target_value = 10
+                    break
+
+        if target_value > 0:
+            progress_pct = min(100, (current_value / target_value) * 100)
+
+        progress.append({
+            'achievement': achievement.to_dict(),
+            'unlocked': unlocked,
+            'progress_percentage': round(progress_pct, 1),
+            'current_value': current_value,
+            'target_value': target_value
+        })
+
+    # Sort: unlocked last, then by progress
+    progress.sort(key=lambda x: (x['unlocked'], -x['progress_percentage']))
+
+    return jsonify({
+        'progress': progress,
+        'total_unlocked': sum(1 for p in progress if p['unlocked']),
+        'total_achievements': len(progress)
+    }), 200
+
+# ========== Notification Endpoints (Month 4) ==========
+
+@app.route('/notifications', methods=['GET'])
+@token_required
+def get_notifications(current_user):
+    """
+    Get user notifications.
+
+    Query parameters:
+    - unread_only: true/false (default: false)
+    - limit: Number of notifications (default: 20, max: 100)
+    """
+    from .utils.models import Notification
+
+    unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    query = Notification.query.filter_by(user_id=current_user.id)
+
+    if unread_only:
+        query = query.filter_by(read=False)
+
+    notifications = query.order_by(Notification.created_at.desc()).limit(limit).all()
+    unread_count = Notification.query.filter_by(user_id=current_user.id, read=False).count()
+
+    return jsonify({
+        'notifications': [n.to_dict() for n in notifications],
+        'unread_count': unread_count
+    }), 200
+
+
+@app.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@token_required
+def mark_notification_read(current_user, notification_id):
+    """Mark a notification as read."""
+    from .utils.models import Notification
+
+    notification = Notification.query.filter_by(
+        id=notification_id,
+        user_id=current_user.id
+    ).first()
+
+    if not notification:
+        return jsonify({'message': 'Notification not found'}), 404
+
+    notification.read = True
+    db.session.commit()
+
+    return jsonify({'message': 'Notification marked as read'}), 200
+
+
+@app.route('/notifications/mark-all-read', methods=['POST'])
+@token_required
+def mark_all_notifications_read(current_user):
+    """Mark all notifications as read."""
+    from .utils.models import Notification
+
+    Notification.query.filter_by(
+        user_id=current_user.id,
+        read=False
+    ).update({'read': True})
+
+    db.session.commit()
+
+    return jsonify({'message': 'All notifications marked as read'}), 200
+
+# ========== User Profile Endpoints (Month 4) ==========
+
+@app.route('/profile', methods=['GET'])
+@token_required
+def get_user_profile(current_user):
+    """Get current user's complete profile with statistics."""
+    from .utils.models import Transaction, UserAchievement, Achievement, TransactionType
+    from datetime import timedelta
+
+    # Get basic stats
+    stats = Transaction.get_user_statistics(current_user.id)
+
+    # Get achievements
+    total_achievements = Achievement.query.count()
+    unlocked_achievements = UserAchievement.query.filter_by(user_id=current_user.id).count()
+
+    # Get activity stats (last 7 days)
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    games_this_week = Transaction.query.filter(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_type == TransactionType.BET,
+        Transaction.created_at >= week_ago
+    ).count()
+
+    # Get leaderboard rank
+    users_above = User.query.filter(User.coins > current_user.coins).count()
+    rank = users_above + 1
+    total_users = User.query.count()
+
+    return jsonify({
+        'user': {
+            'id': current_user.id,
+            'username': current_user.username,
+            'email': current_user.email,
+            'coins': current_user.coins
+        },
+        'statistics': stats,
+        'achievements': {
+            'unlocked': unlocked_achievements,
+            'total': total_achievements,
+            'completion_percentage': round((unlocked_achievements / total_achievements * 100) if total_achievements > 0 else 0, 1)
+        },
+        'activity': {
+            'games_this_week': games_this_week,
+            'average_per_day': round(games_this_week / 7, 1)
+        },
+        'leaderboard': {
+            'rank': rank,
+            'total_users': total_users,
+            'percentile': round(((total_users - rank) / total_users * 100) if total_users > 0 else 0, 1)
+        }
+    }), 200
+
+
+@app.route('/profile/<int:user_id>', methods=['GET'])
+@token_required
+def get_other_user_profile(current_user, user_id):
+    """Get another user's public profile."""
+    from .utils.models import Transaction, UserAchievement, Achievement
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Get public stats
+    stats = Transaction.get_user_statistics(user.id)
+
+    # Get achievements
+    total_achievements = Achievement.query.count()
+    unlocked_achievements = UserAchievement.query.filter_by(user_id=user.id).count()
+
+    # Get leaderboard rank
+    users_above = User.query.filter(User.coins > user.coins).count()
+    rank = users_above + 1
+
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'coins': user.coins
+        },
+        'statistics': {
+            'total_bets_count': stats['total_bets_count'],
+            'total_wins_count': stats['total_wins_count'],
+            'net_profit': stats['net_profit']
+        },
+        'achievements': {
+            'unlocked': unlocked_achievements,
+            'total': total_achievements
+        },
+        'leaderboard': {
+            'rank': rank
+        }
+    }), 200
+
+# ========== End Month 4 Endpoints ==========
+
 @app.route('/spin', methods=['POST'])
 @token_required
 @limiter.limit("60 per minute")
