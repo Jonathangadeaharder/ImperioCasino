@@ -35,7 +35,6 @@ def start_game(user, wager):
         return {'message': 'Invalid wager amount', 'game_over': True}, 400
 
     # Lock user row for update to prevent race conditions
-    from sqlalchemy.orm import with_for_update
     from ..utils.models import User
     locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
 

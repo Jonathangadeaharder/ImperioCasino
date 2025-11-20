@@ -26,7 +26,7 @@ class TestUserAuthentication:
             'username': 'newuser',
             'email': 'newuser@example.com',
             'password': 'securepass123',
-            'confirm_password': 'securepass123'
+            'password2': 'securepass123'
         }, follow_redirects=True)
 
         assert response.status_code == 200
@@ -53,7 +53,7 @@ class TestUserAuthentication:
             'username': username,
             'email': email,
             'password': password,
-            'confirm_password': password
+            'password2': password
         })
 
         # Should either show error or redirect to signup
@@ -66,7 +66,7 @@ class TestUserAuthentication:
             'username': test_user.username,  # Duplicate
             'email': 'different@example.com',
             'password': 'newpass123',
-            'confirm_password': 'newpass123'
+            'password2': 'newpass123'
         })
 
         assert response.status_code in [200, 302]
@@ -240,7 +240,7 @@ class TestPasswordSecurity:
             'username': 'testuser',
             'email': 'test@example.com',
             'password': password,
-            'confirm_password': password
+            'password2': password
         })
 
         # The form should validate or show error
@@ -289,7 +289,7 @@ class TestAuthIntegration:
             'username': 'flowuser',
             'email': 'flow@example.com',
             'password': 'flowpass123',
-            'confirm_password': 'flowpass123'
+            'password2': 'flowpass123'
         }, follow_redirects=True)
         assert response.status_code == 200
 
