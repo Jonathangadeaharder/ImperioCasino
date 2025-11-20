@@ -16,7 +16,7 @@ from .utils.models import User, Notification, Transaction
 from .utils.auth import decode_token
 import structlog
 from datetime import datetime, timedelta
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, case
 
 log = structlog.get_logger()
 
@@ -184,10 +184,10 @@ def get_leaderboard_data(metric="coins", timeframe="all_time", limit=100):
             User.coins,
             (
                 func.coalesce(
-                    func.sum(func.case((Transaction.transaction_type == "WIN", Transaction.amount), else_=0)), 0
+                    func.sum(case((Transaction.transaction_type == "WIN", Transaction.amount), else_=0)), 0
                 )
                 - func.coalesce(
-                    func.abs(func.sum(func.case((Transaction.transaction_type == "BET", Transaction.amount), else_=0))),
+                    func.abs(func.sum(case((Transaction.transaction_type == "BET", Transaction.amount), else_=0))),
                     0,
                 )
             ).label("net_profit"),
