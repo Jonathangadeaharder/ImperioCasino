@@ -214,6 +214,172 @@ def update_coins(current_user):
     logging.info("Coins successfully updated for user_id: %s to %s coins", current_user.username, coins)
     return jsonify({'message': 'Coins updated successfully'}), 200
 
+# ========== Transaction History Endpoints (Month 3) ==========
+
+@app.route('/transactions', methods=['GET'])
+@token_required
+def get_transactions(current_user):
+    """
+    Get transaction history for the current user with optional filtering.
+
+    Query parameters:
+    - limit: Number of transactions to return (default: 50, max: 200)
+    - offset: Number of transactions to skip for pagination (default: 0)
+    - type: Filter by transaction type (bet, win, loss, deposit, etc.)
+    - game: Filter by game type (slots, blackjack, roulette)
+    """
+    from .utils.models import Transaction, TransactionType, GameType
+
+    # Get query parameters
+    limit = min(int(request.args.get('limit', 50)), 200)  # Cap at 200
+    offset = int(request.args.get('offset', 0))
+    transaction_type_str = request.args.get('type')
+    game_type_str = request.args.get('game')
+
+    # Convert string parameters to enums
+    transaction_type = None
+    game_type = None
+
+    if transaction_type_str:
+        try:
+            transaction_type = TransactionType[transaction_type_str.upper()]
+        except KeyError:
+            return jsonify({'message': f'Invalid transaction type: {transaction_type_str}'}), 400
+
+    if game_type_str:
+        try:
+            game_type = GameType[game_type_str.upper()]
+        except KeyError:
+            return jsonify({'message': f'Invalid game type: {game_type_str}'}), 400
+
+    # Get transactions
+    transactions = Transaction.get_user_transactions(
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
+        transaction_type=transaction_type,
+        game_type=game_type
+    )
+
+    # Get total count for pagination info
+    query = Transaction.query.filter_by(user_id=current_user.id)
+    if transaction_type:
+        query = query.filter_by(transaction_type=transaction_type)
+    if game_type:
+        query = query.filter_by(game_type=game_type)
+    total_count = query.count()
+
+    return jsonify({
+        'transactions': [t.to_dict() for t in transactions],
+        'pagination': {
+            'limit': limit,
+            'offset': offset,
+            'total': total_count,
+            'has_more': (offset + limit) < total_count
+        }
+    }), 200
+
+
+@app.route('/transactions/<int:transaction_id>', methods=['GET'])
+@token_required
+def get_transaction_detail(current_user, transaction_id):
+    """Get details of a specific transaction."""
+    from .utils.models import Transaction
+
+    transaction = Transaction.query.filter_by(
+        id=transaction_id,
+        user_id=current_user.id
+    ).first()
+
+    if not transaction:
+        return jsonify({'message': 'Transaction not found'}), 404
+
+    return jsonify(transaction.to_dict()), 200
+
+
+@app.route('/transactions/recent', methods=['GET'])
+@token_required
+def get_recent_transactions(current_user):
+    """Get the 10 most recent transactions for quick display."""
+    from .utils.models import Transaction
+
+    transactions = Transaction.get_user_transactions(
+        user_id=current_user.id,
+        limit=10,
+        offset=0
+    )
+
+    return jsonify({
+        'transactions': [t.to_dict() for t in transactions]
+    }), 200
+
+
+@app.route('/statistics', methods=['GET'])
+@token_required
+def get_user_statistics(current_user):
+    """
+    Get comprehensive statistics for the current user.
+
+    Returns:
+    - Total bets placed and amount wagered
+    - Total wins and amount won
+    - Net profit/loss
+    - Statistics broken down by game type
+    """
+    from .utils.models import Transaction
+
+    stats = Transaction.get_user_statistics(current_user.id)
+
+    # Add current balance
+    stats['current_balance'] = current_user.coins
+
+    return jsonify(stats), 200
+
+
+@app.route('/statistics/game/<game_type>', methods=['GET'])
+@token_required
+def get_game_statistics(current_user, game_type):
+    """Get statistics for a specific game type."""
+    from .utils.models import Transaction, GameType, TransactionType
+    from . import db
+    from sqlalchemy import func
+
+    try:
+        game_enum = GameType[game_type.upper()]
+    except KeyError:
+        return jsonify({'message': f'Invalid game type: {game_type}'}), 400
+
+    # Get bets for this game
+    total_bets = db.session.query(
+        func.count(Transaction.id),
+        func.sum(Transaction.amount)
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_type == TransactionType.BET,
+        Transaction.game_type == game_enum
+    ).first()
+
+    # Get wins for this game
+    total_wins = db.session.query(
+        func.count(Transaction.id),
+        func.sum(Transaction.amount)
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_type == TransactionType.WIN,
+        Transaction.game_type == game_enum
+    ).first()
+
+    return jsonify({
+        'game_type': game_type,
+        'total_bets_count': total_bets[0] or 0,
+        'total_bets_amount': abs(total_bets[1] or 0),
+        'total_wins_count': total_wins[0] or 0,
+        'total_wins_amount': total_wins[1] or 0,
+        'net_profit': (total_wins[1] or 0) + (total_bets[1] or 0)
+    }), 200
+
+# ========== End Transaction History Endpoints ==========
+
 @app.route('/spin', methods=['POST'])
 @token_required
 @limiter.limit("60 per minute")

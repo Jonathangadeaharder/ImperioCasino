@@ -1,7 +1,8 @@
 # game_logic/blackjack.py
 
 import random
-from ..utils.models import BlackjackGameState
+import uuid
+from ..utils.models import BlackjackGameState, Transaction, TransactionType, GameType
 from ..utils.services import update_user_coins
 from .. import db
 import logging
@@ -50,8 +51,22 @@ def start_game(user, wager):
         game.game_over = True
     db.session.commit()
 
+    # Generate reference ID for linking bet and outcome transactions
+    reference_id = str(uuid.uuid4())
+
     # Deduct initial wager from user's coins
     locked_user.coins -= wager
+
+    # Record BET transaction
+    Transaction.create_transaction(
+        user=locked_user,
+        transaction_type=TransactionType.BET,
+        amount=-wager,
+        game_type=GameType.BLACKJACK,
+        description=f"Blackjack initial bet: {wager} coins",
+        reference_id=reference_id
+    )
+
     db.session.commit()
 
     # Initialize a new game state
@@ -63,7 +78,7 @@ def start_game(user, wager):
         player_coins=locked_user.coins,
         current_wager=wager,
         game_over=False,
-        message='',
+        message=reference_id,  # Store reference_id in message field temporarily
         player_stood=False,
         double_down=False,
         split=False,
@@ -174,7 +189,18 @@ def player_double_down(game_state, user):
     if locked_user.coins < game_state.current_wager:
         return {'message': 'Insufficient coins to double down'}, 400
 
-    locked_user.coins -= game_state.current_wager
+    # Record additional BET transaction for double down
+    additional_wager = game_state.current_wager
+    locked_user.coins -= additional_wager
+    Transaction.create_transaction(
+        user=locked_user,
+        transaction_type=TransactionType.BET,
+        amount=-additional_wager,
+        game_type=GameType.BLACKJACK,
+        description=f"Blackjack double down: {additional_wager} coins",
+        reference_id=game_state.message  # Use stored reference_id
+    )
+
     game_state.current_wager *= 2
     game_state.player_coins = locked_user.coins
     game_state.double_down = True
@@ -214,7 +240,18 @@ def player_split(game_state, user):
     if locked_user.coins < game_state.current_wager:
         return {'message': 'Cannot split: Insufficient coins'}, 400
 
-    locked_user.coins -= game_state.current_wager
+    # Record additional BET transaction for split
+    split_wager = game_state.current_wager
+    locked_user.coins -= split_wager
+    Transaction.create_transaction(
+        user=locked_user,
+        transaction_type=TransactionType.BET,
+        amount=-split_wager,
+        game_type=GameType.BLACKJACK,
+        description=f"Blackjack split hand: {split_wager} coins",
+        reference_id=game_state.message  # Use stored reference_id
+    )
+
     game_state.player_coins = locked_user.coins
     game_state.split = True
 
@@ -240,18 +277,58 @@ def dealer_turn(game_state):
 def determine_winner(game_state, user):
     dealer_value = calculate_hand_value(game_state.dealer_hand)
     game_state.dealer_value = dealer_value
+    reference_id = game_state.message  # Retrieve stored reference_id
 
     if game_state.split:
         outcomes = []
-        for hand_attr in ['player_hand', 'player_second_hand']:
+        total_payout = 0
+        for i, hand_attr in enumerate(['player_hand', 'player_second_hand']):
             hand = getattr(game_state, hand_attr)
             player_value = calculate_hand_value(hand)
             outcome = compare_hands(player_value, dealer_value)
             outcomes.append(outcome)
+
+            hand_name = 'first' if i == 0 else 'second'
             if outcome == 'win':
-                user.coins += game_state.current_wager * 2
+                payout = game_state.current_wager * 2
+                user.coins += payout
+                total_payout += payout
+                # Record WIN transaction for this hand
+                Transaction.create_transaction(
+                    user=user,
+                    transaction_type=TransactionType.WIN,
+                    amount=payout,
+                    game_type=GameType.BLACKJACK,
+                    description=f"Blackjack win - {hand_name} hand",
+                    metadata={
+                        'outcome': outcome,
+                        'player_value': player_value,
+                        'dealer_value': dealer_value,
+                        'hand': hand_name,
+                        'split': True
+                    },
+                    reference_id=reference_id
+                )
             elif outcome == 'tie':
-                user.coins += game_state.current_wager
+                refund = game_state.current_wager
+                user.coins += refund
+                total_payout += refund
+                # Record REFUND transaction for tie
+                Transaction.create_transaction(
+                    user=user,
+                    transaction_type=TransactionType.REFUND,
+                    amount=refund,
+                    game_type=GameType.BLACKJACK,
+                    description=f"Blackjack tie - {hand_name} hand (bet returned)",
+                    metadata={
+                        'outcome': outcome,
+                        'player_value': player_value,
+                        'dealer_value': dealer_value,
+                        'hand': hand_name,
+                        'split': True
+                    },
+                    reference_id=reference_id
+                )
 
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins
@@ -261,13 +338,48 @@ def determine_winner(game_state, user):
         outcome = compare_hands(player_value, dealer_value)
 
         if outcome == 'win':
-            user.coins += game_state.current_wager * 2
+            payout = game_state.current_wager * 2
+            user.coins += payout
             game_state.message = 'Ganaste!'
+
+            # Record WIN transaction
+            Transaction.create_transaction(
+                user=user,
+                transaction_type=TransactionType.WIN,
+                amount=payout,
+                game_type=GameType.BLACKJACK,
+                description=f"Blackjack win: {payout} coins",
+                metadata={
+                    'outcome': outcome,
+                    'player_value': player_value,
+                    'dealer_value': dealer_value,
+                    'player_hand': game_state.player_hand,
+                    'dealer_hand': game_state.dealer_hand
+                },
+                reference_id=reference_id
+            )
         elif outcome == 'tie':
-            user.coins += game_state.current_wager
+            refund = game_state.current_wager
+            user.coins += refund
             game_state.message = 'It\'s a tie.'
+
+            # Record REFUND transaction
+            Transaction.create_transaction(
+                user=user,
+                transaction_type=TransactionType.REFUND,
+                amount=refund,
+                game_type=GameType.BLACKJACK,
+                description=f"Blackjack tie (bet returned): {refund} coins",
+                metadata={
+                    'outcome': outcome,
+                    'player_value': player_value,
+                    'dealer_value': dealer_value
+                },
+                reference_id=reference_id
+            )
         else:
             game_state.message = 'Perdiste.'
+            # No transaction needed for loss - the BET transaction already recorded the deduction
 
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins

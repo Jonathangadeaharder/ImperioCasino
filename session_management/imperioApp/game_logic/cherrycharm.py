@@ -115,7 +115,8 @@ def endgame(fruit0: Fruit, fruit1: Fruit, fruit2: Fruit) -> int:
 
 def cherryAction(spin_user):
     from .. import db
-    from ..utils.models import User
+    from ..utils.models import User, Transaction, TransactionType, GameType
+    import uuid
 
     logging.debug("Received spin request for user_id: %s", spin_user.username)
 
@@ -130,9 +131,23 @@ def cherryAction(spin_user):
         logging.warning("User %s does not have enough coins to spin.", locked_user.username)
         return jsonify({'message': 'Not enough coins to spin'}), 400
 
-    # Deduct a coin for spinning
-    locked_user.coins -= 1
+    # Generate reference ID for linking bet and win transactions
+    reference_id = str(uuid.uuid4())
+
+    # Deduct a coin for spinning (BET)
+    bet_amount = 1
+    locked_user.coins -= bet_amount
     logging.info("User %s has spun the slot machine. Coins left: %s", locked_user.username, locked_user.coins)
+
+    # Record BET transaction
+    Transaction.create_transaction(
+        user=locked_user,
+        transaction_type=TransactionType.BET,
+        amount=-bet_amount,
+        game_type=GameType.SLOTS,
+        description=f"Slot machine spin bet",
+        reference_id=reference_id
+    )
 
     # Generate stop segments and fruits
     stop_segments = spin_reels()
@@ -145,8 +160,24 @@ def cherryAction(spin_user):
     logging.info("User %s won: %s coins", locked_user.username, winnings)
 
     # Add winnings to user's coins
-    locked_user.coins += winnings
-    logging.info("User %s new coin balance: %s", locked_user.username, locked_user.coins)
+    if winnings > 0:
+        locked_user.coins += winnings
+        logging.info("User %s new coin balance: %s", locked_user.username, locked_user.coins)
+
+        # Record WIN transaction
+        Transaction.create_transaction(
+            user=locked_user,
+            transaction_type=TransactionType.WIN,
+            amount=winnings,
+            game_type=GameType.SLOTS,
+            description=f"Slot machine win: {[f.value for f in fruits]}",
+            metadata={
+                'fruits': [f.value for f in fruits],
+                'stop_segments': stop_segments,
+                'payout': winnings
+            },
+            reference_id=reference_id
+        )
 
     db.session.commit()
 

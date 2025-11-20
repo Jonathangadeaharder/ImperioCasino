@@ -1,10 +1,11 @@
 import logging
 import random
+import uuid
 from ..utils.services import increase_user_coins, reduce_user_coins
 
 def rouletteAction(current_user, data):
     from .. import db
-    from ..utils.models import User
+    from ..utils.models import User, Transaction, TransactionType, GameType
 
     ROULETTE_NUMBERS = list(range(0, 37))
 
@@ -40,14 +41,38 @@ def rouletteAction(current_user, data):
     if locked_user.coins < total_bet:
         return {"message": "Not enough coins for all bets"}, 400
 
+    # Generate reference ID for linking all bet and win transactions in this spin
+    reference_id = str(uuid.uuid4())
+
     # Deduct the coins for all bets now
     locked_user.coins -= total_bet
+
+    # Record BET transaction for total bet amount
+    Transaction.create_transaction(
+        user=locked_user,
+        transaction_type=TransactionType.BET,
+        amount=-total_bet,
+        game_type=GameType.ROULETTE,
+        description=f"Roulette spin: {len(bet_info)} bet(s) totaling {total_bet} coins",
+        metadata={
+            'num_bets': len(bet_info),
+            'bets': [
+                {
+                    'amount': b.get('amt'),
+                    'numbers': b.get('numbers', ''),
+                    'odds': b.get('odds')
+                } for b in bet_info
+            ]
+        },
+        reference_id=reference_id
+    )
 
     # Perform the spin
     winning_number = random.choice(ROULETTE_NUMBERS)
     total_win = 0
+    winning_bets = []
 
-    for bet in bet_info:
+    for i, bet in enumerate(bet_info):
         numbers_str = bet.get("numbers", "")
         odds = bet.get("odds", 0)
         amt = bet.get("amt")
@@ -73,10 +98,33 @@ def rouletteAction(current_user, data):
         if winning_number in bet_numbers:
             payout = (odds * amt) + amt
             total_win += payout
+            winning_bets.append({
+                'bet_index': i,
+                'amount': amt,
+                'numbers': bet_numbers,
+                'odds': odds,
+                'payout': payout
+            })
 
     # Add winnings to user coins
     if total_win > 0:
         locked_user.coins += total_win
+
+        # Record WIN transaction
+        Transaction.create_transaction(
+            user=locked_user,
+            transaction_type=TransactionType.WIN,
+            amount=total_win,
+            game_type=GameType.ROULETTE,
+            description=f"Roulette win: {total_win} coins on number {winning_number}",
+            metadata={
+                'winning_number': winning_number,
+                'total_payout': total_win,
+                'winning_bets': winning_bets,
+                'num_winning_bets': len(winning_bets)
+            },
+            reference_id=reference_id
+        )
 
     db.session.commit()
 
