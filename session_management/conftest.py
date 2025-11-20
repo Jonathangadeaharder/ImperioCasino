@@ -52,6 +52,8 @@ def client(app):
     with app.app_context():
         db.create_all()
         yield app.test_client()
+        # Clean up database session properly
+        db.session.rollback()
         db.session.remove()
         db.drop_all()
 
@@ -75,6 +77,8 @@ def app_context(app):
     with app.app_context():
         db.create_all()
         yield app
+        # Clean up database session properly
+        db.session.rollback()
         db.session.remove()
         db.drop_all()
 
@@ -283,18 +287,18 @@ def fake_user_data():
 
 
 @pytest.fixture(autouse=True)
-def reset_database(app_context):
+def reset_database():
     """
     Automatically reset database between tests.
 
     This fixture runs before every test to ensure a clean database state.
     """
     yield
-    # Cleanup after test
-    db.session.remove()
-    for table in reversed(db.metadata.sorted_tables):
-        db.session.execute(table.delete())
-    db.session.commit()
+    # Cleanup after test - rollback any pending changes
+    try:
+        db.session.rollback()
+    except Exception:
+        pass  # Session may already be closed
 
 
 @pytest.fixture
