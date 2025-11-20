@@ -17,20 +17,9 @@ if not os.path.exists('logs'):
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Set up logging based on environment
-log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO'))
-logging.basicConfig(
-    level=log_level,
-    format='%(asctime)s %(levelname)s %(name)s : %(message)s',
-    handlers=[
-        logging.FileHandler("logs/app.log"),
-        logging.StreamHandler()
-    ]
-)
-
-# Reduce verbose logging from werkzeug in production
-if app.config.get('LOG_LEVEL') != 'DEBUG':
-    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+# Configure structured logging (Month 2 - Enhanced Logging)
+from .utils.logging_config import configure_logging
+configure_logging(app)
 
 Session(app)  # Initialize Flask-Session
 
@@ -49,13 +38,18 @@ limiter = Limiter(
     swallow_errors=True  # Don't crash if Redis is unavailable
 )
 
-# Log rate limiting configuration
-logging.info(f"Rate limiting configured with storage: {app.config.get('RATELIMIT_STORAGE_URL')}")
-
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # Initialize Migrate
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Configure middleware (Month 2 - Enhanced Logging & Monitoring)
+from .utils.middleware import (
+    add_request_id_middleware,
+    add_security_logging_middleware
+)
+add_request_id_middleware(app)
+add_security_logging_middleware(app)
 
 # Add security headers to all responses
 @app.after_request

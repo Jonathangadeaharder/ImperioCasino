@@ -1,0 +1,194 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd session_management
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up environment
+        run: |
+          cd session_management
+          cp ../.env.example .env
+          echo "FLASK_ENV=testing" >> .env
+          echo "SECRET_KEY=test-secret-key-for-ci" >> .env
+          echo "DATABASE_URI=postgresql://test_user:test_password@localhost:5432/test_db" >> .env
+          echo "REDIS_HOST=localhost" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "RATELIMIT_STORAGE_URL=redis://localhost:6379/0" >> .env
+
+      - name: Run tests with pytest
+        run: |
+          cd session_management
+          pytest -v --cov=imperioApp --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./session_management/coverage.xml
+          flags: backend
+          name: backend-${{ matrix.python-version }}
+
+      - name: Check code style with flake8
+        run: |
+          cd session_management
+          pip install flake8
+          flake8 imperioApp --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 imperioApp --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install bandit
+        run: pip install bandit[toml]
+
+      - name: Run security scan
+        run: |
+          cd session_management
+          bandit -r imperioApp -f json -o bandit-report.json || true
+
+      - name: Upload bandit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-security-report
+          path: session_management/bandit-report.json
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install safety
+        run: pip install safety
+
+      - name: Check dependencies
+        run: |
+          cd session_management
+          safety check -r requirements.txt --json > safety-report.json || true
+
+      - name: Upload safety report
+        uses: actions/upload-artifact@v3
+        with:
+          name: safety-dependency-report
+          path: session_management/safety-report.json
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install linting tools
+        run: |
+          pip install flake8 pylint black isort mypy
+
+      - name: Run flake8
+        run: |
+          cd session_management
+          flake8 imperioApp --count --max-line-length=127 --statistics
+
+      - name: Run black (check only)
+        run: |
+          cd session_management
+          black --check imperioApp || true
+
+      - name: Run isort (check only)
+        run: |
+          cd session_management
+          isort --check-only imperioApp || true
+
+  test-results:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: [test-backend, security-scan, dependency-check, lint]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "Backend Tests: ${{ needs.test-backend.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Dependency Check: ${{ needs.dependency-check.result }}"
+          echo "Code Quality: ${{ needs.lint.result }}"
+
+          if [ "${{ needs.test-backend.result }}" != "success" ]; then
+            echo "❌ Backend tests failed"
+            exit 1
+          fi
+
+          echo "✅ All critical checks passed"
