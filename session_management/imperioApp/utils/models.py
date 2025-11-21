@@ -27,6 +27,23 @@ class BlackjackGameState(db.Model):
     dealer_value = db.Column(db.Integer, nullable=True)  # **New Column Added**
 
     def to_dict(self):
+        # Determine if player can double down
+        can_double_down = (
+            not self.game_over and 
+            len(self.player_hand) == 2 and 
+            not self.double_down and 
+            not self.split and 
+            not self.player_stood
+        )
+        
+        # Determine if player can split
+        can_split = (
+            not self.game_over and
+            not self.split and
+            len(self.player_hand) == 2 and
+            self.player_hand[0]['value'] == self.player_hand[1]['value']
+        )
+        
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -42,7 +59,9 @@ class BlackjackGameState(db.Model):
             'split': self.split,
             'player_second_hand': self.player_second_hand,
             'current_hand': self.current_hand,
-            'dealer_value': self.dealer_value  # Ensure this is included
+            'dealer_value': self.dealer_value,  # Ensure this is included
+            'can_double_down': can_double_down,
+            'can_split': can_split
         }
 
 class User(UserMixin, db.Model):

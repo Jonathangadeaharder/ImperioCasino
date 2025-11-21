@@ -21,6 +21,7 @@ const username = queryParams.username;
 // Initialize variables
 var currentChipBalance = null;
 var currentWager = 0;
+var currentGameId = null; // Track the current game ID
 var dealerGameBoard = $("#dealer");
 var playerGameBoard = $("#user-hand");
 var playerSplitGameBoard = $("#user-split-hand");
@@ -124,6 +125,7 @@ function startGame() {
 				Materialize.toast(gameState.message, 2000);
 			} else {
 				console.log(gameState)
+				currentGameId = gameState.id; // Store the game ID
 				currentChipBalance = gameState.player_coins;
 				updateVisibleChipBalances();
 				$("#welcome").hide();
@@ -155,13 +157,18 @@ doubleDownButton.click(function() { sendAction('double'); });
 splitButton.click(function() { sendAction('split'); });
 
 function sendAction(action) {
+	if (!currentGameId) {
+		Materialize.toast("No hay juego activo.", 2000);
+		return;
+	}
+
 	fetch(`${serverAddress}/blackjack/action`, {
 		method: 'POST',
 		headers: {
 			'Authorization': 'Bearer ' + token,
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ action: action })
+		body: JSON.stringify({ action: action, game_id: currentGameId })
 	})
 		.then(response => response.json())
 		.then(gameState => {
@@ -302,6 +309,7 @@ playAgainButton.click(newGame);
 
 function newGame() {
 	currentWager = 0;
+	currentGameId = null; // Reset game ID
 	updateVisibleChipBalances();
 	$("#game-over").hide();
 	$("#welcome").show();
@@ -313,6 +321,7 @@ $("#reset-game").click(resetGame);
 function resetGame() {
 	// Implement reset game logic if needed
 	currentWager = 0;
+	currentGameId = null; // Reset game ID
 	currentChipBalance = null;
 	getCoins();
 	$("#game-over").hide();
