@@ -26,6 +26,10 @@ class FlaskDBCompatibility:
         self._session = SessionLocal()
         return self._session
     
+    def set_session(self, session):
+        """Set an existing session (for use with FastAPI dependency injection)"""
+        self._session = session
+    
     def close_session(self):
         """Close the current session"""
         if self._session:

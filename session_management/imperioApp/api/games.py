@@ -114,8 +114,8 @@ async def start_blackjack_game(
     from ..game_logic import blackjack
     from ..flask_compat import db as compat_db
     
-    # Temporarily set the compat db's session to our FastAPI session
-    compat_db._session = db
+    # Set the compat db's session to our FastAPI session
+    compat_db.set_session(db)
     
     try:
         game_state, status_code = blackjack.start_game(current_user, game_request.wager)
@@ -128,7 +128,7 @@ async def start_blackjack_game(
         return game_state
     finally:
         # Don't close the session as it's managed by FastAPI
-        compat_db._session = None
+        compat_db.set_session(None)
 
 
 @router.post("/blackjack/action")
@@ -148,8 +148,8 @@ async def blackjack_action(
     from ..game_logic import blackjack
     from ..flask_compat import db as compat_db
     
-    # Temporarily set the compat db's session to our FastAPI session
-    compat_db._session = db
+    # Set the compat db's session to our FastAPI session
+    compat_db.set_session(db)
     
     try:
         result, status_code = blackjack.player_action(
@@ -166,7 +166,7 @@ async def blackjack_action(
         return result
     finally:
         # Don't close the session as it's managed by FastAPI
-        compat_db._session = None
+        compat_db.set_session(None)
 
 
 # Roulette route
@@ -186,8 +186,8 @@ async def roulette_action(
     from ..game_logic import roulette
     from ..flask_compat import db as compat_db
     
-    # Temporarily set the compat db's session to our FastAPI session
-    compat_db._session = db
+    # Set the compat db's session to our FastAPI session
+    compat_db.set_session(db)
     
     try:
         result, status_code = roulette.rouletteAction(current_user, data)
@@ -198,5 +198,5 @@ async def roulette_action(
         return result
     finally:
         # Don't close the session as it's managed by FastAPI
-        compat_db._session = None
+        compat_db.set_session(None)
 
