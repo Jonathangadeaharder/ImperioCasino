@@ -43,9 +43,8 @@ async def update_coins(
             detail="Coins are required"
         )
     
-    # Update coins
+    # Update coins - SQLAlchemy will track changes automatically
     current_user.coins = coins_data.coins
-    db.add(current_user)
     await db.commit()
     await db.refresh(current_user)
     

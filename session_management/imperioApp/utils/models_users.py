@@ -74,13 +74,13 @@ class BlackjackGameState(Base):
             not self.player_stood
         )
         
-        # Determine if player can split
-        can_split = (
-            not self.game_over and
-            not self.split and
-            len(self.player_hand) == 2 and
-            self.player_hand[0]['value'] == self.player_hand[1]['value']
-        )
+        # Determine if player can split - safely check for value key
+        can_split = False
+        if (not self.game_over and not self.split and len(self.player_hand) == 2):
+            try:
+                can_split = self.player_hand[0].get('value') == self.player_hand[1].get('value')
+            except (AttributeError, TypeError, KeyError):
+                can_split = False
         
         return {
             'id': self.id,

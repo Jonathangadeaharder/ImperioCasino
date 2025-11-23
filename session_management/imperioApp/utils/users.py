@@ -16,6 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .models_users import User
 from ..database import get_async_db
 from .config import Config
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def get_user_db(session: AsyncSession = Depends(get_async_db)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
@@ -30,19 +33,19 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         """Called after user registration"""
-        print(f"User {user.id} has registered.")
+        logger.info(f"User {user.id} has registered")
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
         """Called after forgot password request"""
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        logger.info(f"User {user.id} requested password reset")
 
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
         """Called after verification request"""
-        print(f"Verification requested for user {user.id}. Verification token: {token}")
+        logger.info(f"Verification requested for user {user.id}")
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):

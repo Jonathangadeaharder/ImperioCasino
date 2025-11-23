@@ -14,6 +14,9 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
+# Create logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
 
 # Set up logging
 log_level = getattr(logging, Config.LOG_LEVEL, logging.INFO)
@@ -21,7 +24,7 @@ logging.basicConfig(
     level=log_level,
     format='%(asctime)s %(levelname)s %(name)s : %(message)s',
     handlers=[
-        logging.FileHandler("logs/app.log") if os.path.exists('logs') else logging.StreamHandler(),
+        logging.FileHandler("logs/app.log"),
         logging.StreamHandler()
     ]
 )
@@ -31,10 +34,6 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events"""
-    # Create logs directory if it doesn't exist
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    
     # Initialize database tables
     from imperioApp.database import engine, Base
     from imperioApp.utils.models_users import User, BlackjackGameState
