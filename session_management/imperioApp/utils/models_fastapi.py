@@ -4,7 +4,7 @@ Migrated from Flask-SQLAlchemy to SQLAlchemy 2.0
 """
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Index, PickleType
 from sqlalchemy.orm import relationship
-from passlib.hash import bcrypt
+import bcrypt as bcrypt_lib
 from ..database import Base
 from .constants import DEFAULT_COINS
 from sqlalchemy.ext.mutable import MutableList
@@ -99,14 +99,20 @@ class User(Base):
             self.coins = DEFAULT_COINS
 
     def set_password(self, password: str):
-        """Hash and set the user's password"""
-        self.password = bcrypt.hash(password)
+        """Hash and set the user's password using bcrypt"""
+        # Convert password to bytes and hash it
+        password_bytes = password.encode('utf-8')
+        salt = bcrypt_lib.gensalt()
+        hashed = bcrypt_lib.hashpw(password_bytes, salt)
+        self.password = hashed.decode('utf-8')
 
     def verify_password(self, password: str) -> bool:
         """Verify the user's password"""
         if not self.password:
             return False
-        return bcrypt.verify(password, self.password)
+        password_bytes = password.encode('utf-8')
+        hashed_bytes = self.password.encode('utf-8')
+        return bcrypt_lib.checkpw(password_bytes, hashed_bytes)
 
     def __repr__(self):
         return f'<User {self.username}>'
