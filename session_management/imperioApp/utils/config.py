@@ -6,13 +6,18 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         # Only use generated key in development
-        if os.environ.get('FLASK_ENV') == 'production':
+        if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('FASTAPI_ENV') == 'production':
             raise ValueError("SECRET_KEY environment variable must be set in production")
         SECRET_KEY = secrets.token_hex(32)
         print("WARNING: Using auto-generated SECRET_KEY. Set SECRET_KEY env var in production!")
 
+    # JWT Configuration
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_HOURS = 12
+
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'
+    DATABASE_URL = SQLALCHEMY_DATABASE_URI  # FastAPI compatible
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': int(os.environ.get('DB_POOL_SIZE', 10)),
