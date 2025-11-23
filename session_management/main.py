@@ -1,6 +1,6 @@
 """
 FastAPI main application file
-Migrated from Flask to FastAPI
+Migrated to use FastAPI-Users and async SQLite
 """
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,12 +10,10 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from imperioApp.utils.config import Config
+from contextlib import asynccontextmanager
 import logging
 import os
 
-# Create logs directory if it doesn't exist
-if not os.path.exists('logs'):
-    os.makedirs('logs')
 
 # Set up logging
 log_level = getattr(logging, Config.LOG_LEVEL, logging.INFO)
@@ -23,16 +21,40 @@ logging.basicConfig(
     level=log_level,
     format='%(asctime)s %(levelname)s %(name)s : %(message)s',
     handlers=[
-        logging.FileHandler("logs/app.log"),
+        logging.FileHandler("logs/app.log") if os.path.exists('logs') else logging.StreamHandler(),
         logging.StreamHandler()
     ]
 )
 
+
+# Lifespan context manager for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle startup and shutdown events"""
+    # Create logs directory if it doesn't exist
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    
+    # Initialize database tables
+    from imperioApp.database import engine, Base
+    from imperioApp.utils.models_users import User, BlackjackGameState
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    logging.info("Database initialized")
+    yield
+    # Cleanup
+    await engine.dispose()
+    logging.info("Database connections closed")
+
+
 # Create FastAPI app
 app = FastAPI(
     title="ImperioCasino API",
-    description="Multi-game online casino platform API",
-    version="2.0.0"
+    description="Multi-game online casino platform API with FastAPI-Users",
+    version="3.0.0",
+    lifespan=lifespan
 )
 
 # Configure rate limiting
@@ -85,9 +107,8 @@ if os.path.exists("imperioApp/static"):
 
 # Include routers
 try:
-    from imperioApp.api import auth, games, coins
-    app.include_router(auth.router, tags=["Authentication"])
-    app.include_router(games.router, tags=["Games"])
+    from imperioApp.api import auth_users, coins
+    app.include_router(auth_users.router, tags=["Authentication"])
     app.include_router(coins.router, tags=["Coins"])
 except ImportError as e:
     logging.warning(f"Could not import routers: {e}. API routes may not be available.")
@@ -135,19 +156,19 @@ async def unauthorized_handler(request: Request, exc):
 # Root endpoint
 @app.get("/")
 async def root():
-    """API root endpoint - redirects to dashboard or shows API info"""
+    """API root endpoint"""
     return {
-        "message": "ImperioCasino API",
-        "version": "2.0.0",
+        "message": "ImperioCasino API with FastAPI-Users",
+        "version": "3.0.0",
         "docs": "/docs",
-        "dashboard": "/dashboard"
+        "authentication": "FastAPI-Users with JWT"
     }
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy"}
+    return {"status": "healthy", "database": "SQLite (async)"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,13 +1,9 @@
 """
-ImperioApp package initialization for FastAPI
-Provides backward compatibility with Flask imports
+ImperioApp package initialization for FastAPI with FastAPI-Users
 """
-# Import the Flask compatibility layer
-from .flask_compat import db
-
 # Import FastAPI database setup
-from .database import Base, engine, get_db
+from .database import Base, engine, get_async_db
 
-# Make db available for imports
-__all__ = ['db', 'Base', 'engine', 'get_db']
+# Make components available for imports
+__all__ = ['Base', 'engine', 'get_async_db']
 

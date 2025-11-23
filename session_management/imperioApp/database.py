@@ -1,32 +1,35 @@
 """
-Database configuration for FastAPI
-Using SQLAlchemy 2.0
+Database configuration for FastAPI with async SQLite
+Using SQLAlchemy 2.0 with aiosqlite
 """
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from .utils.config import Config
 
-# Create database engine
-engine = create_engine(
-    Config.SQLALCHEMY_DATABASE_URI,
-    **Config.SQLALCHEMY_ENGINE_OPTIONS
+# Create async database engine for SQLite
+DATABASE_URL = Config.SQLALCHEMY_DATABASE_URI.replace('sqlite:///', 'sqlite+aiosqlite:///')
+
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    connect_args={"check_same_thread": False}
 )
 
-# Create SessionLocal class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create async session maker
+async_session_maker = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
 
 # Create Base class for models
 Base = declarative_base()
 
-# Dependency to get database session
-def get_db():
+# Dependency to get async database session
+async def get_async_db():
     """
-    Dependency function that yields database sessions.
+    Async dependency function that yields database sessions.
     Use with FastAPI's Depends.
     """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    async with async_session_maker() as session:
+        yield session
