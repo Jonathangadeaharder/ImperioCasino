@@ -10,7 +10,7 @@ PyJWT==2.10.1
 alembic==1.17.2
 unittest2==1.1.0
 python-dotenv==1.2.1
-email-validator==2.1.0
+email-validator==2.3.0
 flask-cors==6.0.1
 flask-session==0.8.0
 Flask-Limiter==3.5.0
