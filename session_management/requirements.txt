@@ -10,7 +10,7 @@ fastapi-users[sqlalchemy]==13.0.0
 
 # Database - SQLite with async support
 SQLAlchemy==2.0.44
-aiosqlite==0.20.0
+aiosqlite==0.21.0
 alembic==1.17.2
 
 # Password hashing
