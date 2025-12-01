@@ -1,5 +1,5 @@
 # FastAPI and related dependencies
-fastapi==0.121.3
+fastapi==0.123.0
 uvicorn==0.38.0
 python-multipart>=0.0.9
 pydantic==2.12.4
