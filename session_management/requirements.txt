@@ -6,7 +6,7 @@ pydantic==2.12.5
 pydantic-settings==2.12.0
 
 # FastAPI-Users for authentication
-fastapi-users[sqlalchemy]==13.0.0
+fastapi-users[sqlalchemy]==15.0.4
 
 # Database - SQLite with async support
 SQLAlchemy==2.0.46
