@@ -54,7 +54,7 @@
     "r3f-perf": "^7.1.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "three": "^0.181.2",
+    "three": "^0.182.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
