@@ -1,6 +1,5 @@
-import logging
 import random
-from ..utils.services import increase_user_coins, reduce_user_coins
+
 
 def rouletteAction(current_user, data):
     from .. import db
@@ -8,7 +7,7 @@ def rouletteAction(current_user, data):
 
     ROULETTE_NUMBERS = list(range(0, 37))
 
-    bet_info = data.get('bet')
+    bet_info = data.get("bet")
     if not bet_info or not isinstance(bet_info, list):
         return {"message": "Bet details are required"}, 400
 
@@ -31,7 +30,9 @@ def rouletteAction(current_user, data):
         total_bet += amt
 
     # Lock user row for update to prevent race conditions
-    locked_user = db.session.query(User).with_for_update().filter_by(id=current_user.id).first()
+    locked_user = (
+        db.session.query(User).with_for_update().filter_by(id=current_user.id).first()
+    )
 
     if not locked_user:
         return {"message": "User not found"}, 404
@@ -84,5 +85,5 @@ def rouletteAction(current_user, data):
         "winning_number": winning_number,
         "total_bet": total_bet,
         "total_win": total_win,
-        "new_coins": locked_user.coins
+        "new_coins": locked_user.coins,
     }, 200

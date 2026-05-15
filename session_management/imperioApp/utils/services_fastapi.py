@@ -2,6 +2,7 @@
 Services adapter for FastAPI
 Provides database operations without requiring Flask's db context
 """
+
 from typing import Optional
 from ..database import SessionLocal
 from .models_fastapi import User
@@ -18,10 +19,10 @@ def get_db_session():
 def get_user_by_username(username: str) -> Optional[User]:
     """
     Get a user by username
-    
+
     Args:
         username: The username to search for
-        
+
     Returns:
         User object if found, None otherwise
     """
@@ -37,26 +38,24 @@ def get_user_by_username(username: str) -> Optional[User]:
         db.close()
 
 
-def create_user(username: str, email: str, password: str, starting_coins: Optional[int] = None) -> User:
+def create_user(
+    username: str, email: str, password: str, starting_coins: Optional[int] = None
+) -> User:
     """
     Create a new user
-    
+
     Args:
         username: Username for the new user
         email: Email for the new user
         password: Password for the new user
         starting_coins: Optional starting coin amount
-        
+
     Returns:
         Created User object
     """
     db = get_db_session()
     try:
-        user = User(
-            username=username,
-            email=email,
-            coins=starting_coins
-        )
+        user = User(username=username, email=email, coins=starting_coins)
         user.set_password(password)
         db.add(user)
         db.commit()
@@ -69,7 +68,7 @@ def create_user(username: str, email: str, password: str, starting_coins: Option
 def update_user_coins(user: User, coins: int):
     """
     Update user's coin balance
-    
+
     Args:
         user: User object to update
         coins: New coin balance
@@ -89,7 +88,7 @@ def update_user_coins(user: User, coins: int):
 def increase_user_coins(user: User, amount: int):
     """
     Increase user's coin balance
-    
+
     Args:
         user: User object to update
         amount: Amount to increase coins by
@@ -109,7 +108,7 @@ def increase_user_coins(user: User, amount: int):
 def reduce_user_coins(user: User, amount: int):
     """
     Reduce user's coin balance
-    
+
     Args:
         user: User object to update
         amount: Amount to reduce coins by

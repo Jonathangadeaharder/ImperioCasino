@@ -2,6 +2,7 @@
 FastAPI-Users authentication configuration
 Replaces custom JWT authentication with FastAPI-Users
 """
+
 import uuid
 from typing import Optional, AsyncGenerator
 from fastapi import Depends, Request
@@ -21,13 +22,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def get_user_db(session: AsyncSession = Depends(get_async_db)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
+async def get_user_db(
+    session: AsyncSession = Depends(get_async_db),
+) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
     """Get user database adapter for FastAPI-Users"""
     yield SQLAlchemyUserDatabase(session, User)
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     """User manager for FastAPI-Users"""
+
     reset_password_token_secret = Config.SECRET_KEY
     verification_token_secret = Config.SECRET_KEY
 
@@ -61,8 +65,9 @@ def get_jwt_strategy() -> JWTStrategy:
     """Get JWT strategy for authentication"""
     return JWTStrategy(
         secret=Config.SECRET_KEY,
-        lifetime_seconds=Config.ACCESS_TOKEN_EXPIRE_HOURS * 3600,  # Convert hours to seconds
-        algorithm=Config.ALGORITHM
+        lifetime_seconds=Config.ACCESS_TOKEN_EXPIRE_HOURS
+        * 3600,  # Convert hours to seconds
+        algorithm=Config.ALGORITHM,
     )
 
 

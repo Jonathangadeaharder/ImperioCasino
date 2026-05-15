@@ -4,28 +4,33 @@ from enum import Enum
 
 from flask import jsonify
 
-from ..utils.services import increase_user_coins, reduce_user_coins
-
 
 def spin_reels():
     min_segment = 15
     max_segment = 30
     return [random.randint(min_segment, max_segment) for _ in range(3)]
 
+
 def get_fruits(stop_segments):
-    return [segment_to_fruit(reel, segment) for reel, segment in enumerate(stop_segments)]
+    return [
+        segment_to_fruit(reel, segment) for reel, segment in enumerate(stop_segments)
+    ]
+
 
 def calculate_winnings(fruits):
     return endgame(*fruits)
 
+
 def ceildiv(a, b):
     return -(a // -b)
+
 
 class Fruit(Enum):
     CHERRY = "CHERRY"
     LEMON = "LEMON"
     BANANA = "BANANA"
     APPLE = "APPLE"
+
 
 def segment_to_fruit(reel_index: int, reel_segment: int) -> Fruit:
 
@@ -120,23 +125,33 @@ def cherryAction(spin_user):
     logging.debug("Received spin request for user_id: %s", spin_user.username)
 
     # Lock user row for update to prevent race conditions
-    locked_user = db.session.query(User).with_for_update().filter_by(id=spin_user.id).first()
+    locked_user = (
+        db.session.query(User).with_for_update().filter_by(id=spin_user.id).first()
+    )
 
     if not locked_user:
-        return jsonify({'message': 'User not found'}), 404
+        return jsonify({"message": "User not found"}), 404
 
     # Check if the user has enough coins to spin
     if locked_user.coins < 1:
-        logging.warning("User %s does not have enough coins to spin.", locked_user.username)
-        return jsonify({'message': 'Not enough coins to spin'}), 400
+        logging.warning(
+            "User %s does not have enough coins to spin.", locked_user.username
+        )
+        return jsonify({"message": "Not enough coins to spin"}), 400
 
     # Deduct a coin for spinning
     locked_user.coins -= 1
-    logging.info("User %s has spun the slot machine. Coins left: %s", locked_user.username, locked_user.coins)
+    logging.info(
+        "User %s has spun the slot machine. Coins left: %s",
+        locked_user.username,
+        locked_user.coins,
+    )
 
     # Generate stop segments and fruits
     stop_segments = spin_reels()
-    logging.info("Generated stop segments for user %s: %s", locked_user.username, stop_segments)
+    logging.info(
+        "Generated stop segments for user %s: %s", locked_user.username, stop_segments
+    )
     fruits = get_fruits(stop_segments)
     logging.info("Fruits for user %s: %s", locked_user.username, fruits)
 
@@ -146,13 +161,12 @@ def cherryAction(spin_user):
 
     # Add winnings to user's coins
     locked_user.coins += winnings
-    logging.info("User %s new coin balance: %s", locked_user.username, locked_user.coins)
+    logging.info(
+        "User %s new coin balance: %s", locked_user.username, locked_user.coins
+    )
 
     db.session.commit()
 
     # Prepare the response data
-    response_data = {
-        'stopSegments': stop_segments,
-        'totalCoins': locked_user.coins
-    }
+    response_data = {"stopSegments": stop_segments, "totalCoins": locked_user.coins}
     return jsonify(response_data), 200
