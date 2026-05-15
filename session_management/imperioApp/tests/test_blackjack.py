@@ -1,6 +1,10 @@
 from ..game_logic.blackjack import (
-    start_game, player_action, calculate_hand_value,
-    dealer_turn, determine_winner, compare_hands
+    start_game,
+    player_action,
+    calculate_hand_value,
+    dealer_turn,
+    determine_winner,
+    compare_hands,
 )
 from ..utils.services import create_user
 from ..utils.models import BlackjackGameState
@@ -12,20 +16,20 @@ class BlackjackTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         # Create a test user with sufficient coins
-        self.user = create_user('testuser', 'test@example.com', 'testpassword')
+        self.user = create_user("testuser", "test@example.com", "testpassword")
         self.user.coins = 500
         db.session.commit()
 
     def set_game_state(
-            self,
-            wager,
-            player_hand=None,
-            dealer_hand=None,
-            deck=None,
-            split=False,
-            player_second_hand=None,
-            game_over=False,
-            message=''
+        self,
+        wager,
+        player_hand=None,
+        dealer_hand=None,
+        deck=None,
+        split=False,
+        player_second_hand=None,
+        game_over=False,
+        message="",
     ):
         """
         Helper method to set up the game state deterministically.
@@ -34,8 +38,8 @@ class BlackjackTestCase(BaseTestCase):
         # Start the game with the specified wager
         response, status_code = start_game(self.user, wager)
         self.assertEqual(status_code, 200)
-        self.assertFalse(response['game_over'])
-        self.assertEqual(response['current_wager'], wager)
+        self.assertFalse(response["game_over"])
+        self.assertEqual(response["current_wager"], wager)
 
         game_state = BlackjackGameState.query.filter_by(user_id=self.user.id).first()
 
@@ -69,11 +73,11 @@ class BlackjackTestCase(BaseTestCase):
         wager = 50
         response, status_code = start_game(self.user, wager)
         self.assertEqual(status_code, 200)
-        self.assertFalse(response['game_over'])
-        self.assertEqual(len(response['player_hand']), 2)
-        self.assertEqual(len(response['dealer_hand']), 2)
-        self.assertEqual(response['current_wager'], wager)
-        self.assertEqual(response['player_coins'], self.user.coins)
+        self.assertFalse(response["game_over"])
+        self.assertEqual(len(response["player_hand"]), 2)
+        self.assertEqual(len(response["dealer_hand"]), 2)
+        self.assertEqual(response["current_wager"], wager)
+        self.assertEqual(response["player_coins"], self.user.coins)
         self.assertEqual(self.user.coins, 500 - wager)
 
     def test_start_game_invalid_wager(self):
@@ -81,8 +85,8 @@ class BlackjackTestCase(BaseTestCase):
         wager = -10
         response, status_code = start_game(self.user, wager)
         self.assertEqual(status_code, 400)
-        self.assertTrue(response['game_over'])
-        self.assertEqual(response['message'], 'Invalid wager amount')
+        self.assertTrue(response["game_over"])
+        self.assertEqual(response["message"], "Invalid wager amount")
 
     def test_start_game_insufficient_coins(self):
         # Test starting a game when user has insufficient coins
@@ -91,8 +95,8 @@ class BlackjackTestCase(BaseTestCase):
         wager = 50
         response, status_code = start_game(self.user, wager)
         self.assertEqual(status_code, 400)
-        self.assertTrue(response['game_over'])
-        self.assertEqual(response['message'], 'Insufficient coins')
+        self.assertTrue(response["game_over"])
+        self.assertEqual(response["message"], "Insufficient coins")
 
     def test_player_hit(self):
         """
@@ -101,29 +105,31 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '2', 'value': 2},
-            {'suit': 'diamonds', 'name': '3', 'value': 3}
+            {"suit": "hearts", "name": "2", "value": 2},
+            {"suit": "diamonds", "name": "3", "value": 3},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup: Next card is '5' for player hit, followed by extra cards for dealer if needed
         deck = [
-            {'suit': 'diamonds', 'name': '6', 'value': 6},  # Additional buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4},     # Extra for dealer
-            {'suit': 'clubs', 'name': '5', 'value': 5}       # Player's hit (last element)
+            {"suit": "diamonds", "name": "6", "value": 6},  # Additional buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Extra for dealer
+            {"suit": "clubs", "name": "5", "value": 5},  # Player's hit (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         initial_hand_size = len(game_state.player_hand)
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
         self.assertEqual(len(game_state.player_hand), initial_hand_size + 1)
         # Verify that the player received the '5' card
-        self.assertEqual(game_state.player_hand[-1], {'suit': 'clubs', 'name': '5', 'value': 5})
+        self.assertEqual(
+            game_state.player_hand[-1], {"suit": "clubs", "name": "5", "value": 5}
+        )
         self.assertFalse(game_state.game_over)
 
     def test_player_hit_bust(self):
@@ -132,27 +138,31 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': 'King', 'value': 10},
-            {'suit': 'diamonds', 'name': 'Queen', 'value': 10}
+            {"suit": "hearts", "name": "King", "value": 10},
+            {"suit": "diamonds", "name": "Queen", "value": 10},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup: Next card is 'Jack' causing bust
         deck = [
-            {'suit': 'diamonds', 'name': '3', 'value': 3},   # Additional buffer
-            {'suit': 'hearts', 'name': '2', 'value': 2},      # Extra buffer
-            {'suit': 'clubs', 'name': 'Jack', 'value': 10}    # Player's hit causing bust (last element)
+            {"suit": "diamonds", "name": "3", "value": 3},  # Additional buffer
+            {"suit": "hearts", "name": "2", "value": 2},  # Extra buffer
+            {
+                "suit": "clubs",
+                "name": "Jack",
+                "value": 10,
+            },  # Player's hit causing bust (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'Perdiste.')
+        self.assertEqual(game_state.message, "Perdiste.")
         # Player's coins should remain at 500 - wager = 450
         self.assertEqual(self.user.coins, 500 - wager)
 
@@ -162,40 +172,52 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '9', 'value': 9},
-            {'suit': 'diamonds', 'name': '2', 'value': 2}
+            {"suit": "hearts", "name": "9", "value": 9},
+            {"suit": "diamonds", "name": "2", "value": 2},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's hit: 'Queen' to reach 21
         # Dealer's hits: '4' and '4' to reach 20
         deck = [
-            {'suit': 'diamonds', 'name': '4', 'value': 4},   # Dealer's second hit
-            {'suit': 'hearts', 'name': '4', 'value': 4},     # Dealer's first hit
-            {'suit': 'clubs', 'name': 'Queen', 'value': 10}  # Player's hit (last element)
+            {"suit": "diamonds", "name": "4", "value": 4},  # Dealer's second hit
+            {"suit": "hearts", "name": "4", "value": 4},  # Dealer's first hit
+            {
+                "suit": "clubs",
+                "name": "Queen",
+                "value": 10,
+            },  # Player's hit (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
 
         # Assertions
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'Ganaste!')
+        self.assertEqual(game_state.message, "Ganaste!")
         self.assertEqual(len(game_state.player_hand), 3)
-        self.assertEqual(game_state.player_hand[-1], {'suit': 'clubs', 'name': 'Queen', 'value': 10})
+        self.assertEqual(
+            game_state.player_hand[-1], {"suit": "clubs", "name": "Queen", "value": 10}
+        )
         self.assertEqual(len(game_state.dealer_hand), 4)
-        self.assertEqual(game_state.dealer_hand[2], {'suit': 'hearts', 'name': '4', 'value': 4})
-        self.assertEqual(game_state.dealer_hand[3], {'suit': 'diamonds', 'name': '4', 'value': 4})
+        self.assertEqual(
+            game_state.dealer_hand[2], {"suit": "hearts", "name": "4", "value": 4}
+        )
+        self.assertEqual(
+            game_state.dealer_hand[3], {"suit": "diamonds", "name": "4", "value": 4}
+        )
         dealer_total = calculate_hand_value(game_state.dealer_hand)
         self.assertEqual(dealer_total, 20)
         # Player wins: coins increase by the wager amount (assuming double payout)
-        self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
+        self.assertEqual(
+            self.user.coins, 500 - wager + wager * 2
+        )  # 500 - 50 + 100 = 550
 
     def test_player_stand(self):
         """
@@ -205,24 +227,24 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '7', 'value': 7}
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "7", "value": 7},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Dealer's hit: '2' to reach 18
         # Extra cards to prevent deck exhaustion
         deck = [
-            {'suit': 'clubs', 'name': '4', 'value': 4},       # Additional buffer
-            {'suit': 'diamonds', 'name': '3', 'value': 3},    # Extra buffer
-            {'suit': 'hearts', 'name': '2', 'value': 2}       # Dealer's hit (last element)
+            {"suit": "clubs", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "diamonds", "name": "3", "value": 3},  # Extra buffer
+            {"suit": "hearts", "name": "2", "value": 2},  # Dealer's hit (last element)
         ]
-        game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
+        self.set_game_state(wager, player_hand, dealer_hand, deck)
 
-        response, status_code = player_action(self.user, 'stand')
+        response, status_code = player_action(self.user, "stand")
         self.assertEqual(status_code, 200)
 
         # After dealer's turn:
@@ -230,7 +252,7 @@ class BlackjackTestCase(BaseTestCase):
         # Dealer hits and gets '2', total becomes 18
         # Player's total: 17
         # Dealer wins
-        self.assertEqual(response['message'], 'Perdiste.')
+        self.assertEqual(response["message"], "Perdiste.")
         # Player's coins should remain at 500 - wager = 450
         self.assertEqual(self.user.coins, 500 - wager)
 
@@ -242,27 +264,31 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '5', 'value': 5},
-            {'suit': 'diamonds', 'name': '6', 'value': 6}
+            {"suit": "hearts", "name": "5", "value": 5},
+            {"suit": "diamonds", "name": "6", "value": 6},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's double_down hit: 'King' to reach 21
         # Dealer's potential hits: '3' to reach 19
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3},       # Dealer's hit
-            {'suit': 'spades', 'name': 'King', 'value': 10}    # Player's double_down hit (last element)
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Dealer's hit
+            {
+                "suit": "spades",
+                "name": "King",
+                "value": 10,
+            },  # Player's double_down hit (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         initial_coins = self.user.coins  # 500 - 50 = 450
 
-        response, status_code = player_action(self.user, 'double_down')
+        response, status_code = player_action(self.user, "double_down")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
@@ -273,9 +299,11 @@ class BlackjackTestCase(BaseTestCase):
         # Player's total becomes 21 (5 + 6 + 10)
         # Dealer's total is 16, must hit and reach 19 (9 + 7 + 3)
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'Ganaste!')
+        self.assertEqual(game_state.message, "Ganaste!")
         # Player's coins should increase by double the wager
-        self.assertEqual(self.user.coins, initial_coins - wager + wager * 4)  # 450 - 50 + 200 = 600
+        self.assertEqual(
+            self.user.coins, initial_coins - wager + wager * 4
+        )  # 450 - 50 + 200 = 600
 
     def test_player_double_down_insufficient_coins(self):
         """
@@ -285,12 +313,12 @@ class BlackjackTestCase(BaseTestCase):
         db.session.commit()
         wager = 50
         # Setup game state without specifying hands and deck
-        game_state = self.set_game_state(wager)
+        self.set_game_state(wager)
 
         # Attempt to double down, which requires an additional 50 coins
-        response, status_code = player_action(self.user, 'double_down')
+        response, status_code = player_action(self.user, "double_down")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'Insufficient coins to double down')
+        self.assertEqual(response["message"], "Insufficient coins to double down")
 
     def test_player_split(self):
         """
@@ -299,26 +327,34 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '8', 'value': 8},
-            {'suit': 'diamonds', 'name': '8', 'value': 8},
+            {"suit": "hearts", "name": "8", "value": 8},
+            {"suit": "diamonds", "name": "8", "value": 8},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # First split hand draws '3', second split hand draws '4'
         # Extra cards to prevent deck exhaustion
         deck = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},       # Additional buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},    # Second split hand's new card
-            {'suit': 'hearts', 'name': '3', 'value': 3}       # First split hand's new card (last element)
+            {"suit": "clubs", "name": "5", "value": 5},  # Additional buffer
+            {
+                "suit": "diamonds",
+                "name": "4",
+                "value": 4,
+            },  # Second split hand's new card
+            {
+                "suit": "hearts",
+                "name": "3",
+                "value": 3,
+            },  # First split hand's new card (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         initial_coins = self.user.coins  # 500 - 50 = 450
 
-        response, status_code = player_action(self.user, 'split')
+        response, status_code = player_action(self.user, "split")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
@@ -334,25 +370,27 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '8', 'value': 8},
-            {'suit': 'diamonds', 'name': '9', 'value': 9},
+            {"suit": "hearts", "name": "8", "value": 8},
+            {"suit": "diamonds", "name": "9", "value": 9},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup (doesn't matter in this case as split should fail before drawing)
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3},       # Extra buffer
-            {'suit': 'spades', 'name': '5', 'value': 5}        # Additional buffer
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Extra buffer
+            {"suit": "spades", "name": "5", "value": 5},  # Additional buffer
         ]
-        game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
+        self.set_game_state(wager, player_hand, dealer_hand, deck)
 
-        response, status_code = player_action(self.user, 'split')
+        response, status_code = player_action(self.user, "split")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'Cannot split: Cards do not have the same value')
+        self.assertEqual(
+            response["message"], "Cannot split: Cards do not have the same value"
+        )
 
     def test_dealer_turn(self):
         """
@@ -361,27 +399,29 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '7', 'value': 7}
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "7", "value": 7},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '6', 'value': 6},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "6", "value": 6},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Dealer's initial total: 13
         # Dealer hits and draws '4' to reach 17
         # Deck setup:
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Additional buffer
-            {'suit': 'diamonds', 'name': '3', 'value': 3},     # Extra buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4}        # Dealer's hit (last element)
+            {"suit": "clubs", "name": "2", "value": 2},  # Additional buffer
+            {"suit": "diamonds", "name": "3", "value": 3},  # Extra buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Dealer's hit (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         dealer_turn(game_state)
         dealer_value = calculate_hand_value(game_state.dealer_hand)
         self.assertTrue(dealer_value >= 17)
-        self.assertFalse(game_state.game_over)  # Game should not be over until player stands or busts
+        self.assertFalse(
+            game_state.game_over
+        )  # Game should not be over until player stands or busts
 
     def test_determine_winner_player_win(self):
         """
@@ -389,25 +429,27 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '9', 'value': 9},
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "9", "value": 9},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '7', 'value': 7},
-            {'suit': 'spades', 'name': '8', 'value': 8},
+            {"suit": "clubs", "name": "7", "value": 7},
+            {"suit": "spades", "name": "8", "value": 8},
         ]
         # Dealer's total: 15
         # Assuming dealer stands or busts after their turn
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '3', 'value': 3},     # Additional buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "3", "value": 3},  # Additional buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Extra buffer
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'Ganaste!')
-        self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
+        self.assertEqual(game_state.message, "Ganaste!")
+        self.assertEqual(
+            self.user.coins, 500 - wager + wager * 2
+        )  # 500 - 50 + 100 = 550
 
     def test_determine_winner_tie(self):
         """
@@ -415,18 +457,18 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '7', 'value': 7},
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "7", "value": 7},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '8', 'value': 8},
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "8", "value": 8},
         ]
         # Both player and dealer total to 17
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '3', 'value': 3},     # Additional buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "3", "value": 3},  # Additional buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Extra buffer
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
@@ -438,11 +480,11 @@ class BlackjackTestCase(BaseTestCase):
         """
         Test the compare_hands function with various scenarios.
         """
-        self.assertEqual(compare_hands(22, 18), 'lose')  # Player bust
-        self.assertEqual(compare_hands(20, 22), 'win')   # Dealer bust
-        self.assertEqual(compare_hands(19, 18), 'win')
-        self.assertEqual(compare_hands(18, 19), 'lose')
-        self.assertEqual(compare_hands(20, 20), 'tie')
+        self.assertEqual(compare_hands(22, 18), "lose")  # Player bust
+        self.assertEqual(compare_hands(20, 22), "win")  # Dealer bust
+        self.assertEqual(compare_hands(19, 18), "win")
+        self.assertEqual(compare_hands(18, 19), "lose")
+        self.assertEqual(compare_hands(20, 20), "tie")
 
     def test_player_action_invalid(self):
         """
@@ -450,17 +492,17 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         self.set_game_state(wager)
-        response, status_code = player_action(self.user, 'invalid_action')
+        response, status_code = player_action(self.user, "invalid_action")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'Invalid action')
+        self.assertEqual(response["message"], "Invalid action")
 
     def test_player_action_no_active_game(self):
         """
         Test performing a player action when there's no active game.
         """
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 400)
-        self.assertIn('No active game', response.get('message', ''))
+        self.assertIn("No active game", response.get("message", ""))
 
     def test_double_down_win(self):
         """
@@ -468,27 +510,31 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '5', 'value': 5},
-            {'suit': 'diamonds', 'name': '6', 'value': 6},
+            {"suit": "hearts", "name": "5", "value": 5},
+            {"suit": "diamonds", "name": "6", "value": 6},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's double_down hit: 'King' to reach 21
         # Dealer's potential hit: '3' to reach 19
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3},       # Dealer's hit
-            {'suit': 'spades', 'name': 'King', 'value': 10}    # Player's double_down hit (last element)
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Dealer's hit
+            {
+                "suit": "spades",
+                "name": "King",
+                "value": 10,
+            },  # Player's double_down hit (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         initial_coins = self.user.coins  # 500 - 50 = 450
 
-        response, status_code = player_action(self.user, 'double_down')
+        response, status_code = player_action(self.user, "double_down")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
@@ -499,8 +545,10 @@ class BlackjackTestCase(BaseTestCase):
         # Dealer's total is 19 (9 + 7 + 3)
         # Player wins
         self.assertTrue(game_state.game_over)
-        self.assertEqual(game_state.message, 'Ganaste!')
-        self.assertEqual(self.user.coins, initial_coins - wager + wager * 4)  # 450 - 50 + 200 = 600
+        self.assertEqual(game_state.message, "Ganaste!")
+        self.assertEqual(
+            self.user.coins, initial_coins - wager + wager * 4
+        )  # 450 - 50 + 200 = 600
 
     def test_player_hit_after_double_down(self):
         """
@@ -508,33 +556,37 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '5', 'value': 5},
-            {'suit': 'diamonds', 'name': '6', 'value': 6},
+            {"suit": "hearts", "name": "5", "value": 5},
+            {"suit": "diamonds", "name": "6", "value": 6},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's double_down hit: 'King' to reach 21
         # Dealer's potential hit: '3' to reach 19
         # Extra buffer cards
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3},       # Dealer's hit
-            {'suit': 'spades', 'name': 'King', 'value': 10}    # Player's double_down hit (last element)
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Dealer's hit
+            {
+                "suit": "spades",
+                "name": "King",
+                "value": 10,
+            },  # Player's double_down hit (last element)
         ]
-        game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
+        self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         # Perform double_down
-        response, status_code = player_action(self.user, 'double_down')
+        response, status_code = player_action(self.user, "double_down")
         self.assertEqual(status_code, 200)
 
         # Attempt to hit after double_down
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'No active game')
+        self.assertEqual(response["message"], "No active game")
 
     def test_player_cannot_double_down_after_hit(self):
         """
@@ -542,33 +594,33 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '2', 'value': 2},
-            {'suit': 'diamonds', 'name': '3', 'value': 3},
+            {"suit": "hearts", "name": "2", "value": 2},
+            {"suit": "diamonds", "name": "3", "value": 3},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's hit: '4' to reach 6
         # Dealer's potential hit: '5' to reach 14
         # Extra buffer cards
         deck = [
-            {'suit': 'clubs', 'name': '2', 'value': 2},        # Further buffer
-            {'suit': 'diamonds', 'name': '6', 'value': 6},     # Additional buffer
-            {'suit': 'hearts', 'name': '5', 'value': 5},       # Dealer's hit
-            {'suit': 'clubs', 'name': '4', 'value': 4}         # Player's hit (last element)
+            {"suit": "clubs", "name": "2", "value": 2},  # Further buffer
+            {"suit": "diamonds", "name": "6", "value": 6},  # Additional buffer
+            {"suit": "hearts", "name": "5", "value": 5},  # Dealer's hit
+            {"suit": "clubs", "name": "4", "value": 4},  # Player's hit (last element)
         ]
-        game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
+        self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         # Perform hit
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         # Attempt to double_down after hit
-        response, status_code = player_action(self.user, 'double_down')
+        response, status_code = player_action(self.user, "double_down")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'Cannot double down at this stage')
+        self.assertEqual(response["message"], "Cannot double down at this stage")
 
     def test_player_cannot_split_after_hit(self):
         """
@@ -576,33 +628,35 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '6', 'value': 6},
-            {'suit': 'diamonds', 'name': '7', 'value': 7},
+            {"suit": "hearts", "name": "6", "value": 6},
+            {"suit": "diamonds", "name": "7", "value": 7},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's hit: '2' to reach 8
         # Dealer's potential hit: '3' to reach 8
         # Extra buffer cards
         deck = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3},       # Dealer's hit
-            {'suit': 'clubs', 'name': '2', 'value': 2}         # Player's hit (last element)
+            {"suit": "clubs", "name": "5", "value": 5},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Dealer's hit
+            {"suit": "clubs", "name": "2", "value": 2},  # Player's hit (last element)
         ]
-        game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
+        self.set_game_state(wager, player_hand, dealer_hand, deck)
 
         # Perform hit
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         # Attempt to split after hit
-        response, status_code = player_action(self.user, 'split')
+        response, status_code = player_action(self.user, "split")
         self.assertEqual(status_code, 400)
-        self.assertEqual(response['message'], 'Cannot split: Hand does not contain exactly two cards')
+        self.assertEqual(
+            response["message"], "Cannot split: Hand does not contain exactly two cards"
+        )
 
     def test_player_hit_with_multiple_aces(self):
         """
@@ -610,20 +664,20 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': 'Ace', 'value': 11},
-            {'suit': 'diamonds', 'name': 'Ace', 'value': 11},
-            {'suit': 'clubs', 'name': 'Ace', 'value': 11},
+            {"suit": "hearts", "name": "Ace", "value": 11},
+            {"suit": "diamonds", "name": "Ace", "value": 11},
+            {"suit": "clubs", "name": "Ace", "value": 11},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup: No hits required, but include extra cards
         deck = [
-            {'suit': 'clubs', 'name': '4', 'value': 4},        # Additional buffer
-            {'suit': 'diamonds', 'name': '3', 'value': 3},     # Additional buffer
-            {'suit': 'hearts', 'name': '2', 'value': 2},       # Extra buffer
-            {'suit': 'spades', 'name': '5', 'value': 5}        # Further buffer
+            {"suit": "clubs", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "diamonds", "name": "3", "value": 3},  # Additional buffer
+            {"suit": "hearts", "name": "2", "value": 2},  # Extra buffer
+            {"suit": "spades", "name": "5", "value": 5},  # Further buffer
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
@@ -637,27 +691,29 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '9', 'value': 9},
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "9", "value": 9},
         ]
         dealer_hand = [
-            {'suit': 'hearts', 'name': 'King', 'value': 10},
-            {'suit': 'diamonds', 'name': 'Queen', 'value': 10},
-            {'suit': 'clubs', 'name': '3', 'value': 3},  # Dealer's total: 23 (bust)
+            {"suit": "hearts", "name": "King", "value": 10},
+            {"suit": "diamonds", "name": "Queen", "value": 10},
+            {"suit": "clubs", "name": "3", "value": 3},  # Dealer's total: 23 (bust)
         ]
         # Deck setup: Dealer already has a bust
         deck = [
-            {'suit': 'clubs', 'name': '6', 'value': 6},        # Further buffer
-            {'suit': 'diamonds', 'name': '5', 'value': 5},     # Additional buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
+            {"suit": "clubs", "name": "6", "value": 6},  # Further buffer
+            {"suit": "diamonds", "name": "5", "value": 5},  # Additional buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Extra buffer
         ]
         game_state = self.set_game_state(
-            wager, player_hand, dealer_hand, deck, game_over=True, message='Ganaste!'
+            wager, player_hand, dealer_hand, deck, game_over=True, message="Ganaste!"
         )
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'Ganaste!')
-        self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
+        self.assertEqual(game_state.message, "Ganaste!")
+        self.assertEqual(
+            self.user.coins, 500 - wager + wager * 2
+        )  # 500 - 50 + 100 = 550
 
     def test_player_busts(self):
         """
@@ -665,26 +721,26 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': 'King', 'value': 10},
-            {'suit': 'diamonds', 'name': 'Queen', 'value': 10},
-            {'suit': 'clubs', 'name': '3', 'value': 3},  # Player's total: 23 (bust)
+            {"suit": "hearts", "name": "King", "value": 10},
+            {"suit": "diamonds", "name": "Queen", "value": 10},
+            {"suit": "clubs", "name": "3", "value": 3},  # Player's total: 23 (bust)
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup: Dealer's turn won't matter as player already busts
         deck = [
-            {'suit': 'clubs', 'name': '6', 'value': 6},        # Further buffer
-            {'suit': 'diamonds', 'name': '5', 'value': 5},     # Additional buffer
-            {'suit': 'hearts', 'name': '4', 'value': 4}        # Extra buffer
+            {"suit": "clubs", "name": "6", "value": 6},  # Further buffer
+            {"suit": "diamonds", "name": "5", "value": 5},  # Additional buffer
+            {"suit": "hearts", "name": "4", "value": 4},  # Extra buffer
         ]
         game_state = self.set_game_state(
-            wager, player_hand, dealer_hand, deck, game_over=True, message='Perdiste.'
+            wager, player_hand, dealer_hand, deck, game_over=True, message="Perdiste."
         )
 
         determine_winner(game_state, self.user)
-        self.assertEqual(game_state.message, 'Perdiste.')
+        self.assertEqual(game_state.message, "Perdiste.")
         self.assertEqual(self.user.coins, 500 - wager)  # 500 - 50 = 450
 
     def test_player_hits_21(self):
@@ -693,37 +749,45 @@ class BlackjackTestCase(BaseTestCase):
         """
         wager = 50
         player_hand = [
-            {'suit': 'hearts', 'name': '10', 'value': 10},
-            {'suit': 'diamonds', 'name': '9', 'value': 9},
+            {"suit": "hearts", "name": "10", "value": 10},
+            {"suit": "diamonds", "name": "9", "value": 9},
         ]
         dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7},
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck setup:
         # Player's hit: '2' to reach 21
         # Dealer's potential hit: '3' to reach 19
         # Extra buffer cards
         deck = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},        # Further buffer
-            {'suit': 'diamonds', 'name': '4', 'value': 4},     # Additional buffer
-            {'suit': 'spades', 'name': '3', 'value': 3},       # Dealer's hit
-            {'suit': 'hearts', 'name': '2', 'value': 2}        # Player's hit to reach 21 (last element)
+            {"suit": "clubs", "name": "5", "value": 5},  # Further buffer
+            {"suit": "diamonds", "name": "4", "value": 4},  # Additional buffer
+            {"suit": "spades", "name": "3", "value": 3},  # Dealer's hit
+            {
+                "suit": "hearts",
+                "name": "2",
+                "value": 2,
+            },  # Player's hit to reach 21 (last element)
         ]
         game_state = self.set_game_state(wager, player_hand, dealer_hand, deck)
 
-        response, status_code = player_action(self.user, 'hit')
+        response, status_code = player_action(self.user, "hit")
         self.assertEqual(status_code, 200)
 
         db.session.refresh(game_state)
 
         # Assertions
         self.assertTrue(game_state.game_over, "Game should be over when player hits 21")
-        self.assertEqual(game_state.message, 'Ganaste!')
+        self.assertEqual(game_state.message, "Ganaste!")
         self.assertEqual(len(game_state.player_hand), 3)
-        self.assertEqual(game_state.player_hand[-1], {'suit': 'hearts', 'name': '2', 'value': 2})
+        self.assertEqual(
+            game_state.player_hand[-1], {"suit": "hearts", "name": "2", "value": 2}
+        )
         # Player's coins should increase by the wager amount (assuming double payout)
-        self.assertEqual(self.user.coins, 500 - wager + wager * 2)  # 500 - 50 + 100 = 550
+        self.assertEqual(
+            self.user.coins, 500 - wager + wager * 2
+        )  # 500 - 50 + 100 = 550
 
     def test_multiple_concurrent_games(self):
         """
@@ -734,76 +798,80 @@ class BlackjackTestCase(BaseTestCase):
         wager1 = 50
         response1, status_code1 = start_game(self.user, wager1)
         self.assertEqual(status_code1, 200)
-        game_id_1 = response1['id']
-        
+        game_id_1 = response1["id"]
+
         # Start second game
         wager2 = 25
         response2, status_code2 = start_game(self.user, wager2)
         self.assertEqual(status_code2, 200)
-        game_id_2 = response2['id']
-        
+        game_id_2 = response2["id"]
+
         # Verify both games are different
         self.assertNotEqual(game_id_1, game_id_2)
-        
+
         # Get both game states
         game_state_1 = BlackjackGameState.query.filter_by(id=game_id_1).first()
         game_state_2 = BlackjackGameState.query.filter_by(id=game_id_2).first()
-        
+
         # Set up specific hands for each game
         game_state_1.player_hand = [
-            {'suit': 'hearts', 'name': '5', 'value': 5},
-            {'suit': 'diamonds', 'name': '6', 'value': 6}
+            {"suit": "hearts", "name": "5", "value": 5},
+            {"suit": "diamonds", "name": "6", "value": 6},
         ]
         game_state_1.dealer_hand = [
-            {'suit': 'clubs', 'name': '9', 'value': 9},
-            {'suit': 'spades', 'name': '7', 'value': 7}
+            {"suit": "clubs", "name": "9", "value": 9},
+            {"suit": "spades", "name": "7", "value": 7},
         ]
         # Deck for game 1 - player will have 5+6+3=14, won't trigger end game
         game_state_1.deck = [
-            {'suit': 'hearts', 'name': '4', 'value': 4},  # Buffer
-            {'suit': 'diamonds', 'name': '5', 'value': 5},  # Buffer
-            {'suit': 'hearts', 'name': '3', 'value': 3}  # Next card for game 1
+            {"suit": "hearts", "name": "4", "value": 4},  # Buffer
+            {"suit": "diamonds", "name": "5", "value": 5},  # Buffer
+            {"suit": "hearts", "name": "3", "value": 3},  # Next card for game 1
         ]
-        
+
         game_state_2.player_hand = [
-            {'suit': 'hearts', 'name': '8', 'value': 8},
-            {'suit': 'diamonds', 'name': '7', 'value': 7}
+            {"suit": "hearts", "name": "8", "value": 8},
+            {"suit": "diamonds", "name": "7", "value": 7},
         ]
         game_state_2.dealer_hand = [
-            {'suit': 'clubs', 'name': '5', 'value': 5},
-            {'suit': 'spades', 'name': '6', 'value': 6}
+            {"suit": "clubs", "name": "5", "value": 5},
+            {"suit": "spades", "name": "6", "value": 6},
         ]
         # Deck for game 2 - player will have 8+7+2=17, won't trigger end game
         game_state_2.deck = [
-            {'suit': 'hearts', 'name': '9', 'value': 9},  # Buffer
-            {'suit': 'diamonds', 'name': '10', 'value': 10},  # Buffer
-            {'suit': 'spades', 'name': '2', 'value': 2}  # Next card for game 2
+            {"suit": "hearts", "name": "9", "value": 9},  # Buffer
+            {"suit": "diamonds", "name": "10", "value": 10},  # Buffer
+            {"suit": "spades", "name": "2", "value": 2},  # Next card for game 2
         ]
-        
+
         db.session.commit()
-        
+
         # Perform hit on game 1 with game_id
-        response, status_code = player_action(self.user, 'hit', game_id_1)
+        response, status_code = player_action(self.user, "hit", game_id_1)
         self.assertEqual(status_code, 200)
-        
+
         # Verify game 1 was affected
         db.session.refresh(game_state_1)
         self.assertEqual(len(game_state_1.player_hand), 3)
-        self.assertEqual(game_state_1.player_hand[-1], {'suit': 'hearts', 'name': '3', 'value': 3})
-        
+        self.assertEqual(
+            game_state_1.player_hand[-1], {"suit": "hearts", "name": "3", "value": 3}
+        )
+
         # Verify game 2 was NOT affected
         db.session.refresh(game_state_2)
         self.assertEqual(len(game_state_2.player_hand), 2)  # Should still have 2 cards
-        
+
         # Perform hit on game 2 with game_id
-        response, status_code = player_action(self.user, 'hit', game_id_2)
+        response, status_code = player_action(self.user, "hit", game_id_2)
         self.assertEqual(status_code, 200)
-        
+
         # Verify game 2 was affected
         db.session.refresh(game_state_2)
         self.assertEqual(len(game_state_2.player_hand), 3)
-        self.assertEqual(game_state_2.player_hand[-1], {'suit': 'spades', 'name': '2', 'value': 2})
-        
+        self.assertEqual(
+            game_state_2.player_hand[-1], {"suit": "spades", "name": "2", "value": 2}
+        )
+
         # Verify game 1 was NOT affected by game 2's action
         db.session.refresh(game_state_1)
         self.assertEqual(len(game_state_1.player_hand), 3)  # Should still have 3 cards

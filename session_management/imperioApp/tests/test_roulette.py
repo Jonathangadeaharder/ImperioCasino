@@ -4,29 +4,31 @@ from flask import session
 import json
 from unittest.mock import patch
 
+
 class RouletteTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.user = create_user('roulette_user', 'roulette@example.com', 'roulettepass')
+        self.user = create_user("roulette_user", "roulette@example.com", "roulettepass")
         self.login_user()
 
     def login_user(self):
         with self.client:
-            response = self.client.post('/login', data=dict(
-                username='roulette_user',
-                password='roulettepass'
-            ), follow_redirects=True)
+            response = self.client.post(
+                "/login",
+                data=dict(username="roulette_user", password="roulettepass"),
+                follow_redirects=True,
+            )
             self.assertEqual(response.status_code, 200)
-            self.token = session.get('token')
+            self.token = session.get("token")
             self.assertIsNotNone(self.token)
 
     def make_request(self, bet_info):
-        headers = {'Authorization': f'Bearer {self.token}'}
+        headers = {"Authorization": f"Bearer {self.token}"}
         return self.client.post(
-            '/roulette/action',
-            data=json.dumps({'bet': bet_info}),
+            "/roulette/action",
+            data=json.dumps({"bet": bet_info}),
             headers=headers,
-            content_type='application/json'
+            content_type="application/json",
         )
 
     def test_roulette_no_bet_provided(self):
@@ -34,25 +36,25 @@ class RouletteTestCase(BaseTestCase):
         response = self.make_request(None)
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
-        self.assertIn('message', data)
-        self.assertEqual(data['message'], 'Bet details are required')
+        self.assertIn("message", data)
+        self.assertEqual(data["message"], "Bet details are required")
 
     def test_roulette_invalid_bet_amount(self):
         """Test that an invalid bet amount returns an error."""
-        bet_info = [{'numbers': '1', 'odds': 35, 'amt': 0}]
+        bet_info = [{"numbers": "1", "odds": 35, "amt": 0}]
         response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
-        self.assertEqual(data['message'], 'Invalid bet amount')
+        self.assertEqual(data["message"], "Invalid bet amount")
 
     def test_roulette_insufficient_coins(self):
         """Test betting more coins than the user has."""
         update_user_coins(self.user, 10)
-        bet_info = [{'numbers': '1', 'odds': 35, 'amt': 20}]
+        bet_info = [{"numbers": "1", "odds": 35, "amt": 20}]
         response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
-        self.assertEqual(data['message'], 'Not enough coins')
+        self.assertEqual(data["message"], "Not enough coins")
 
     def test_roulette_single_number_win(self):
         """
@@ -61,17 +63,17 @@ class RouletteTestCase(BaseTestCase):
         Example: Bet 10 on number 17, if 17 hits, player should get (35*10)+10 = 360.
         """
         initial_coins = self.user.coins
-        bet_info = [{'numbers': '17', 'odds': 35, 'amt': 10}]
+        bet_info = [{"numbers": "17", "odds": 35, "amt": 10}]
         # Mock random.choice to return a known winning number (17)
-        with patch('random.choice', return_value=17):
+        with patch("random.choice", return_value=17):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertIn('winning_number', data)
-        self.assertEqual(data['winning_number'], 17)
-        self.assertEqual(data['total_bet'], 10)
-        self.assertEqual(data['total_win'], 360)
-        self.assertEqual(data['new_coins'], initial_coins - 10 + 360)
+        self.assertIn("winning_number", data)
+        self.assertEqual(data["winning_number"], 17)
+        self.assertEqual(data["total_bet"], 10)
+        self.assertEqual(data["total_win"], 360)
+        self.assertEqual(data["new_coins"], initial_coins - 10 + 360)
 
     def test_roulette_single_number_loss(self):
         """
@@ -79,16 +81,16 @@ class RouletteTestCase(BaseTestCase):
         Example: Bet 10 on number 17, winning number is 5, no payout.
         """
         initial_coins = self.user.coins
-        bet_info = [{'numbers': '17', 'odds': 35, 'amt': 10}]
-        with patch('random.choice', return_value=5):
+        bet_info = [{"numbers": "17", "odds": 35, "amt": 10}]
+        with patch("random.choice", return_value=5):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(data['winning_number'], 5)
-        self.assertEqual(data['total_bet'], 10)
-        self.assertEqual(data['total_win'], 0)
+        self.assertEqual(data["winning_number"], 5)
+        self.assertEqual(data["total_bet"], 10)
+        self.assertEqual(data["total_win"], 0)
         # Player should lose the bet amount
-        self.assertEqual(data['new_coins'], initial_coins - 10)
+        self.assertEqual(data["new_coins"], initial_coins - 10)
 
     def test_roulette_multiple_bets_mixed_outcomes(self):
         """
@@ -103,35 +105,35 @@ class RouletteTestCase(BaseTestCase):
         """
         initial_coins = self.user.coins
         bet_info = [
-            {'numbers': '5', 'odds': 35, 'amt': 10},
-            {'numbers': '1,2,3', 'odds': 11, 'amt': 20}
+            {"numbers": "5", "odds": 35, "amt": 10},
+            {"numbers": "1,2,3", "odds": 11, "amt": 20},
         ]
-        with patch('random.choice', return_value=2):
+        with patch("random.choice", return_value=2):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(data['winning_number'], 2)
-        self.assertEqual(data['total_bet'], 30)
-        self.assertEqual(data['total_win'], 240)
-        self.assertEqual(data['new_coins'], initial_coins - 30 + 240)
+        self.assertEqual(data["winning_number"], 2)
+        self.assertEqual(data["total_bet"], 30)
+        self.assertEqual(data["total_win"], 240)
+        self.assertEqual(data["new_coins"], initial_coins - 30 + 240)
 
     def test_roulette_invalid_numbers_format(self):
         """
         Test that providing invalid numbers format (like 'abc' or empty string)
         returns a proper error message.
         """
-        bet_info = [{'numbers': 'abc', 'odds': 35, 'amt': 10}]
+        bet_info = [{"numbers": "abc", "odds": 35, "amt": 10}]
         response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
-        self.assertEqual(data['message'], 'Invalid bet numbers')
+        self.assertEqual(data["message"], "Invalid bet numbers")
 
-        bet_info = [{'numbers': '', 'odds': 35, 'amt': 10}]
+        bet_info = [{"numbers": "", "odds": 35, "amt": 10}]
         response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)  # No numbers means no win scenario
         data = response.get_json()
         # If empty numbers is considered valid but no hits, just a loss
-        self.assertEqual(data['total_win'], 0)
+        self.assertEqual(data["total_win"], 0)
 
     def test_roulette_multiple_bets_all_lost(self):
         """
@@ -144,16 +146,16 @@ class RouletteTestCase(BaseTestCase):
         """
         initial_coins = self.user.coins
         bet_info = [
-            {'numbers': '1', 'odds': 35, 'amt': 10},
-            {'numbers': '2,3', 'odds': 17, 'amt': 20}
+            {"numbers": "1", "odds": 35, "amt": 10},
+            {"numbers": "2,3", "odds": 17, "amt": 20},
         ]
-        with patch('random.choice', return_value=4):
+        with patch("random.choice", return_value=4):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(data['total_bet'], 30)
-        self.assertEqual(data['total_win'], 0)
-        self.assertEqual(data['new_coins'], initial_coins - 30)
+        self.assertEqual(data["total_bet"], 30)
+        self.assertEqual(data["total_win"], 0)
+        self.assertEqual(data["new_coins"], initial_coins - 30)
 
     def test_roulette_edge_number_zero(self):
         """
@@ -162,15 +164,15 @@ class RouletteTestCase(BaseTestCase):
         Winning number = 0 means a win of 360
         """
         initial_coins = self.user.coins
-        bet_info = [{'numbers': '0', 'odds': 35, 'amt': 10}]
-        with patch('random.choice', return_value=0):
+        bet_info = [{"numbers": "0", "odds": 35, "amt": 10}]
+        with patch("random.choice", return_value=0):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(data['winning_number'], 0)
-        self.assertEqual(data['total_bet'], 10)
-        self.assertEqual(data['total_win'], 360)
-        self.assertEqual(data['new_coins'], initial_coins - 10 + 360)
+        self.assertEqual(data["winning_number"], 0)
+        self.assertEqual(data["total_bet"], 10)
+        self.assertEqual(data["total_win"], 360)
+        self.assertEqual(data["new_coins"], initial_coins - 10 + 360)
 
     def test_roulette_large_multiple_bets(self):
         """
@@ -185,24 +187,26 @@ class RouletteTestCase(BaseTestCase):
         """
         initial_coins = self.user.coins
         bet_info = [
-            {'numbers': '1,2,3,4,5,6', 'odds': 5, 'amt': 10},
-            {'numbers': '10,11,12', 'odds': 11, 'amt': 15},
-            {'numbers': '20', 'odds': 35, 'amt': 5}
+            {"numbers": "1,2,3,4,5,6", "odds": 5, "amt": 10},
+            {"numbers": "10,11,12", "odds": 11, "amt": 15},
+            {"numbers": "20", "odds": 35, "amt": 5},
         ]
-        with patch('random.choice', return_value=11):
+        with patch("random.choice", return_value=11):
             response = self.make_request(bet_info)
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(data['winning_number'], 11)
-        self.assertEqual(data['total_bet'], 30)
-        self.assertEqual(data['total_win'], 180)
-        self.assertEqual(data['new_coins'], initial_coins - 30 + 180)
+        self.assertEqual(data["winning_number"], 11)
+        self.assertEqual(data["total_bet"], 30)
+        self.assertEqual(data["total_win"], 180)
+        self.assertEqual(data["new_coins"], initial_coins - 30 + 180)
 
     def test_roulette_token_required(self):
         """
         Test that calling roulette action without a token returns 401.
         """
-        response = self.client.post('/roulette/action', json={'bet': [{'numbers': '1', 'odds': 35, 'amt': 10}]})
+        response = self.client.post(
+            "/roulette/action", json={"bet": [{"numbers": "1", "odds": 35, "amt": 10}]}
+        )
         self.assertEqual(response.status_code, 401)
         data = response.get_json()
-        self.assertEqual(data['message'], 'Token is missing')
+        self.assertEqual(data["message"], "Token is missing")

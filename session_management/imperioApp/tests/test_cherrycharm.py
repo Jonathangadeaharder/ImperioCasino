@@ -1,12 +1,20 @@
-from ..game_logic.cherrycharm import spin_reels, get_fruits, calculate_winnings, cherryAction, Fruit, segment_to_fruit
+from ..game_logic.cherrycharm import (
+    spin_reels,
+    get_fruits,
+    calculate_winnings,
+    cherryAction,
+    Fruit,
+    segment_to_fruit,
+)
 from ..utils.services import create_user
 from .. import db
 from .base_test import BaseTestCase
 
+
 class CherryCharmTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.user = create_user('testuser', 'test@example.com', 'testpassword')
+        self.user = create_user("testuser", "test@example.com", "testpassword")
 
     def test_spin_reels(self):
         segments = spin_reels()
@@ -43,9 +51,9 @@ class CherryCharmTestCase(BaseTestCase):
         response, status_code = cherryAction(self.user)
         self.assertEqual(status_code, 200)
         data = response.get_json()
-        self.assertIn('stopSegments', data)
-        self.assertIn('totalCoins', data)
-        self.assertEqual(data['totalCoins'], self.user.coins)
+        self.assertIn("stopSegments", data)
+        self.assertIn("totalCoins", data)
+        self.assertEqual(data["totalCoins"], self.user.coins)
 
     def test_executeSpin_not_enough_coins(self):
         self.user.coins = 0
@@ -53,4 +61,4 @@ class CherryCharmTestCase(BaseTestCase):
         response, status_code = cherryAction(self.user)
         self.assertEqual(status_code, 400)
         data = response.get_json()
-        self.assertEqual(data['message'], 'Not enough coins to spin')
+        self.assertEqual(data["message"], "Not enough coins to spin")

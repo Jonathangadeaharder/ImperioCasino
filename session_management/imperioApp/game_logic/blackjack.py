@@ -8,40 +8,54 @@ import logging
 
 # Define the card deck
 deck = [
-    {'suit': suit, 'name': name, 'value': value}
-    for suit in ['hearts', 'diamond', 'clubs', 'spades']
+    {"suit": suit, "name": name, "value": value}
+    for suit in ["hearts", "diamond", "clubs", "spades"]
     for name, value in [
-        ('2', 2), ('3', 3), ('4', 4), ('5', 5), ('6', 6),
-        ('7', 7), ('8', 8), ('9', 9), ('10', 10),
-        ('Jack', 10), ('Queen', 10), ('King', 10), ('Ace', 11)
+        ("2", 2),
+        ("3", 3),
+        ("4", 4),
+        ("5", 5),
+        ("6", 6),
+        ("7", 7),
+        ("8", 8),
+        ("9", 9),
+        ("10", 10),
+        ("Jack", 10),
+        ("Queen", 10),
+        ("King", 10),
+        ("Ace", 11),
     ]
 ]
+
 
 def shuffle_deck():
     return random.sample(deck * 6, len(deck) * 6)  # Using 6 decks
 
+
 def calculate_hand_value(hand):
-    value = sum(card['value'] for card in hand)
-    aces = sum(1 for card in hand if card['name'] == 'Ace')
+    value = sum(card["value"] for card in hand)
+    aces = sum(1 for card in hand if card["name"] == "Ace")
     while value > 21 and aces:
         value -= 10  # Convert an ace from 11 to 1
         aces -= 1
     return value
 
+
 def start_game(user, wager):
     # Validate wager
     if wager <= 0:
-        return {'message': 'Invalid wager amount', 'game_over': True}, 400
+        return {"message": "Invalid wager amount", "game_over": True}, 400
 
     # Lock user row for update to prevent race conditions
     from ..utils.models import User
+
     locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
 
     if not locked_user:
-        return {'message': 'User not found', 'game_over': True}, 404
+        return {"message": "User not found", "game_over": True}, 404
 
     if locked_user.coins < wager:
-        return {'message': 'Insufficient coins', 'game_over': True}, 400
+        return {"message": "Insufficient coins", "game_over": True}, 400
 
     # Note: We no longer terminate existing active games to support multiple concurrent games
     # Each game is now tracked by its unique game_id
@@ -59,12 +73,12 @@ def start_game(user, wager):
         player_coins=locked_user.coins,
         current_wager=wager,
         game_over=False,
-        message='',
+        message="",
         player_stood=False,
         double_down=False,
         split=False,
         player_second_hand=[],
-        current_hand='first'
+        current_hand="first",
     )
 
     # Deal initial cards
@@ -78,34 +92,43 @@ def start_game(user, wager):
 
     return game_state.to_dict(), 200
 
+
 def player_action(user, action, game_id=None):
     # If game_id is provided, use it to find the specific game
     if game_id:
-        game_state = BlackjackGameState.query.filter_by(id=game_id, user_id=user.id, game_over=False).first()
+        game_state = BlackjackGameState.query.filter_by(
+            id=game_id, user_id=user.id, game_over=False
+        ).first()
     else:
         # Fallback to the old behavior for backward compatibility
-        game_state = BlackjackGameState.query.filter_by(user_id=user.id, game_over=False).first()
-    
-    if not game_state:
-        return {'message': 'No active game'}, 400
+        game_state = BlackjackGameState.query.filter_by(
+            user_id=user.id, game_over=False
+        ).first()
 
-    if action == 'hit':
+    if not game_state:
+        return {"message": "No active game"}, 400
+
+    if action == "hit":
         return player_hit(user, game_state)
-    elif action == 'stand':
+    elif action == "stand":
         return player_stand(game_state, user)
-    elif action == 'double_down':
+    elif action == "double_down":
         return player_double_down(game_state, user)
-    elif action == 'split':
+    elif action == "split":
         # Capture both response and status code
         response, status_code = player_split(game_state, user)
         return response, status_code
     else:
-        return {'message': 'Invalid action'}, 400
+        return {"message": "Invalid action"}, 400
 
 
 def player_hit(user, game_state):
     if game_state.split:
-        hand = game_state.player_second_hand if game_state.current_hand == 'second' else game_state.player_hand
+        hand = (
+            game_state.player_second_hand
+            if game_state.current_hand == "second"
+            else game_state.player_hand
+        )
     else:
         hand = game_state.player_hand
 
@@ -115,13 +138,16 @@ def player_hit(user, game_state):
     logging.debug(f"Player hit. Hand value: {player_value}")
 
     if player_value > 21:
-        if game_state.split and game_state.current_hand == 'first':
-            game_state.current_hand = 'second'
+        if game_state.split and game_state.current_hand == "first":
+            game_state.current_hand = "second"
             game_state.player_stood = False
         else:
             # Lock user for coin updates
             from ..utils.models import User
-            locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+            locked_user = (
+                db.session.query(User).with_for_update().filter_by(id=user.id).first()
+            )
             if locked_user:
                 game_state.game_over = True
                 dealer_turn(game_state)
@@ -129,15 +155,18 @@ def player_hit(user, game_state):
     elif player_value == 21:
         # Lock user for coin updates
         from ..utils.models import User
-        locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+        locked_user = (
+            db.session.query(User).with_for_update().filter_by(id=user.id).first()
+        )
         if locked_user:
             game_state.player_stood = True
             game_state.game_over = True
             dealer_turn(game_state)
             determine_winner(game_state, locked_user)
-    elif game_state.split and game_state.current_hand == 'first':
+    elif game_state.split and game_state.current_hand == "first":
         # If split and first hand, switch to second hand
-        game_state.current_hand = 'second'
+        game_state.current_hand = "second"
         game_state.player_stood = False
 
     db.session.commit()
@@ -145,13 +174,16 @@ def player_hit(user, game_state):
 
 
 def player_stand(game_state, user):
-    if game_state.split and game_state.current_hand == 'first':
-        game_state.current_hand = 'second'
+    if game_state.split and game_state.current_hand == "first":
+        game_state.current_hand = "second"
         game_state.player_stood = False
     else:
         # Lock user for coin updates
         from ..utils.models import User
-        locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
+
+        locked_user = (
+            db.session.query(User).with_for_update().filter_by(id=user.id).first()
+        )
         if locked_user:
             # Dealer's turn
             dealer_turn(game_state)
@@ -163,18 +195,24 @@ def player_stand(game_state, user):
 
 
 def player_double_down(game_state, user):
-    if len(game_state.player_hand) > 2 or game_state.double_down or game_state.split or game_state.player_stood:
-        return {'message': 'Cannot double down at this stage'}, 400
+    if (
+        len(game_state.player_hand) > 2
+        or game_state.double_down
+        or game_state.split
+        or game_state.player_stood
+    ):
+        return {"message": "Cannot double down at this stage"}, 400
 
     # Lock user row for update to prevent race conditions
     from ..utils.models import User
+
     locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
 
     if not locked_user:
-        return {'message': 'User not found'}, 404
+        return {"message": "User not found"}, 404
 
     if locked_user.coins < game_state.current_wager:
-        return {'message': 'Insufficient coins to double down'}, 400
+        return {"message": "Insufficient coins to double down"}, 400
 
     locked_user.coins -= game_state.current_wager
     game_state.current_wager *= 2
@@ -185,7 +223,7 @@ def player_double_down(game_state, user):
     player_value = calculate_hand_value(game_state.player_hand)
 
     if player_value > 21:
-        game_state.message = 'Bust! You exceeded 21.'
+        game_state.message = "Bust! You exceeded 21."
         game_state.game_over = True
     else:
         game_state.player_stood = True
@@ -196,25 +234,27 @@ def player_double_down(game_state, user):
     db.session.commit()
     return game_state.to_dict(), 200
 
+
 def player_split(game_state, user):
     hand = game_state.player_hand
     # Check if hand has exactly two cards
     if len(hand) != 2:
-        return {'message': 'Cannot split: Hand does not contain exactly two cards'}, 400
+        return {"message": "Cannot split: Hand does not contain exactly two cards"}, 400
     # Check if both cards have the same value
-    if hand[0]['value'] != hand[1]['value']:
-        return {'message': 'Cannot split: Cards do not have the same value'}, 400
+    if hand[0]["value"] != hand[1]["value"]:
+        return {"message": "Cannot split: Cards do not have the same value"}, 400
 
     # Lock user row for update to prevent race conditions
     from ..utils.models import User
+
     locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
 
     if not locked_user:
-        return {'message': 'User not found'}, 404
+        return {"message": "User not found"}, 404
 
     # Check if user has enough coins
     if locked_user.coins < game_state.current_wager:
-        return {'message': 'Cannot split: Insufficient coins'}, 400
+        return {"message": "Cannot split: Insufficient coins"}, 400
 
     locked_user.coins -= game_state.current_wager
     game_state.player_coins = locked_user.coins
@@ -230,14 +270,16 @@ def player_split(game_state, user):
     return game_state.to_dict(), 200
 
 
-
 def dealer_turn(game_state):
     dealer_value = calculate_hand_value(game_state.dealer_hand)
     while dealer_value < 17:
         # Dealer hits
         game_state.dealer_hand.append(game_state.deck.pop())
         dealer_value = calculate_hand_value(game_state.dealer_hand)
-    logging.debug(f"Dealer's final hand: {game_state.dealer_hand} with value: {dealer_value}")
+    logging.debug(
+        f"Dealer's final hand: {game_state.dealer_hand} with value: {dealer_value}"
+    )
+
 
 def determine_winner(game_state, user):
     dealer_value = calculate_hand_value(game_state.dealer_hand)
@@ -245,31 +287,31 @@ def determine_winner(game_state, user):
 
     if game_state.split:
         outcomes = []
-        for hand_attr in ['player_hand', 'player_second_hand']:
+        for hand_attr in ["player_hand", "player_second_hand"]:
             hand = getattr(game_state, hand_attr)
             player_value = calculate_hand_value(hand)
             outcome = compare_hands(player_value, dealer_value)
             outcomes.append(outcome)
-            if outcome == 'win':
+            if outcome == "win":
                 user.coins += game_state.current_wager * 2
-            elif outcome == 'tie':
+            elif outcome == "tie":
                 user.coins += game_state.current_wager
 
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins
-        game_state.message = f'First hand: {outcomes[0]}, Second hand: {outcomes[1]}'
+        game_state.message = f"First hand: {outcomes[0]}, Second hand: {outcomes[1]}"
     else:
         player_value = calculate_hand_value(game_state.player_hand)
         outcome = compare_hands(player_value, dealer_value)
 
-        if outcome == 'win':
+        if outcome == "win":
             user.coins += game_state.current_wager * 2
-            game_state.message = 'Ganaste!'
-        elif outcome == 'tie':
+            game_state.message = "Ganaste!"
+        elif outcome == "tie":
             user.coins += game_state.current_wager
-            game_state.message = 'It\'s a tie.'
+            game_state.message = "It's a tie."
         else:
-            game_state.message = 'Perdiste.'
+            game_state.message = "Perdiste."
 
         update_user_coins(user, user.coins)
         game_state.player_coins = user.coins
@@ -277,14 +319,15 @@ def determine_winner(game_state, user):
     game_state.game_over = True
     db.session.commit()
 
+
 def compare_hands(player_value, dealer_value):
     if player_value > 21:
-        return 'lose'
+        return "lose"
     elif dealer_value > 21:
-        return 'win'
+        return "win"
     elif player_value > dealer_value:
-        return 'win'
+        return "win"
     elif player_value == dealer_value:
-        return 'tie'
+        return "tie"
     else:
-        return 'lose'
+        return "lose"

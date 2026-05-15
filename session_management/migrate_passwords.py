@@ -16,7 +16,6 @@ Options:
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add parent directory to path to import imperioApp
@@ -24,10 +23,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from imperioApp import app, db
 from imperioApp.utils.models import User
-from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -38,7 +36,7 @@ def is_already_hashed(password_str):
     """
     if not password_str:
         return False
-    return password_str.startswith(('$2b$', '$2a$', '$2y$', 'pbkdf2:', 'scrypt:'))
+    return password_str.startswith(("$2b$", "$2a$", "$2y$", "pbkdf2:", "scrypt:"))
 
 
 def migrate_passwords(dry_run=False):
@@ -64,12 +62,16 @@ def migrate_passwords(dry_run=False):
         for user in users:
             try:
                 if not user.password:
-                    logger.warning(f"User {user.username} has no password set. Skipping.")
+                    logger.warning(
+                        f"User {user.username} has no password set. Skipping."
+                    )
                     error_count += 1
                     continue
 
                 if is_already_hashed(user.password):
-                    logger.info(f"User {user.username} password is already hashed. Skipping.")
+                    logger.info(
+                        f"User {user.username} password is already hashed. Skipping."
+                    )
                     already_hashed_count += 1
                     continue
 
@@ -77,7 +79,9 @@ def migrate_passwords(dry_run=False):
                 plain_password = user.password
 
                 if dry_run:
-                    logger.info(f"[DRY RUN] Would hash password for user: {user.username}")
+                    logger.info(
+                        f"[DRY RUN] Would hash password for user: {user.username}"
+                    )
                     migrated_count += 1
                 else:
                     # Hash the password using the model's method
@@ -93,21 +97,23 @@ def migrate_passwords(dry_run=False):
         if not dry_run and migrated_count > 0:
             try:
                 db.session.commit()
-                logger.info(f"\n✓ Successfully committed {migrated_count} password hashes to database")
+                logger.info(
+                    f"\n✓ Successfully committed {migrated_count} password hashes to database"
+                )
             except Exception as e:
                 db.session.rollback()
                 logger.error(f"Failed to commit changes: {e}")
                 return
 
         # Summary
-        logger.info("\n" + "="*60)
+        logger.info("\n" + "=" * 60)
         logger.info("MIGRATION SUMMARY")
-        logger.info("="*60)
+        logger.info("=" * 60)
         logger.info(f"Total users:           {len(users)}")
         logger.info(f"Passwords migrated:    {migrated_count}")
         logger.info(f"Already hashed:        {already_hashed_count}")
         logger.info(f"Errors/Skipped:        {error_count}")
-        logger.info("="*60)
+        logger.info("=" * 60)
 
         if dry_run and migrated_count > 0:
             logger.info("\n⚠️  This was a DRY RUN. No changes were saved.")
@@ -135,19 +141,25 @@ def verify_migration():
             return False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Migrate user passwords from plain text to hashed')
-    parser.add_argument('--dry-run', action='store_true',
-                        help='Show what would be changed without making changes')
-    parser.add_argument('--verify', action='store_true',
-                        help='Verify that all passwords are hashed')
+    parser = argparse.ArgumentParser(
+        description="Migrate user passwords from plain text to hashed"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be changed without making changes",
+    )
+    parser.add_argument(
+        "--verify", action="store_true", help="Verify that all passwords are hashed"
+    )
 
     args = parser.parse_args()
 
     logger.info("ImperioCasino Password Migration Tool")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     if args.verify:
         logger.info("Verifying password hashes...\n")
@@ -158,7 +170,7 @@ if __name__ == '__main__':
         else:
             logger.warning("⚠️  WARNING: This will modify the database!")
             response = input("Continue? (yes/no): ")
-            if response.lower() != 'yes':
+            if response.lower() != "yes":
                 logger.info("Migration cancelled.")
                 sys.exit(0)
             print()
