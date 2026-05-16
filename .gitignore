@@ -70,6 +70,9 @@ yarn-debug.log*
 yarn-error.log*
 cherry-charm/yarn.lock
 
+# SvelteKit
+.svelte-kit/
+
 # Build artifacts
 project_sources.zip
 concatenated_code.txt
