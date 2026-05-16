@@ -1,0 +1,41 @@
+root: true
+
+exclude:
+  - node_modules/**
+  - .git/**
+  - dist/**
+  - build/**
+  - coverage/**
+  - docs/**
+  - .svelte-kit/**
+  - .vercel/**
+  - static/images/**
+
+rules:
+  max-depth:
+    max: 5
+    exemptions:
+      - ".git/**"
+      - "node_modules/**"
+      - ".svelte-kit/**"
+
+  max-files-in-dir:
+    max: 30
+    exemptions:
+      - "static/images/**"
+
+  max-subdirs:
+    max: 15
+    exemptions:
+      - "static/images/**"
+
+  file-existence:
+    "README.md":
+      rule: "exists:1"
+
+  disallowed-patterns:
+    - "*.tmp"
+    - "*.bak"
+    - ".DS_Store"
+
+  github-workflows: null
