@@ -1,0 +1,53 @@
+# Logs
+*.log
+logs/
+
+# SQLite database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.*
+!.env.example
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SvelteKit
+.svelte-kit/
+
+# PocketBase binary & data
+pocketbase/pocketbase
+pocketbase/pb_data/
+pocketbase/CHANGELOG.md
+pocketbase/LICENSE.md
+
+# Ralph loop
+.ralph-loop/
+
+# Build artifacts
+*.zip
