@@ -39,7 +39,8 @@ export function calculateHandValue(hand: Hand): number {
 }
 
 export function playerHit(hand: Hand, deck: Deck): { hand: Hand; deck: Deck; busted: boolean } {
-	const card = deck.pop()!;
+	if (deck.length === 0) return { hand, deck, busted: calculateHandValue(hand) > 21 };
+	const card = deck.pop() as Card;
 	const newHand = [...hand, card];
 	const busted = calculateHandValue(newHand) > 21;
 	return { hand: newHand, deck, busted };
@@ -47,11 +48,12 @@ export function playerHit(hand: Hand, deck: Deck): { hand: Hand; deck: Deck; bus
 
 export function dealerTurn(deck: Deck, hand: Hand): { hand: Hand; deck: Deck } {
 	let currentHand = [...hand];
-	while (calculateHandValue(currentHand) < 17) {
-		const card = deck.pop()!;
+	let currentDeck = [...deck];
+	while (calculateHandValue(currentHand) < 17 && currentDeck.length > 0) {
+		const card = currentDeck.pop() as Card;
 		currentHand = [...currentHand, card];
 	}
-	return { hand: currentHand, deck };
+	return { hand: currentHand, deck: currentDeck };
 }
 
 export function compareHands(player: Hand, dealer: Hand): 'win' | 'lose' | 'tie' {

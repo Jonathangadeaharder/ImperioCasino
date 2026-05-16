@@ -13,7 +13,7 @@ export class PocketBaseAdapter implements DBAdapter {
 	async getUserByUsername(username: string): Promise<User | null> {
 		try {
 			const records = await this.pb.collection('users').getList(1, 1, {
-				filter: `username = "${username}"`
+				filter: this.pb.filter('username = {:username}', { username })
 			});
 			if (records.items.length === 0) return null;
 			const r = records.items[0];
@@ -29,17 +29,13 @@ export class PocketBaseAdapter implements DBAdapter {
 	}
 
 	async addCoins(userId: string, amount: number): Promise<number> {
-		const record = await this.pb.collection('users').getOne(userId);
-		const newCoins = record.coins + amount;
-		await this.pb.collection('users').update(userId, { coins: newCoins });
-		return newCoins;
+		const record = await this.pb.collection('users').update(userId, { 'coins+': amount });
+		return record.coins;
 	}
 
 	async deductCoins(userId: string, amount: number): Promise<number> {
-		const record = await this.pb.collection('users').getOne(userId);
-		const newCoins = Math.max(0, record.coins - amount);
-		await this.pb.collection('users').update(userId, { coins: newCoins });
-		return newCoins;
+		const record = await this.pb.collection('users').update(userId, { 'coins-': amount });
+		return record.coins;
 	}
 
 	async setCoins(userId: string, amount: number): Promise<number> {

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createDeck, shuffleDeck, calculateHandValue } from '$lib/server/games/blackjack';
-import type { BlackjackState } from '$lib/types';
+import type { BlackjackState, Card } from '$lib/types';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const { wager } = await request.json();
@@ -11,8 +11,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (coins < wager) return json({ error: 'Not enough coins' }, { status: 400 });
 
 	const deck = shuffleDeck(createDeck());
-	const player_hand = [deck.pop()!, deck.pop()!];
-	const dealer_hand = [deck.pop()!, deck.pop()!];
+	const player_hand = [deck.pop() as Card, deck.pop() as Card];
+	const dealer_hand = [deck.pop() as Card, deck.pop() as Card];
 	const playerValue = calculateHandValue(player_hand);
 	const dealerValue = calculateHandValue(dealer_hand);
 
@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		id: gameId,
 		...state,
 		deck: [],
-		can_double_down: false,
-		can_split: player_hand[0].name === player_hand[1].name && ['Jack', 'Queen', 'King'].includes(player_hand[0].name) === ['Jack', 'Queen', 'King'].includes(player_hand[1].name)
+		can_double_down: true,
+		can_split: player_hand[0].value === player_hand[1].value
 	});
 };

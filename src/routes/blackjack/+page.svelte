@@ -13,7 +13,10 @@
 	let resultMessage = $state<string | null>(null);
 	let resultPayout = $state(0);
 
+	let previousCoins = $state(0);
+
 	async function startGame() {
+		previousCoins = coins;
 		const res = await fetch('/blackjack/start', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -41,7 +44,7 @@
 		if (d.game_over) {
 			playing = false;
 			resultMessage = d.message;
-			resultPayout = d.player_coins;
+			resultPayout = Math.max(0, d.player_coins - previousCoins);
 		}
 	}
 </script>

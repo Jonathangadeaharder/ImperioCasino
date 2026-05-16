@@ -3,7 +3,7 @@
 	import CardComponent from './Card.svelte';
 
 	let { gameState, onAction, playing }: {
-		gameState: BlackjackState | null;
+		gameState: BlackjackState & { can_double_down?: boolean; can_split?: boolean };
 		onAction: (action: string) => void;
 		playing: boolean;
 	} = $props();
@@ -45,8 +45,8 @@
 			<div class="actions">
 				<button onclick={() => onAction('hit')}>Hit</button>
 				<button onclick={() => onAction('stand')}>Stand</button>
-				<button onclick={() => onAction('double')} disabled={!gameState.double_down}>Double</button>
-				<button onclick={() => onAction('split')} disabled={!gameState.split}>Split</button>
+				<button onclick={() => onAction('double')} disabled={!gameState.can_double_down}>Double</button>
+				<button onclick={() => onAction('split')} disabled={!gameState.can_split}>Split</button>
 			</div>
 		{/if}
 	</div>

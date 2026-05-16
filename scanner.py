@@ -1,7 +1,7 @@
 import os
 
 # Define the list of code file extensions you want to include
-code_extensions = [".py", "ts", ".css", ".tsx"]
+code_extensions = [".py", ".ts", ".css", ".tsx"]
 
 # Define directories to exclude from the search
 exclude_dirs = {

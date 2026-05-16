@@ -2,11 +2,13 @@ import PocketBase from 'pocketbase';
 import { building } from '$app/environment';
 import type { Handle } from '@sveltejs/kit';
 import { PocketBaseAdapter } from '$lib/server/db/pocketbase';
+import { env } from '$env/dynamic/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);
 
-	const pb = new PocketBase('http://127.0.0.1:8090');
+	const pbUrl = env.POCKETBASE_URL || 'http://127.0.0.1:8090';
+	const pb = new PocketBase(pbUrl);
 	event.locals.pb = pb;
 	event.locals.db = new PocketBaseAdapter(pb);
 
@@ -15,7 +17,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	try {
 		if (pb.authStore.isValid) {
-			await pb.collection('users').authRefresh();
+			const token = pb.authStore.token as string;
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			const expiresAt = payload.exp * 1000;
+			const fiveMinutes = 5 * 60 * 1000;
+			if (Date.now() > expiresAt - fiveMinutes) {
+				await pb.collection('users').authRefresh();
+			}
 		}
 	} catch {
 		pb.authStore.clear();
