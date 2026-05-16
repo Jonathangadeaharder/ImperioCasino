@@ -101,7 +101,7 @@
 		<button onclick={spin} disabled={bets.length === 0 || spinning}>
 			{spinning ? 'Spinning...' : 'Spin!'}
 		</button>
-		{error && <p class="error">{error}</p>}
+		{#if error}<p class="error">{error}</p>{/if}
 		{#if result}
 			<div class="result">
 				<h2>Result: {result.winning_number}</h2>

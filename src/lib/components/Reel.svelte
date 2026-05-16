@@ -1,21 +1,14 @@
 <script lang="ts">
-	import { T, useFrame } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 
 	let { reelIndex, spinning }: { reelIndex: number; spinning: boolean } = $props();
 
 	let mesh: any = $state(null);
-	let rotationX = $state(0);
-	let startTime = $state(0);
 
-	$effect(() => {
-		if (spinning) startTime = performance.now();
-	});
-
-	useFrame(({ delta }) => {
+	useTask((delta) => {
 		if (!mesh) return;
 		if (spinning) {
-			rotationX += delta * 8;
-			mesh.rotation.x = rotationX;
+			mesh.rotation.x += delta * 8;
 		}
 	});
 </script>
