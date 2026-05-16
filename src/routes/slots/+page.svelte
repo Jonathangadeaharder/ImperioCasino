@@ -3,8 +3,8 @@
 	import SlotMachine from '$lib/components/SlotMachine.svelte';
 	import type { Fruit } from '$lib/types';
 
-	let { data } = $props();
-	let coins = $state(data.coins);
+	import { page } from '$app/stores';
+	let coins = $state($page.data.coins);
 	let spinning = $state(false);
 	let resultFruits = $state<Fruit[] | null>(null);
 	let payout = $state(0);

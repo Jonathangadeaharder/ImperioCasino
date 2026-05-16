@@ -1,7 +1,6 @@
 <script lang="ts">
-	let { data } = $props();
-
-	let coins = $state(data.coins);
+	import { page } from '$app/stores';
+	let coins = $state($page.data.coins);
 	let bets = $state<{ numbers: string; odds: number; amt: number }[]>([]);
 	let spinning = $state(false);
 	let result = $state<{ winning_number: number; total_bet: number; total_win: number; new_coins: number } | null>(null);

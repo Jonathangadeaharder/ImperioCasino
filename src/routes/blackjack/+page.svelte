@@ -4,8 +4,8 @@
 	import ResultModal from '$lib/components/ResultModal.svelte';
 	import type { BlackjackState } from '$lib/types';
 
-	let { data } = $props();
-	let coins = $state(data.coins);
+	import { page } from '$app/stores';
+	let coins = $state($page.data.coins);
 	let gameState = $state<BlackjackState | null>(null);
 	let wager = $state(10);
 	let playing = $state(false);
