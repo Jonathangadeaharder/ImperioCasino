@@ -73,6 +73,15 @@ cherry-charm/yarn.lock
 # SvelteKit
 .svelte-kit/
 
+# PocketBase binary & data
+pocketbase/pocketbase
+pocketbase/pb_data/
+pocketbase/CHANGELOG.md
+pocketbase/LICENSE.md
+
+# Ralph loop
+.ralph-loop/
+
 # Build artifacts
 project_sources.zip
 concatenated_code.txt

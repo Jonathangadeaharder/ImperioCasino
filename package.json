@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "pb": "./pocketbase/pocketbase serve --dir=./pocketbase/pb_data --http=127.0.0.1:8090",
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
