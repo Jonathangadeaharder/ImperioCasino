@@ -13,7 +13,7 @@ export class PocketBaseAdapter implements DBAdapter {
 	async getUserByUsername(username: string): Promise<User | null> {
 		try {
 			const records = await this.pb.collection('users').getList(1, 1, {
-				filter: `username = "${username}"`
+				filter: this.pb.filter('username = {:username}', { username })
 			});
 			if (records.items.length === 0) return null;
 			const r = records.items[0];
