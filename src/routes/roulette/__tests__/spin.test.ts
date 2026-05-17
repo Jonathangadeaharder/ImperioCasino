@@ -3,16 +3,25 @@ import { describe, it, expect, vi } from 'vitest';
 import { POST } from '../spin/+server';
 
 function mockEvent(bets: Array<{ numbers: string; odds: number; amt: number }>) {
+	const mockGetCoins = vi.fn();
+	const mockDeductCoins = vi.fn();
+	const mockAddCoins = vi.fn();
+	const mockSetCoins = vi.fn();
+	const mockCreateBlackjackGame = vi.fn();
+	const mockUpdateBlackjackGame = vi.fn();
+	const mockGetBlackjackGame = vi.fn();
+	const mockGetUser = vi.fn();
+	const mockGetUserByUsername = vi.fn();
 	const mockDb = {
-		getCoins: vi.fn(),
-		deductCoins: vi.fn(),
-		addCoins: vi.fn(),
-		setCoins: vi.fn(),
-		createBlackjackGame: vi.fn(),
-		updateBlackjackGame: vi.fn(),
-		getBlackjackGame: vi.fn(),
-		getUser: vi.fn(),
-		getUserByUsername: vi.fn()
+		getCoins: mockGetCoins,
+		deductCoins: mockDeductCoins,
+		addCoins: mockAddCoins,
+		setCoins: mockSetCoins,
+		createBlackjackGame: mockCreateBlackjackGame,
+		updateBlackjackGame: mockUpdateBlackjackGame,
+		getBlackjackGame: mockGetBlackjackGame,
+		getUser: mockGetUser,
+		getUserByUsername: mockGetUserByUsername
 	};
 	const request = new Request('http://localhost:5173/roulette/spin', {
 		method: 'POST',
@@ -27,16 +36,19 @@ function mockEvent(bets: Array<{ numbers: string; odds: number; amt: number }>) 
 		},
 		params: {},
 		url: new URL('http://localhost:5173/roulette/spin')
-	} as Parameters<typeof POST>[0];
+	} as unknown as Parameters<typeof POST>[0];
 }
 
 describe('roulette spin POST', () => {
 	it('processes spin with valid bets', async () => {
 		const event = mockEvent([{ numbers: '7', odds: 35, amt: 10 }]);
-		event.locals.db.getCoins.mockResolvedValue(100);
-		event.locals.db.deductCoins.mockResolvedValue(90);
-		event.locals.db.addCoins.mockResolvedValue(90);
-		event.locals.db.getCoins.mockResolvedValue(90);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockDeductCoins = vi.mocked(event.locals.db.deductCoins);
+		const mockAddCoins = vi.mocked(event.locals.db.addCoins);
+		mockGetCoins.mockResolvedValue(100);
+		mockDeductCoins.mockResolvedValue(90);
+		mockAddCoins.mockResolvedValue(90);
+		mockGetCoins.mockResolvedValue(90);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -62,7 +74,8 @@ describe('roulette spin POST', () => {
 
 	it('returns 400 when coins are insufficient', async () => {
 		const event = mockEvent([{ numbers: '7', odds: 35, amt: 200 }]);
-		event.locals.db.getCoins.mockResolvedValue(100);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		mockGetCoins.mockResolvedValue(100);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -73,9 +86,12 @@ describe('roulette spin POST', () => {
 
 	it('adds coins on winning bet', async () => {
 		const event = mockEvent([{ numbers: '7', odds: 35, amt: 10 }]);
-		event.locals.db.getCoins.mockResolvedValue(100);
-		event.locals.db.deductCoins.mockResolvedValue(90);
-		event.locals.db.addCoins.mockResolvedValue(450);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockDeductCoins = vi.mocked(event.locals.db.deductCoins);
+		const mockAddCoins = vi.mocked(event.locals.db.addCoins);
+		mockGetCoins.mockResolvedValue(100);
+		mockDeductCoins.mockResolvedValue(90);
+		mockAddCoins.mockResolvedValue(450);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -91,8 +107,10 @@ describe('roulette spin POST', () => {
 			{ numbers: '7', odds: 35, amt: 5 },
 			{ numbers: '1,2,3', odds: 11, amt: 5 }
 		]);
-		event.locals.db.getCoins.mockResolvedValue(100);
-		event.locals.db.deductCoins.mockResolvedValue(90);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockDeductCoins = vi.mocked(event.locals.db.deductCoins);
+		mockGetCoins.mockResolvedValue(100);
+		mockDeductCoins.mockResolvedValue(90);
 
 		const response = await POST(event);
 		const body = await response.json();

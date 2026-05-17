@@ -65,7 +65,7 @@ describe('login +page.server', () => {
 			});
 			const event = mockEvent({ request });
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('Email and password required');
 		});
@@ -79,7 +79,7 @@ describe('login +page.server', () => {
 			});
 			const event = mockEvent({ request });
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('Email and password required');
 		});
@@ -97,7 +97,7 @@ describe('login +page.server', () => {
 				authWithPassword: vi.fn().mockRejectedValue(new Error('Invalid credentials'))
 			});
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(401);
 			expect(result.data?.error).toBe('Invalid credentials');
 		});

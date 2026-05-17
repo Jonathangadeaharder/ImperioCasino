@@ -11,7 +11,9 @@ export default defineConfig({
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'html', 'clover'],
-			thresholds: { branches: 80, lines: 65, functions: 75, statements: 65 }
+			thresholds: { branches: 80, lines: 80, functions: 80, statements: 80 },
+			include: ['src/**/*.ts'],
+			exclude: ['**/adapter.ts', '**/types.ts', '**/+layout.server.ts']
 		}
 	}
 });

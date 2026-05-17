@@ -3,28 +3,38 @@ import { describe, it, expect, vi } from 'vitest';
 import { load } from '../+page.server';
 
 function mockEvent() {
+	const mockGetCoins = vi.fn();
+	const mockDeductCoins = vi.fn();
+	const mockAddCoins = vi.fn();
+	const mockSetCoins = vi.fn();
+	const mockCreateBlackjackGame = vi.fn();
+	const mockUpdateBlackjackGame = vi.fn();
+	const mockGetBlackjackGame = vi.fn();
+	const mockGetUser = vi.fn();
+	const mockGetUserByUsername = vi.fn();
 	const mockDb = {
-		getCoins: vi.fn(),
-		deductCoins: vi.fn(),
-		addCoins: vi.fn(),
-		setCoins: vi.fn(),
-		createBlackjackGame: vi.fn(),
-		updateBlackjackGame: vi.fn(),
-		getBlackjackGame: vi.fn(),
-		getUser: vi.fn(),
-		getUserByUsername: vi.fn()
+		getCoins: mockGetCoins,
+		deductCoins: mockDeductCoins,
+		addCoins: mockAddCoins,
+		setCoins: mockSetCoins,
+		createBlackjackGame: mockCreateBlackjackGame,
+		updateBlackjackGame: mockUpdateBlackjackGame,
+		getBlackjackGame: mockGetBlackjackGame,
+		getUser: mockGetUser,
+		getUserByUsername: mockGetUserByUsername
 	};
 	return {
 		locals: { db: mockDb, user: { id: 'user1', username: 'test', coins: 100 } },
 		params: {},
 		url: new URL('http://localhost:5173/roulette')
-	} as Parameters<typeof load>[0];
+	} as unknown as Parameters<typeof load>[0];
 }
 
 describe('roulette +page.server', () => {
 	it('returns coins from DB', async () => {
 		const event = mockEvent();
-		event.locals.db.getCoins.mockResolvedValue(200);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		mockGetCoins.mockResolvedValue(200);
 
 		const result = await load(event);
 
@@ -36,6 +46,6 @@ describe('roulette +page.server', () => {
 		const event = mockEvent();
 		event.locals.user = null;
 
-		await expect(load(event as Parameters<typeof load>[0])).rejects.toThrow();
+		await expect(load(event as unknown as Parameters<typeof load>[0])).rejects.toThrow();
 	});
 });

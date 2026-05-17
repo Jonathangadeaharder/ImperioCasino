@@ -68,7 +68,7 @@ describe('signup +page.server', () => {
 			});
 			const event = mockEvent({ request });
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('All fields required');
 		});
@@ -83,7 +83,7 @@ describe('signup +page.server', () => {
 			});
 			const event = mockEvent({ request });
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('All fields required');
 		});
@@ -98,7 +98,7 @@ describe('signup +page.server', () => {
 			});
 			const event = mockEvent({ request });
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('All fields required');
 		});
@@ -118,7 +118,7 @@ describe('signup +page.server', () => {
 				authWithPassword: vi.fn()
 			});
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('Username already taken');
 		});
@@ -138,7 +138,7 @@ describe('signup +page.server', () => {
 				authWithPassword: vi.fn()
 			});
 
-			const result = await actions.default(event);
+			const result = await actions.default(event) as { status: number; data: Record<string, unknown> };
 			expect(result.status).toBe(400);
 			expect(result.data?.error).toBe('Registration failed');
 		});

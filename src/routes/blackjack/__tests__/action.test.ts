@@ -29,16 +29,25 @@ function createMockState(overrides?: Partial<BlackjackState>): BlackjackState {
 }
 
 function mockEvent(action: string, game_id: string, overrides?: Record<string, unknown>) {
+	const mockGetCoins = vi.fn();
+	const mockDeductCoins = vi.fn();
+	const mockAddCoins = vi.fn();
+	const mockSetCoins = vi.fn();
+	const mockCreateBlackjackGame = vi.fn();
+	const mockUpdateBlackjackGame = vi.fn();
+	const mockGetBlackjackGame = vi.fn();
+	const mockGetUser = vi.fn();
+	const mockGetUserByUsername = vi.fn();
 	const mockDb = {
-		getCoins: vi.fn(),
-		deductCoins: vi.fn(),
-		addCoins: vi.fn(),
-		setCoins: vi.fn(),
-		createBlackjackGame: vi.fn(),
-		updateBlackjackGame: vi.fn(),
-		getBlackjackGame: vi.fn(),
-		getUser: vi.fn(),
-		getUserByUsername: vi.fn()
+		getCoins: mockGetCoins,
+		deductCoins: mockDeductCoins,
+		addCoins: mockAddCoins,
+		setCoins: mockSetCoins,
+		createBlackjackGame: mockCreateBlackjackGame,
+		updateBlackjackGame: mockUpdateBlackjackGame,
+		getBlackjackGame: mockGetBlackjackGame,
+		getUser: mockGetUser,
+		getUserByUsername: mockGetUserByUsername
 	};
 	const request = new Request('http://localhost:5173/blackjack/action', {
 		method: 'POST',
@@ -54,16 +63,19 @@ function mockEvent(action: string, game_id: string, overrides?: Record<string, u
 		},
 		params: {},
 		url: new URL('http://localhost:5173/blackjack/action')
-	} as Parameters<typeof POST>[0];
+	} as unknown as Parameters<typeof POST>[0];
 }
 
 describe('blackjack action POST', () => {
 	it('processes hit action', async () => {
 		const state = createMockState({ deck: [makeCard('3', 3)] });
 		const event = mockEvent('hit', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
-		event.locals.db.getCoins.mockResolvedValue(90);
-		event.locals.db.updateBlackjackGame.mockResolvedValue(undefined);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockUpdateBlackjackGame = vi.mocked(event.locals.db.updateBlackjackGame);
+		mockGetBlackjackGame.mockResolvedValue(state);
+		mockGetCoins.mockResolvedValue(90);
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -79,9 +91,12 @@ describe('blackjack action POST', () => {
 			deck: [makeCard('J', 10)]
 		});
 		const event = mockEvent('hit', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
-		event.locals.db.getCoins.mockResolvedValue(90);
-		event.locals.db.updateBlackjackGame.mockResolvedValue(undefined);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockUpdateBlackjackGame = vi.mocked(event.locals.db.updateBlackjackGame);
+		mockGetBlackjackGame.mockResolvedValue(state);
+		mockGetCoins.mockResolvedValue(90);
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -95,10 +110,14 @@ describe('blackjack action POST', () => {
 			deck: [makeCard('3', 3), makeCard('2', 2)]
 		});
 		const event = mockEvent('stand', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
-		event.locals.db.getCoins.mockResolvedValue(100);
-		event.locals.db.updateBlackjackGame.mockResolvedValue(undefined);
-		event.locals.db.addCoins.mockResolvedValue(100);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockUpdateBlackjackGame = vi.mocked(event.locals.db.updateBlackjackGame);
+		const mockAddCoins = vi.mocked(event.locals.db.addCoins);
+		mockGetBlackjackGame.mockResolvedValue(state);
+		mockGetCoins.mockResolvedValue(100);
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
+		mockAddCoins.mockResolvedValue(100);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -116,10 +135,14 @@ describe('blackjack action POST', () => {
 			deck: [makeCard('4', 4), makeCard('2', 2)]
 		});
 		const event = mockEvent('double', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
-		event.locals.db.getCoins.mockResolvedValue(80);
-		event.locals.db.deductCoins.mockResolvedValue(80);
-		event.locals.db.updateBlackjackGame.mockResolvedValue(undefined);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockDeductCoins = vi.mocked(event.locals.db.deductCoins);
+		const mockUpdateBlackjackGame = vi.mocked(event.locals.db.updateBlackjackGame);
+		mockGetBlackjackGame.mockResolvedValue(state);
+		mockGetCoins.mockResolvedValue(80);
+		mockDeductCoins.mockResolvedValue(80);
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -132,7 +155,8 @@ describe('blackjack action POST', () => {
 	it('returns 400 when game is already over', async () => {
 		const state = createMockState({ game_over: true, message: 'You win!' });
 		const event = mockEvent('hit', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		mockGetBlackjackGame.mockResolvedValue(state);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -144,9 +168,12 @@ describe('blackjack action POST', () => {
 	it('returns coins updated after action', async () => {
 		const state = createMockState({ deck: [makeCard('2', 2), makeCard('3', 3)] });
 		const event = mockEvent('stand', 'game1');
-		event.locals.db.getBlackjackGame.mockResolvedValue(state);
-		event.locals.db.getCoins.mockResolvedValue(110);
-		event.locals.db.updateBlackjackGame.mockResolvedValue(undefined);
+		const mockGetBlackjackGame = vi.mocked(event.locals.db.getBlackjackGame);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockUpdateBlackjackGame = vi.mocked(event.locals.db.updateBlackjackGame);
+		mockGetBlackjackGame.mockResolvedValue(state);
+		mockGetCoins.mockResolvedValue(110);
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
 
 		const response = await POST(event);
 		const body = await response.json();

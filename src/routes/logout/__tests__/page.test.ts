@@ -14,14 +14,13 @@ function mockEvent() {
 		},
 		params: {},
 		url: new URL('http://localhost:5173/logout')
-	} as any;
+	} as unknown as Parameters<NonNullable<typeof actions.default>>[0];
 }
 
 describe('logout +page.server', () => {
 	describe('load', () => {
 		it('redirects to /login', async () => {
-			const event = mockEvent();
-			await expect(load(event)).rejects.toMatchObject({
+			await expect(load()).rejects.toMatchObject({
 				status: 303,
 				location: '/login'
 			});
