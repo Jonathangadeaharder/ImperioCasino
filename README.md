@@ -29,8 +29,8 @@ ImperioCasino/
 
 - Python 3.8+
 - Node.js 16+ (for Cherry-Charm)
-- pip
-- npm or yarn
+- uv (Python package manager)
+- pnpm (Node package manager)
 
 ### 1. Backend Setup
 
@@ -38,22 +38,18 @@ ImperioCasino/
 # Navigate to backend directory
 cd session_management
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Configure environment
 cp ../.env.example .env
 # Edit .env and set your SECRET_KEY (see below)
 
 # Initialize database
-flask db upgrade
+uv run flask db upgrade
 
 # Run the backend server
-python run.py
+uv run python run.py
 ```
 
 The backend will run on `http://localhost:5000`
@@ -93,14 +89,14 @@ python migrate_passwords.py --verify
 cd cherry-charm
 
 # Install dependencies
-npm install  # or yarn install
+pnpm install
 
 # Configure environment
 cp .env.example .env
 # Edit .env if needed
 
 # Run development server
-npm run dev  # or yarn dev
+pnpm run dev
 ```
 
 Runs on `http://localhost:5173`
@@ -208,15 +204,13 @@ VITE_DEV_LOG=true
 cd session_management
 
 # Run all tests
-python -m unittest discover -s imperioApp/tests
+uv run pytest
 
 # Run specific test file
-python -m unittest imperioApp.tests.test_auth
+uv run pytest imperioApp/tests/test_auth.py
 
 # Run with coverage
-pip install coverage
-coverage run -m unittest discover
-coverage report
+uv run pytest --cov --cov-branch --cov-report=term-missing
 ```
 
 ## 📦 Dependencies
@@ -263,20 +257,19 @@ flask db downgrade
 ```bash
 # Terminal 1 - Backend
 cd session_management
-source venv/bin/activate
-python run.py
+uv run python run.py
 
 # Terminal 2 - Cherry-Charm
 cd cherry-charm
-npm run dev
+pnpm run dev
 
 # Terminal 3 - Blackjack (optional)
 cd blackjack-master
-python run.py
+uv run python run.py
 
 # Terminal 4 - Roulette (optional)
 cd roulette
-python run.py
+uv run python run.py
 ```
 
 ## 🚀 Production Deployment
@@ -300,7 +293,7 @@ python run.py
 
 1. **Use Production WSGI Server**
    ```bash
-   pip install gunicorn
+   uv pip install gunicorn
    gunicorn -w 4 -b 0.0.0.0:5000 'session_management.run:app'
    ```
 
