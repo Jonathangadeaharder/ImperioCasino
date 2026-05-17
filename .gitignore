@@ -51,3 +51,6 @@ pocketbase/LICENSE.md
 
 # Build artifacts
 *.zip
+
+# Coverage reports
+coverage/
