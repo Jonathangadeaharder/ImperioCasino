@@ -1,6 +1,21 @@
-# ADR-003: Threlte for 3D Slot Engine
-
-**Status:** Accepted
+---
+id: ADR-003
+kind: adr
+title: Threlte for 3D Slot Engine
+status: draft
+authors: []
+reviewers: []
+tags: []
+supersedes: []
+superseded_by: []
+depends_on: []
+blocks: []
+implements: []
+related: []
+external: []
+project: ImperioCasino
+checksum: bcdf722e027a0351675fbc34c59ad2d0b7316e463de86d60fba06772a149c8fe
+---
 
 **Context:** The slot game requires 3D rendering with animated reel spins, particle effects, and immersive visuals. The solution must integrate natively with Svelte's reactive system.
 

@@ -12,6 +12,12 @@ exclude:
   - static/images/**
 
 rules:
+  deploy-action: false
+
+  mandatory-linters:
+    - structurelint
+    - vitest-linter
+
   max-depth:
     max: 5
     exemptions:
@@ -38,4 +44,3 @@ rules:
     - "*.bak"
     - ".DS_Store"
 
-  github-workflows: null

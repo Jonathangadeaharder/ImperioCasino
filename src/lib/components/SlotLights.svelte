@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
 </script>
 
 <T.DirectionalLight position={[-2, 3, 2]} intensity={1} />

@@ -14,7 +14,7 @@ concurrency:
 jobs:
   repo-hygiene:
     name: Repo Hygiene
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
       - uses: actions/checkout@v4
       - name: Check for iCloud sync conflicts
@@ -27,7 +27,7 @@ jobs:
 
   node-quality:
     name: Node Quality
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -50,38 +50,61 @@ jobs:
 
   dependency-scan:
     name: Dependency Scan
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
       - uses: actions/checkout@v4
+      - name: Install Trivy
+        run: brew install aquasecurity/trivy/trivy
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
+        run: trivy fs --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed .
 
   secret-scanning:
     name: Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gitleaks
+        run: brew install gitleaks
+      - name: Run gitleaks
+        run: gitleaks detect --verbose
+
+  structure:
+    name: Repository Structure
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Build structurelint
+        run: |
+          git clone --depth 1 https://github.com/Jonathangadeaharder/structurelint.git /tmp/structurelint
+          cd /tmp/structurelint && go build -o /usr/local/bin/structurelint ./cmd/structurelint
+      - name: Run structurelint
+        run: structurelint .
+      - name: Cleanup structurelint build
+        if: always()
+        run: rm -rf /tmp/structurelint
+
+  vitest-lint:
+    name: Test Quality (Vitest)
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Jonathangadeaharder/vitest-linter@v1
 
   required-checks:
     name: Required Checks (PR)
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     needs:
       - repo-hygiene
       - node-quality
       - dependency-scan
       - secret-scanning
+      - structure
+      - vitest-lint
     if: always()
     steps:
       - name: Verify all PR gate jobs passed
@@ -89,7 +112,9 @@ jobs:
           if [ "${{ needs.repo-hygiene.result }}" != "success" ] || \
              [ "${{ needs.node-quality.result }}" != "success" ] || \
              [ "${{ needs.dependency-scan.result }}" != "success" ] || \
-             [ "${{ needs.secret-scanning.result }}" != "success" ]; then
+             [ "${{ needs.secret-scanning.result }}" != "success" ] || \
+             [ "${{ needs.structure.result }}" != "success" ] || \
+             [ "${{ needs.vitest-lint.result }}" != "success" ]; then
             echo "One or more PR gate jobs failed."
             echo "repo-hygiene: ${{ needs.repo-hygiene.result }}"
             echo "node-quality: ${{ needs.node-quality.result }}"
@@ -98,3 +123,6 @@ jobs:
             exit 1
           fi
           echo "All PR gate jobs passed."
+      - name: Cleanup pnpm store
+        if: always()
+        run: rm -rf "/tmp/pnpm-store-${GITHUB_RUN_ID}"

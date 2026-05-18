@@ -1,34 +1,33 @@
 <script lang="ts">
-	import { Canvas } from '@threlte/core';
-	import SlotMachine from '$lib/components/SlotMachine.svelte';
-	import type { Fruit } from '$lib/types';
+import { page } from "$app/stores";
+import type { Fruit } from "$lib/types";
 
-	import { page } from '$app/stores';
-	let coins = $state($page.data.coins);
-	let spinning = $state(false);
-	let resultFruits = $state<Fruit[] | null>(null);
-	let payout = $state(0);
-	let message = $state<string | null>(null);
+let coins = $state($page.data.coins);
+let spinning = $state(false);
+let _resultFruits = $state<Fruit[] | null>(null);
+let _payout = $state(0);
+let _message = $state<string | null>(null);
 
-	async function spin() {
-		if (spinning || coins < 1) return;
-		spinning = true;
-		resultFruits = null;
-		message = null;
-		payout = 0;
+async function _spin() {
+	if (spinning || coins < 1) return;
+	spinning = true;
+	_resultFruits = null;
+	_message = null;
+	_payout = 0;
 
-		const res = await fetch('/slots/spin', { method: 'POST' });
-		const d = await res.json();
-		if (res.ok) {
-			resultFruits = d.fruits;
-			payout = d.payout;
-			coins = d.total_coins;
-			d.payout > 0
-				? message = `You won ${d.payout} coins!`
-				: message = 'No win. Try again!';
-		}
-		setTimeout(() => { spinning = false; }, 2000);
+	const res = await fetch("/slots/spin", { method: "POST" });
+	const d = await res.json();
+	if (res.ok) {
+		_resultFruits = d.fruits;
+		_payout = d.payout;
+		coins = d.total_coins;
+		_message =
+			d.payout > 0 ? `You won ${d.payout} coins!` : "No win. Try again!";
 	}
+	setTimeout(() => {
+		spinning = false;
+	}, 2000);
+}
 </script>
 
 <h1>Slots</h1>

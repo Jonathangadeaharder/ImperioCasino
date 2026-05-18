@@ -1,4 +1,4 @@
-export type Suit = 'Hearts' | 'Diamonds' | 'Clubs' | 'Spades';
+export type Suit = "Hearts" | "Diamonds" | "Clubs" | "Spades";
 
 export interface Card {
 	suit: Suit;
@@ -30,7 +30,7 @@ export interface BlackjackState {
 	player_stood: boolean;
 	double_down: boolean;
 	split: boolean;
-	current_hand: 'first' | 'second';
+	current_hand: "first" | "second";
 	dealer_value: number;
 }
 
@@ -40,7 +40,7 @@ export interface Bet {
 	amt: number;
 }
 
-export type Fruit = 'CHERRY' | 'LEMON' | 'BANANA' | 'APPLE';
+export type Fruit = "CHERRY" | "LEMON" | "BANANA" | "APPLE";
 
 export interface SpinResult {
 	stop_segments: number[];
@@ -48,4 +48,4 @@ export interface SpinResult {
 	payout: number;
 }
 
-export type GameAction = 'hit' | 'stand' | 'double' | 'split';
+export type GameAction = "hit" | "stand" | "double" | "split";

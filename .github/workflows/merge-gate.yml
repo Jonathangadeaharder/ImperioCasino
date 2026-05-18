@@ -125,3 +125,6 @@ jobs:
             exit 1
           fi
           echo "All merge gate jobs passed."
+      - name: Cleanup pnpm store
+        if: always()
+        run: rm -rf "/tmp/pnpm-store-${GITHUB_RUN_ID}"

@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { Card as CardType } from '$lib/types';
-	let { card, hidden = false }: { card: CardType; hidden?: boolean } = $props();
+import type { Card as CardType } from "$lib/types";
+
+let { card, hidden = false }: { card: CardType; hidden?: boolean } = $props();
 </script>
 
 <div class="card {hidden ? 'hidden' : ''}">

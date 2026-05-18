@@ -1,6 +1,21 @@
-# ADR-004: Database Abstraction Layer for Future Migration
-
-**Status:** Accepted
+---
+id: ADR-004
+kind: adr
+title: Database Abstraction Layer for Future Migration
+status: draft
+authors: []
+reviewers: []
+tags: []
+supersedes: []
+superseded_by: []
+depends_on: []
+blocks: []
+implements: []
+related: []
+external: []
+project: ImperioCasino
+checksum: 42b282ffe8bd1c0ab3b208be89bc234f5f8046125ce26daa44f9763c818fc4e5
+---
 
 **Context:** The initial backend uses PocketBase for speed of development. However, for production scale, Supabase or another cloud database may be needed. The architecture should not couple tightly to PocketBase APIs.
 

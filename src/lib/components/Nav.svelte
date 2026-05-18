@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import CoinBalance from './CoinBalance.svelte';
-	let user = $derived($page.data.user);
+import { page } from "$app/stores";
+
+let _user = $derived($page.data.user);
 </script>
 
 <nav>
@@ -11,7 +11,7 @@
 		<a href="/roulette">Roulette</a>
 		<a href="/slots">Slots</a>
 	</div>
-	{#if user}
+	{#if _user}
 		<CoinBalance />
 		<a href="/logout">Logout</a>
 	{/if}

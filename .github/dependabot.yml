@@ -5,16 +5,9 @@
 
 version: 2
 updates:
-  # Enable version updates for npm (cherry-charm frontend)
+  # Enable version updates for npm
   - package-ecosystem: "npm"
-    directory: "/cherry-charm"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  # Enable version updates for pip (session_management backend)
-  - package-ecosystem: "pip"
-    directory: "/session_management"
+    directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10

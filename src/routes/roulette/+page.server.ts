@@ -1,6 +1,8 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const coins = await locals.db.getCoins(locals.user!.id);
+	const userId = locals.user?.id;
+	if (!userId) return { coins: 0 };
+	const coins = await locals.db.getCoins(userId);
 	return { coins };
 };

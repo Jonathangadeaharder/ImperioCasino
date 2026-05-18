@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	let user = $derived($page.data.user);
+import { page } from "$app/stores";
+
+let _user = $derived($page.data.user);
 </script>
 
 <h1>Welcome{user ? `, ${user.username}` : ''}</h1>
