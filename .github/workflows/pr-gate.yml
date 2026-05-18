@@ -16,7 +16,7 @@ jobs:
     name: Repo Hygiene
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check for iCloud sync conflicts
         run: |
           if find . -path ./node_modules -prune -o -path ./.git -prune -o -name "* [0-9]*" -print | grep -q .; then
@@ -29,7 +29,7 @@ jobs:
     name: Node Quality
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node
@@ -52,7 +52,7 @@ jobs:
     name: Dependency Scan
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Trivy
         run: brew install aquasecurity/trivy/trivy
       - name: Run Trivy filesystem scan
@@ -62,7 +62,7 @@ jobs:
     name: Secret Scanning
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install gitleaks
@@ -74,7 +74,7 @@ jobs:
     name: Repository Structure
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
@@ -92,7 +92,7 @@ jobs:
     name: Test Quality (Vitest)
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: Jonathangadeaharder/vitest-linter@v1
 
   required-checks:
