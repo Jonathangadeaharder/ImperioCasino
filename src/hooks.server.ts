@@ -1,6 +1,6 @@
 import type { Handle } from "@sveltejs/kit";
 import PocketBase from "pocketbase";
-import { building } from "$app/environment";
+import { building, dev } from "$app/environment";
 import { PocketBaseAdapter } from "$lib/server/db/pocketbase";
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -31,9 +31,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 			: null;
 
 	const response = await resolve(event);
-	response.headers.set(
+	response.headers.append(
 		"set-cookie",
-		pb.authStore.exportToCookie({ httpOnly: false }),
+		pb.authStore.exportToCookie({
+			httpOnly: true,
+			secure: !dev,
+			sameSite: "lax",
+			path: "/",
+		}),
 	);
 	return response;
 };

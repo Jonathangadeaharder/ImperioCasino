@@ -1,5 +1,7 @@
 <script lang="ts">
 import { page } from "$app/stores";
+import { Canvas } from "@threlte/core";
+import SlotMachine from "$lib/components/SlotMachine.svelte";
 import type { Fruit } from "$lib/types";
 
 let coins = $state($page.data.coins);
@@ -15,18 +17,25 @@ async function _spin() {
 	_message = null;
 	_payout = 0;
 
-	const res = await fetch("/slots/spin", { method: "POST" });
-	const d = await res.json();
-	if (res.ok) {
-		_resultFruits = d.fruits;
-		_payout = d.payout;
-		coins = d.total_coins;
-		_message =
-			d.payout > 0 ? `You won ${d.payout} coins!` : "No win. Try again!";
+	try {
+		const res = await fetch("/slots/spin", { method: "POST" });
+		const d = await res.json();
+		if (res.ok) {
+			_resultFruits = d.fruits;
+			_payout = d.payout;
+			coins = d.total_coins;
+			_message =
+				d.payout > 0 ? `You won ${d.payout} coins!` : "No win. Try again!";
+		} else {
+			_message = d.error ?? "Spin failed. Try again.";
+		}
+	} catch {
+		_message = "Spin failed. Try again.";
+	} finally {
+		setTimeout(() => {
+			spinning = false;
+		}, 2000);
 	}
-	setTimeout(() => {
-		spinning = false;
-	}, 2000);
 }
 </script>
 
@@ -35,21 +44,21 @@ async function _spin() {
 
 <div class="canvas-container">
 	<Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-		<SlotMachine onSpin={spin} {coins} {spinning} />
+		<SlotMachine onSpin={_spin} {coins} {spinning} />
 	</Canvas>
 </div>
 
 <div class="controls" style="text-align: center; margin-top: 1rem;">
-	<button onclick={spin} disabled={spinning || coins < 1}>
+	<button onclick={_spin} disabled={spinning || coins < 1}>
 		{spinning ? 'Spinning...' : coins < 1 ? 'No coins' : 'SPIN (1 coin)'}
 	</button>
 </div>
 
-{#if message}
-	<div class="result" class:win={payout > 0}>
-		<p>{message}</p>
-		{#if resultFruits}
-			<p class="fruits">{resultFruits.join(' - ')}</p>
+{#if _message}
+	<div class="result" class:win={_payout > 0}>
+		<p>{_message}</p>
+		{#if _resultFruits}
+			<p class="fruits">{_resultFruits.join(' - ')}</p>
 		{/if}
 	</div>
 {/if}

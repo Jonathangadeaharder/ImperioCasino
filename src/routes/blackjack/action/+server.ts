@@ -8,14 +8,28 @@ import {
 import type { GameAction } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
+const VALID_ACTIONS = ["hit", "stand", "double"] as const;
+
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const { action, game_id } = (await request.json()) as {
 		action: GameAction;
 		game_id: string;
 	};
+	if (!VALID_ACTIONS.includes(action)) {
+		return json({ error: "Invalid action" }, { status: 400 });
+	}
+	if (!game_id) {
+		return json({ error: "Missing game_id" }, { status: 400 });
+	}
 	const userId = locals.user?.id;
 	if (!userId) return json({ error: "Not authenticated" }, { status: 401 });
 	const state = await locals.db.getBlackjackGame(game_id);
+	if (!state) {
+		return json({ error: "Game not found" }, { status: 404 });
+	}
+	if (state.user_id !== userId) {
+		return json({ error: "Forbidden" }, { status: 403 });
+	}
 	if (state.game_over)
 		return json({ error: "Game already over" }, { status: 400 });
 

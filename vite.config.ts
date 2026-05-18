@@ -12,8 +12,8 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'html', 'clover'],
 			thresholds: { branches: 80, lines: 80, functions: 90, statements: 90 },
-			include: ['src/**/*.ts'],
-			exclude: ['**/adapter.ts', '**/types.ts', '**/+layout.server.ts']
+			include: ['src/**/*.{ts,svelte}'],
+			exclude: ['**/adapter.ts', '**/types.ts']
 		}
 	}
 });

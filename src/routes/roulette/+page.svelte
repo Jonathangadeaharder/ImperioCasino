@@ -72,36 +72,41 @@ async function _spin() {
 	_error = null;
 	_result = null;
 
-	const res = await fetch("/roulette/spin", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ bets }),
-	});
-	const d = await res.json();
-	if (res.ok) {
-		_result = d;
-		_coins = d.new_coins;
-		bets = [];
-	} else {
-		_error = d.error;
+	try {
+		const res = await fetch("/roulette/spin", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ bets }),
+		});
+		const d = await res.json();
+		if (res.ok) {
+			_result = d;
+			_coins = d.new_coins;
+			bets = [];
+		} else {
+			_error = d.error ?? "Spin failed";
+		}
+	} catch {
+		_error = "Spin failed. Please try again.";
+	} finally {
+		_spinning = false;
 	}
-	_spinning = false;
 }
 </script>
 
 <h1>Roulette</h1>
-<p class="coins">Coins: {coins}</p>
+<p class="coins">Coins: {_coins}</p>
 
 <div class="layout">
 	<div class="table">
 		<h3>Numbers</h3>
 		<div class="grid">
-			{#each singleBets as bet}
+			{#each _singleBets as bet}
 				<button
 					class="cell"
 					style="background: {bet.color}"
 					class:selected={bets.some(b => b.numbers === bet.numbers)}
-					onclick={() => toggleBet(bet)}
+					onclick={() => _toggleBet(bet)}
 				>
 					{bet.label}
 				</button>
@@ -109,10 +114,10 @@ async function _spin() {
 		</div>
 		<h3>Outside Bets</h3>
 		<div class="special">
-			{#each specialBets as bet}
+			{#each _specialBets as bet}
 				<button
 					class:selected={bets.some(b => b.numbers === bet.numbers)}
-					onclick={() => toggleBet(bet)}
+					onclick={() => _toggleBet(bet)}
 				>
 					{bet.label}
 				</button>
@@ -121,15 +126,15 @@ async function _spin() {
 	</div>
 	<div class="info">
 		<p>Current bets: {bets.reduce((s, b) => s + b.amt, 0)}</p>
-		<button onclick={spin} disabled={bets.length === 0 || spinning}>
-			{spinning ? 'Spinning...' : 'Spin!'}
+		<button onclick={_spin} disabled={bets.length === 0 || _spinning}>
+			{_spinning ? 'Spinning...' : 'Spin!'}
 		</button>
-		{#if error}<p class="error">{error}</p>{/if}
-		{#if result}
+		{#if _error}<p class="error">{_error}</p>{/if}
+		{#if _result}
 			<div class="result">
-				<h2>Result: {result.winning_number}</h2>
-				<p class:win={result.total_win > 0} class:lose={result.total_win === 0}>
-					{result.total_win > 0 ? `You won ${result.total_win} coins!` : 'No win this time.'}
+				<h2>Result: {_result.winning_number}</h2>
+				<p class:win={_result.total_win > 0} class:lose={_result.total_win === 0}>
+					{_result.total_win > 0 ? `You won ${_result.total_win} coins!` : 'No win this time.'}
 				</p>
 			</div>
 		{/if}

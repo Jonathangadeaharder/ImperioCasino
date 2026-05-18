@@ -5,9 +5,9 @@ on:
     types: [created, edited]
 
 permissions:
-  issues: write
+  issue-comments: write
   pull-requests: write
-  contents: write
+  contents: read
 
 jobs:
   pr_agent:

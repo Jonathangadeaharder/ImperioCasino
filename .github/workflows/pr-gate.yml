@@ -80,13 +80,13 @@ jobs:
           go-version: "1.24"
       - name: Build structurelint
         run: |
-          git clone --depth 1 https://github.com/Jonathangadeaharder/structurelint.git /tmp/structurelint
-          cd /tmp/structurelint && go build -o /usr/local/bin/structurelint ./cmd/structurelint
+          git clone --depth 1 --branch v0.1.0 https://github.com/Jonathangadeaharder/structurelint.git /tmp/structurelint
+          cd /tmp/structurelint && go build -o /tmp/structurelint-bin ./cmd/structurelint
       - name: Run structurelint
-        run: structurelint .
+        run: /tmp/structurelint-bin .
       - name: Cleanup structurelint build
         if: always()
-        run: rm -rf /tmp/structurelint
+        run: rm -rf /tmp/structurelint /tmp/structurelint-bin
 
   vitest-lint:
     name: Test Quality (Vitest)

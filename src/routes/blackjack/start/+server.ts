@@ -8,8 +8,11 @@ import type { BlackjackState } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { wager } = await request.json();
-	if (wager <= 0) return json({ error: "Invalid wager" }, { status: 400 });
+	const raw = (await request.json()).wager;
+	const wager = Number(raw);
+	if (!Number.isFinite(wager) || wager <= 0 || !Number.isInteger(wager)) {
+		return json({ error: "Invalid wager" }, { status: 400 });
+	}
 
 	const userId = locals.user?.id;
 	if (!userId) return json({ error: "Not authenticated" }, { status: 401 });
@@ -47,8 +50,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		dealer_value: dealerValue,
 	};
 
-	await locals.db.deductCoins(userId, wager);
 	const gameId = await locals.db.createBlackjackGame(userId, state);
+	try {
+		await locals.db.deductCoins(userId, wager);
+	} catch {
+		await locals.db.updateBlackjackGame(gameId, { game_over: true, message: "Coin deduction failed" });
+		return json({ error: "Transaction failed" }, { status: 500 });
+	}
 
 	return json({
 		id: gameId,

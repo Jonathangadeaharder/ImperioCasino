@@ -4,9 +4,22 @@ import type { Bet } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { bets } = (await request.json()) as { bets: Bet[] };
-	if (!bets.length)
+	const body = await request.json();
+	if (!Array.isArray(body.bets) || body.bets.length === 0) {
 		return json({ error: "Place at least one bet" }, { status: 400 });
+	}
+	const bets: Bet[] = body.bets;
+	for (const bet of bets) {
+		if (
+			typeof bet.amt !== "number" ||
+			!Number.isFinite(bet.amt) ||
+			bet.amt <= 0 ||
+			typeof bet.numbers !== "string" ||
+			typeof bet.odds !== "number"
+		) {
+			return json({ error: "Invalid bet entry" }, { status: 400 });
+		}
+	}
 
 	const userId = locals.user?.id;
 	if (!userId) return json({ error: "Not authenticated" }, { status: 401 });
@@ -20,7 +33,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const totalWin = calculatePayouts(bets, winningNumber);
 
 	await locals.db.deductCoins(userId, totalBet);
-	if (totalWin > 0) await locals.db.addCoins(userId, totalWin);
+	if (totalWin > 0) {
+		try {
+			await locals.db.addCoins(userId, totalWin);
+		} catch {
+			await locals.db.addCoins(userId, totalBet);
+			return json({ error: "Transaction failed" }, { status: 500 });
+		}
+	}
 
 	const newCoins = await locals.db.getCoins(userId);
 	return json({
