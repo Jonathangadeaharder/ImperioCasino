@@ -16,7 +16,7 @@
   "dependencies": {
     "@threlte/core": "^8.5.14",
     "@threlte/extras": "^9.18.0",
-    "pocketbase": "^0.25.2",
+    "pocketbase": "^0.26.9",
     "three": "^0.184.0"
   },
   "devDependencies": {
