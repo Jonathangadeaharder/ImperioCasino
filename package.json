@@ -15,7 +15,7 @@
   "type": "module",
   "dependencies": {
     "@threlte/core": "^8.5.14",
-    "@threlte/extras": "^9.18.0",
+    "@threlte/extras": "^9.19.0",
     "pocketbase": "^0.25.2",
     "three": "^0.184.0"
   },
