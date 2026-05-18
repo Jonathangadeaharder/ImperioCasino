@@ -1,4 +1,4 @@
-import type { User, BlackjackState } from '$lib/types';
+import type { BlackjackState, User } from "$lib/types";
 
 export interface DBAdapter {
 	getUser(id: string): Promise<User>;
@@ -8,6 +8,9 @@ export interface DBAdapter {
 	deductCoins(userId: string, amount: number): Promise<number>;
 	setCoins(userId: string, amount: number): Promise<number>;
 	createBlackjackGame(userId: string, state: BlackjackState): Promise<string>;
-	updateBlackjackGame(gameId: string, state: Partial<BlackjackState>): Promise<void>;
+	updateBlackjackGame(
+		gameId: string,
+		state: Partial<BlackjackState>,
+	): Promise<void>;
 	getBlackjackGame(gameId: string): Promise<BlackjackState>;
 }

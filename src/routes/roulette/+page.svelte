@@ -1,83 +1,112 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	let coins = $state($page.data.coins);
-	let bets = $state<{ numbers: string; odds: number; amt: number }[]>([]);
-	let spinning = $state(false);
-	let result = $state<{ winning_number: number; total_bet: number; total_win: number; new_coins: number } | null>(null);
-	let error = $state<string | null>(null);
+import { page } from "$app/stores";
 
-	const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+let _coins = $state($page.data.coins);
+let bets = $state<{ numbers: string; odds: number; amt: number }[]>([]);
+let _spinning = $state(false);
+let _result = $state<{
+	winning_number: number;
+	total_bet: number;
+	total_win: number;
+	new_coins: number;
+} | null>(null);
+let _error = $state<string | null>(null);
 
-	const singleBets = Array.from({ length: 37 }, (_, i) => ({
-		numbers: String(i),
-		odds: 35,
-		label: String(i),
-		color: i === 0 ? '#4caf50' : redNumbers.includes(i) ? '#ff4444' : '#e0e0e0'
-	}));
+const redNumbers = [
+	1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
+];
 
-	const specialBets = [
-		{ numbers: '1,2,3,4,5,6,7,8,9,10,11,12', odds: 2, label: '1-12' },
-		{ numbers: '13,14,15,16,17,18,19,20,21,22,23,24', odds: 2, label: '13-24' },
-		{ numbers: '25,26,27,28,29,30,31,32,33,34,35,36', odds: 2, label: '25-36' },
-		{ numbers: '1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35', odds: 1, label: 'Odd' },
-		{ numbers: '2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36', odds: 1, label: 'Even' },
-		{ numbers: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18', odds: 1, label: '1-18' },
-		{ numbers: '19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36', odds: 1, label: '19-36' },
-		{ numbers: redNumbers.join(','), odds: 1, label: 'Red' },
-		{
-			numbers: Array.from({ length: 37 }, (_, i) => i)
-				.filter(n => !redNumbers.includes(n) && n !== 0)
-				.join(','),
-			odds: 1,
-			label: 'Black'
-		},
-	];
+const _singleBets = Array.from({ length: 37 }, (_, i) => ({
+	numbers: String(i),
+	odds: 35,
+	label: String(i),
+	color: i === 0 ? "#4caf50" : redNumbers.includes(i) ? "#ff4444" : "#e0e0e0",
+}));
 
-	function toggleBet(bet: { numbers: string; odds: number; label: string }) {
-		const existing = bets.find(b => b.numbers === bet.numbers);
-		if (existing) {
-			bets = bets.filter(b => b.numbers !== bet.numbers);
-		} else {
-			bets = [...bets, { numbers: bet.numbers, odds: bet.odds, amt: 10 }];
-		}
+const _specialBets = [
+	{ numbers: "1,2,3,4,5,6,7,8,9,10,11,12", odds: 2, label: "1-12" },
+	{ numbers: "13,14,15,16,17,18,19,20,21,22,23,24", odds: 2, label: "13-24" },
+	{ numbers: "25,26,27,28,29,30,31,32,33,34,35,36", odds: 2, label: "25-36" },
+	{
+		numbers: "1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35",
+		odds: 1,
+		label: "Odd",
+	},
+	{
+		numbers: "2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36",
+		odds: 1,
+		label: "Even",
+	},
+	{
+		numbers: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
+		odds: 1,
+		label: "1-18",
+	},
+	{
+		numbers: "19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36",
+		odds: 1,
+		label: "19-36",
+	},
+	{ numbers: redNumbers.join(","), odds: 1, label: "Red" },
+	{
+		numbers: Array.from({ length: 37 }, (_, i) => i)
+			.filter((n) => !redNumbers.includes(n) && n !== 0)
+			.join(","),
+		odds: 1,
+		label: "Black",
+	},
+];
+
+function _toggleBet(bet: { numbers: string; odds: number; label: string }) {
+	const existing = bets.find((b) => b.numbers === bet.numbers);
+	if (existing) {
+		bets = bets.filter((b) => b.numbers !== bet.numbers);
+	} else {
+		bets = [...bets, { numbers: bet.numbers, odds: bet.odds, amt: 10 }];
 	}
+}
 
-	async function spin() {
-		if (bets.length === 0) return;
-		spinning = true;
-		error = null;
-		result = null;
+async function _spin() {
+	if (bets.length === 0) return;
+	_spinning = true;
+	_error = null;
+	_result = null;
 
-		const res = await fetch('/roulette/spin', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ bets })
+	try {
+		const res = await fetch("/roulette/spin", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ bets }),
 		});
 		const d = await res.json();
 		if (res.ok) {
-			result = d;
-			coins = d.new_coins;
+			_result = d;
+			_coins = d.new_coins;
 			bets = [];
 		} else {
-			error = d.error;
+			_error = d.error ?? "Spin failed";
 		}
-		spinning = false;
+	} catch {
+		_error = "Spin failed. Please try again.";
+	} finally {
+		_spinning = false;
 	}
+}
 </script>
 
 <h1>Roulette</h1>
-<p class="coins">Coins: {coins}</p>
+<p class="coins">Coins: {_coins}</p>
 
 <div class="layout">
 	<div class="table">
 		<h3>Numbers</h3>
 		<div class="grid">
-			{#each singleBets as bet}
+			{#each _singleBets as bet}
 				<button
 					class="cell"
 					style="background: {bet.color}"
 					class:selected={bets.some(b => b.numbers === bet.numbers)}
-					onclick={() => toggleBet(bet)}
+					onclick={() => _toggleBet(bet)}
 				>
 					{bet.label}
 				</button>
@@ -85,10 +114,10 @@
 		</div>
 		<h3>Outside Bets</h3>
 		<div class="special">
-			{#each specialBets as bet}
+			{#each _specialBets as bet}
 				<button
 					class:selected={bets.some(b => b.numbers === bet.numbers)}
-					onclick={() => toggleBet(bet)}
+					onclick={() => _toggleBet(bet)}
 				>
 					{bet.label}
 				</button>
@@ -97,15 +126,15 @@
 	</div>
 	<div class="info">
 		<p>Current bets: {bets.reduce((s, b) => s + b.amt, 0)}</p>
-		<button onclick={spin} disabled={bets.length === 0 || spinning}>
-			{spinning ? 'Spinning...' : 'Spin!'}
+		<button onclick={_spin} disabled={bets.length === 0 || _spinning}>
+			{_spinning ? 'Spinning...' : 'Spin!'}
 		</button>
-		{#if error}<p class="error">{error}</p>{/if}
-		{#if result}
+		{#if _error}<p class="error">{_error}</p>{/if}
+		{#if _result}
 			<div class="result">
-				<h2>Result: {result.winning_number}</h2>
-				<p class:win={result.total_win > 0} class:lose={result.total_win === 0}>
-					{result.total_win > 0 ? `You won ${result.total_win} coins!` : 'No win this time.'}
+				<h2>Result: {_result.winning_number}</h2>
+				<p class:win={_result.total_win > 0} class:lose={_result.total_win === 0}>
+					{_result.total_win > 0 ? `You won ${_result.total_win} coins!` : 'No win this time.'}
 				</p>
 			</div>
 		{/if}

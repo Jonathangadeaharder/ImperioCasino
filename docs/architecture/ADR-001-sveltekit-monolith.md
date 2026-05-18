@@ -1,6 +1,21 @@
-# ADR-001: SvelteKit Monolith with PocketBase Backend
-
-**Status:** Accepted
+---
+id: ADR-001
+kind: adr
+title: SvelteKit Monolith with PocketBase Backend
+status: draft
+authors: []
+reviewers: []
+tags: []
+supersedes: []
+superseded_by: []
+depends_on: []
+blocks: []
+implements: []
+related: []
+external: []
+project: ImperioCasino
+checksum: c9c5f675ab091094e85fff77751e1b704403688d6a207cfba9e4b5c7b42548fe
+---
 
 **Context:** The existing casino platform uses Flask + React/jQuery with a separate backend. This is complex to deploy and maintain. A modernized stack should reduce boilerplate, improve developer experience, and support 3D rendering for slot games.
 

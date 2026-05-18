@@ -1,0 +1,6 @@
+[config]
+model = "openai/qwen3.6-27b-mlx"
+
+[openai]
+key = "lm-studio"
+api_base = "http://localhost:1234/v1"

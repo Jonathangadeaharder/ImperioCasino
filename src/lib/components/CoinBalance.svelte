@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	let coins = $derived($page.data.user?.coins ?? 0);
+import { page } from "$app/stores";
+
+let _coins = $derived($page.data.user?.coins ?? 0);
 </script>
 
-<span class="coins">🪙 {coins}</span>
+<span class="coins">🪙 {_coins}</span>
 
 <style>
 	.coins {

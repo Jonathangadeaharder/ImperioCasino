@@ -1,16 +1,21 @@
 <script lang="ts">
-	let { wager, setWager, max, disabled = false }: {
-		wager: number;
-		setWager: (n: number) => void;
-		max: number;
-		disabled?: boolean;
-	} = $props();
+let {
+	wager,
+	setWager,
+	max,
+	disabled = false,
+}: {
+	wager: number;
+	setWager: (n: number) => void;
+	max: number;
+	disabled?: boolean;
+} = $props();
 
-	const chips = [10, 25, 50, 100];
+const _chips = [10, 25, 50, 100];
 </script>
 
 <div class="chips">
-	{#each chips as chip}
+	{#each _chips as chip}
 		<button
 			class:selected={wager === chip}
 			disabled={disabled || chip > max}

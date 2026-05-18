@@ -1,5 +1,9 @@
 <script lang="ts">
-	let { show, message, payout }: { show: boolean; message: string | null; payout: number } = $props();
+let {
+	show,
+	message,
+	payout,
+}: { show: boolean; message: string | null; payout: number } = $props();
 </script>
 
 {#if show}

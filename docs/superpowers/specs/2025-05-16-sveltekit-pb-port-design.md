@@ -1,4 +1,20 @@
-# ImperioCasino — SvelteKit + PocketBase Port
+---
+id: SPEC-SVELTEKIT-PB
+kind: spec
+title: ImperioCasino — SvelteKit + PocketBase Port
+status: draft
+authors: []
+reviewers: []
+tags: []
+supersedes: []
+superseded_by: []
+depends_on: []
+blocks: []
+implements: []
+related: []
+external: []
+project: ImperioCasino
+checksum: ee5b1b35903423d7f2fce115cfebb38a939aaa011bec550d8edbabc79e41a96b
 
 ## Overview
 

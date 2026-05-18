@@ -1,0 +1,26 @@
+name: PR-Agent
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issue-comments: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  pr_agent:
+    if: vars.ENABLE_PR_AGENT == 'true' && github.event.issue.pull_request != null
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - name: PR Agent
+        env:
+          OPENAI_KEY: ${{ secrets.LM_STUDIO_API_KEY }}
+          OPENAI.API_BASE: http://localhost:1234/v1
+          CONFIG.MODEL: openai/qwen3.6-27b-mlx
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3.13 -m venv /tmp/pr-agent-venv-py313
+          /tmp/pr-agent-venv-py313/bin/pip install pr-agent
+          /tmp/pr-agent-venv-py313/bin/pr_agent --github_action

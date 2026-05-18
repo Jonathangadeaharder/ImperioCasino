@@ -1,6 +1,21 @@
-# ADR-005: Testing Strategy
-
-**Status:** Accepted
+---
+id: ADR-005
+kind: adr
+title: Testing Strategy
+status: draft
+authors: []
+reviewers: []
+tags: []
+supersedes: []
+superseded_by: []
+depends_on: []
+blocks: []
+implements: []
+related: []
+external: []
+project: ImperioCasino
+checksum: 2f40a285b9175cdf0b8803815ac3e1c6d460e578733dbd573316fc6c9b511e88
+---
 
 **Context:** Casino games require high correctness guarantees. Bugs in payout calculations, deck shuffling, or bet validation can cause financial losses. The testing strategy must cover game logic, integration, and 3D rendering.
 

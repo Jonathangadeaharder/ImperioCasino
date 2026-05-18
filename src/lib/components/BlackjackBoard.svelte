@@ -1,16 +1,21 @@
 <script lang="ts">
-	import type { Card as CardType, BlackjackState } from '$lib/types';
-	import CardComponent from './Card.svelte';
+// biome-ignore lint/correctness/noUnusedImports: Used in template
+import Card from "$lib/components/Card.svelte";
+import type { BlackjackState, Card as CardType } from "$lib/types";
 
-	let { gameState, onAction, playing }: {
-		gameState: BlackjackState | null;
-		onAction: (action: string) => void;
-		playing: boolean;
-	} = $props();
+let {
+	gameState,
+	onAction,
+	playing,
+}: {
+	gameState: BlackjackState | null;
+	onAction: (action: string) => void;
+	playing: boolean;
+} = $props();
 
-	function handValue(hand: CardType[]): number {
-		return hand.reduce((s, c) => s + c.value, 0);
-	}
+function _handValue(hand: CardType[]): number {
+	return hand.reduce((s, c) => s + c.value, 0);
+}
 </script>
 
 {#if gameState}
@@ -19,24 +24,24 @@
 			<h3>Dealer ({gameState.dealer_value || '?'})</h3>
 			<div class="cards">
 				{#each gameState.dealer_hand as card, i}
-					<CardComponent card={card} hidden={i === 1 && !gameState.game_over} />
+					<Card card={card} hidden={i === 1 && !gameState.game_over} />
 				{/each}
 			</div>
 		</div>
 		<div class="hand player">
-			<h3>Your Hand ({handValue(gameState.player_hand)})</h3>
+			<h3>Your Hand ({_handValue(gameState.player_hand)})</h3>
 			<div class="cards">
 				{#each gameState.player_hand as card}
-					<CardComponent card={card} />
+						<Card card={card} />
 				{/each}
 			</div>
 		</div>
 		{#if gameState.split && gameState.player_second_hand}
 			<div class="hand player">
-				<h3>Second Hand ({handValue(gameState.player_second_hand)})</h3>
+				<h3>Second Hand ({_handValue(gameState.player_second_hand)})</h3>
 				<div class="cards">
 					{#each gameState.player_second_hand as card}
-						<CardComponent card={card} />
+					<Card card={card} />
 					{/each}
 				</div>
 			</div>

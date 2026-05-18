@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
-	import SlotCasing from './SlotCasing.svelte';
-	import SlotLights from './SlotLights.svelte';
-	import Reel from './Reel.svelte';
-
-	let { onSpin, coins, spinning }: { onSpin: () => void; coins: number; spinning: boolean } = $props();
+let {
+	onSpin,
+	coins,
+	spinning,
+}: { onSpin: () => void; coins: number; spinning: boolean } = $props();
 </script>
 
 <T.Group>
