@@ -1,9 +1,9 @@
 <script lang="ts">
 import { page } from "$app/stores";
-import type { BlackjackState } from "$lib/types";
 import BlackjackBoard from "$lib/components/BlackjackBoard.svelte";
 import ChipSelector from "$lib/components/ChipSelector.svelte";
 import ResultModal from "$lib/components/ResultModal.svelte";
+import type { BlackjackState } from "$lib/types";
 
 let _coins = $state($page.data.coins);
 let _gameState = $state<BlackjackState | null>(null);

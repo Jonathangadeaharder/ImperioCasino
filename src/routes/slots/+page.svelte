@@ -1,8 +1,8 @@
 <script lang="ts">
-import { page } from "$app/stores";
 import { Canvas, T } from "@threlte/core";
-import type { Fruit } from "$lib/types";
+import { page } from "$app/stores";
 import SlotMachine from "$lib/components/SlotMachine.svelte";
+import type { Fruit } from "$lib/types";
 
 let coins = $state($page.data.coins);
 let spinning = $state(false);

@@ -65,9 +65,7 @@ export class PocketBaseAdapter implements DBAdapter {
 	}
 
 	async getBlackjackGame(gameId: string): Promise<BlackjackState> {
-		const record = await this.pb
-			.collection("blackjack_games")
-			.getOne(gameId);
+		const record = await this.pb.collection("blackjack_games").getOne(gameId);
 		return {
 			id: record.id,
 			user_id: record.user_id,
