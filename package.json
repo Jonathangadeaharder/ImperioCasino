@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "packageManager": "pnpm@9.15.0",
   "type": "module",
   "dependencies": {
     "@threlte/core": "^8.5.16",
