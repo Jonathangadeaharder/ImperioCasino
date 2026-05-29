@@ -25,7 +25,7 @@ vi.mock("pocketbase", () => ({
 import { handle } from "../hooks.server";
 
 function mockResolve() {
-	return { headers: { set: vi.fn() } };
+	return { headers: { set: vi.fn(), append: vi.fn() } };
 }
 
 describe("hooks.server handle", () => {
@@ -34,7 +34,7 @@ describe("hooks.server handle", () => {
 			request: { headers: { get: vi.fn(() => "") } },
 			locals: {},
 		} as any;
-		const resolve = vi.fn().mockResolvedValue({ headers: { set: vi.fn() } });
+		const resolve = vi.fn().mockResolvedValue({ headers: { set: vi.fn(), append: vi.fn() } });
 
 		await handle({ event, resolve });
 
@@ -108,7 +108,7 @@ describe("hooks.server handle", () => {
 
 		await handle({ event, resolve });
 
-		expect(mockRes.headers.set).toHaveBeenCalledWith(
+		expect(mockRes.headers.append).toHaveBeenCalledWith(
 			"set-cookie",
 			"pb_auth=session",
 		);
