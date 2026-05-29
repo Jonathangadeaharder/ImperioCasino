@@ -2,9 +2,9 @@
 id: ADR-004
 kind: adr
 title: Database Abstraction Layer for Future Migration
-status: draft
-authors: []
-reviewers: []
+status: accepted
+authors: [Jonathan Gadea Harder]
+reviewers: [Jonathan Gadea Harder]
 tags: []
 supersedes: []
 superseded_by: []
