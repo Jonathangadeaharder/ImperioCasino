@@ -15,8 +15,8 @@ importers:
         specifier: ^9.20.1
         version: 9.20.1(@types/three@0.184.1)(svelte@5.55.7)(three@0.184.0)
       pocketbase:
-        specifier: ^0.25.2
-        version: 0.25.2
+        specifier: ^0.27.0
+        version: 0.27.0
       three:
         specifier: ^0.184.0
         version: 0.184.0
@@ -1047,8 +1047,8 @@ packages:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
-  pocketbase@0.25.2:
-    resolution: {integrity: sha512-ONZl1+qHJMnhR2uacBlBJ90lm7njtL/zy0606+1ROfK9hSL4LRBRc8r89rMcNRzPzRqCNyoFTh2Qg/lYXdEC1w==}
+  pocketbase@0.27.0:
+    resolution: {integrity: sha512-K5N6d93UP/BNMbMnlZ6BUfy9VPCIvLyqhJFOsNI8OsZwzvKWEAfyD36boi5K4ECIOl5HMlo0TzuaeGdKpMwizQ==}
 
   postcss@8.5.14:
     resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
@@ -2239,7 +2239,7 @@ snapshots:
 
   picomatch@4.0.4: {}
 
-  pocketbase@0.25.2: {}
+  pocketbase@0.27.0: {}
 
   postcss@8.5.14:
     dependencies:
