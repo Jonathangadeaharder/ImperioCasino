@@ -34,7 +34,9 @@ describe("hooks.server handle", () => {
 			request: { headers: { get: vi.fn(() => "") } },
 			locals: {},
 		} as any;
-		const resolve = vi.fn().mockResolvedValue({ headers: { set: vi.fn(), append: vi.fn() } });
+		const resolve = vi
+			.fn()
+			.mockResolvedValue({ headers: { set: vi.fn(), append: vi.fn() } });
 
 		await handle({ event, resolve });
 
