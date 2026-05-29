@@ -1,4 +1,9 @@
 <script lang="ts">
+import { T } from "@threlte/core";
+import SlotLights from "$lib/components/SlotLights.svelte";
+import SlotCasing from "$lib/components/SlotCasing.svelte";
+import Reel from "$lib/components/Reel.svelte";
+
 let {
 	onSpin,
 	coins,

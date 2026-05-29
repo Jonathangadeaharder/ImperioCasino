@@ -1,5 +1,5 @@
 <script lang="ts">
-import { useTask } from "@threlte/core";
+import { T, useTask } from "@threlte/core";
 
 let { reelIndex, spinning }: { reelIndex: number; spinning: boolean } =
 	$props();
