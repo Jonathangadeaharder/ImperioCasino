@@ -54,7 +54,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		await locals.db.deductCoins(userId, wager);
 	} catch {
-		await locals.db.updateBlackjackGame(gameId, { game_over: true, message: "Coin deduction failed" });
+		await locals.db.updateBlackjackGame(gameId, {
+			game_over: true,
+			message: "Coin deduction failed",
+		});
 		return json({ error: "Transaction failed" }, { status: 500 });
 	}
 
