@@ -5,7 +5,7 @@ import type { Mesh } from "three";
 let { reelIndex, spinning }: { reelIndex: number; spinning: boolean } =
 	$props();
 
-let mesh: Mesh | null = $state(null);
+let mesh: Mesh | undefined = $state(undefined);
 
 useTask((delta) => {
 	if (!mesh) return;
