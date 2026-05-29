@@ -1,5 +1,7 @@
 <script lang="ts">
+import { Canvas, T } from "@threlte/core";
 import { page } from "$app/stores";
+import SlotMachine from "$lib/components/SlotMachine.svelte";
 import type { Fruit } from "$lib/types";
 
 let coins = $state($page.data.coins);
@@ -41,7 +43,8 @@ async function _spin() {
 <p class="coins">Coins: {coins}</p>
 
 <div class="canvas-container">
-	<Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+	<Canvas>
+		<T.PerspectiveCamera position={[0, 0, 5]} fov={50} />
 		<SlotMachine onSpin={_spin} {coins} {spinning} />
 	</Canvas>
 </div>

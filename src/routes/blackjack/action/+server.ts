@@ -5,14 +5,13 @@ import {
 	determineWinner,
 	playerHit,
 } from "$lib/server/games/blackjack";
-import type { GameAction } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
-const VALID_ACTIONS = ["hit", "stand", "double"] as const;
+const VALID_ACTIONS: readonly string[] = ["hit", "stand", "double"];
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const { action, game_id } = (await request.json()) as {
-		action: GameAction;
+		action: string;
 		game_id: string;
 	};
 	if (!VALID_ACTIONS.includes(action)) {

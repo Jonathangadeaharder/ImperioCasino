@@ -1,5 +1,6 @@
 <script lang="ts">
 import { page } from "$app/stores";
+import CoinBalance from "$lib/components/CoinBalance.svelte";
 
 let _user = $derived($page.data.user);
 </script>

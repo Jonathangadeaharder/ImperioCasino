@@ -4,7 +4,7 @@ import { page } from "$app/stores";
 let _user = $derived($page.data.user);
 </script>
 
-<h1>Welcome{user ? `, ${user.username}` : ''}</h1>
+<h1>Welcome{_user ? `, ${_user.username}` : ''}</h1>
 <p class="subtitle">Choose your game</p>
 
 <div class="games">

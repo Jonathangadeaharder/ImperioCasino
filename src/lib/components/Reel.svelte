@@ -1,10 +1,11 @@
 <script lang="ts">
-import { useTask } from "@threlte/core";
+import { T, useTask } from "@threlte/core";
+import type { Mesh } from "three";
 
 let { reelIndex, spinning }: { reelIndex: number; spinning: boolean } =
 	$props();
 
-let mesh: any = $state(null);
+let mesh: Mesh | undefined = $state(undefined);
 
 useTask((delta) => {
 	if (!mesh) return;

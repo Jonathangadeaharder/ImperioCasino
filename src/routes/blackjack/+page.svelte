@@ -1,5 +1,8 @@
 <script lang="ts">
 import { page } from "$app/stores";
+import BlackjackBoard from "$lib/components/BlackjackBoard.svelte";
+import ChipSelector from "$lib/components/ChipSelector.svelte";
+import ResultModal from "$lib/components/ResultModal.svelte";
 import type { BlackjackState } from "$lib/types";
 
 let _coins = $state($page.data.coins);
@@ -48,19 +51,19 @@ async function _handleAction(action: string) {
 
 <h1>Blackjack</h1>
 
-{#if !gameState}
+{#if !_gameState}
 	<div class="start">
-		<p>Coins: {coins}</p>
-		<ChipSelector {wager} setWager={(n) => wager = n} max={coins} />
-		<button onclick={startGame} disabled={playing}>Deal</button>
+		<p>Coins: {_coins}</p>
+		<ChipSelector {wager} setWager={(n: number) => wager = n} max={_coins} />
+		<button onclick={_startGame} disabled={_playing}>Deal</button>
 	</div>
 {/if}
 
-<BlackjackBoard {gameState} onAction={handleAction} {playing} />
-<ResultModal show={resultMessage !== null} message={resultMessage} payout={resultPayout} />
+<BlackjackBoard gameState={_gameState} onAction={_handleAction} playing={_playing} />
+<ResultModal show={_resultMessage !== null} message={_resultMessage} payout={_resultPayout} />
 
-{#if gameState && gameState.game_over}
-	<p class="coins-after">Coins: {coins}</p>
+{#if _gameState && _gameState.game_over}
+	<p class="coins-after">Coins: {_coins}</p>
 {/if}
 
 <style>
