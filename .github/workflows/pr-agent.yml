@@ -5,22 +5,48 @@ on:
     types: [created, edited]
 
 permissions:
-  issue-comments: write
-  pull-requests: write
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
-  pr_agent:
+  pr-agent:
     if: vars.ENABLE_PR_AGENT == 'true' && github.event.issue.pull_request != null
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - name: PR Agent
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install and Run PR Agent
         env:
-          OPENAI_KEY: ${{ secrets.LM_STUDIO_API_KEY }}
-          OPENAI.API_BASE: http://localhost:1234/v1
-          CONFIG.MODEL: openai/qwen3.6-27b-mlx
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB.USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI.KEY: ${{ secrets.CROFAI_API_KEY }}
+          OPENAI.API_BASE: https://crof.ai/v1
+          OPENAI.API_TYPE: "openai"
+          CONFIG.MODEL: "openai/glm-5.1"
+          CONFIG.FALLBACK_MODELS: '[]'
+          CONFIG.CUSTOM_MODEL_MAX_TOKENS: "32768"
+          CONFIG.AI_TIMEOUT: "300"
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
-          python3.13 -m venv /tmp/pr-agent-venv-py313
-          /tmp/pr-agent-venv-py313/bin/pip install pr-agent
-          /tmp/pr-agent-venv-py313/bin/pr_agent --github_action
+          VENV=/tmp/pr-agent-venv-py313
+          if [ ! -f "$VENV/bin/python" ]; then
+            python3.13 -m venv "$VENV"
+            "$VENV/bin/pip" install --upgrade pip
+            "$VENV/bin/pip" install pr-agent
+          fi
+
+          PR_URL="${{ github.event.issue.pull_request.html_url }}"
+
+          if echo "$COMMENT_BODY" | grep -q "^/review"; then
+            "$VENV/bin/python" -m pr_agent.cli --pr_url="$PR_URL" review
+          elif echo "$COMMENT_BODY" | grep -q "^/describe"; then
+            "$VENV/bin/python" -m pr_agent.cli --pr_url="$PR_URL" describe
+          elif echo "$COMMENT_BODY" | grep -q "^/improve"; then
+            "$VENV/bin/python" -m pr_agent.cli --pr_url="$PR_URL" improve
+          elif echo "$COMMENT_BODY" | grep -q "^/ask"; then
+            QUESTION="${COMMENT_BODY#/ask }"
+            "$VENV/bin/python" -m pr_agent.cli --pr_url="$PR_URL" ask "$QUESTION"
+          else
+            echo "No pr-agent command found. Use /review, /describe, /improve, or /ask."
+          fi
