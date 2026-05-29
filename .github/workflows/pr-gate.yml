@@ -97,13 +97,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
       - name: Install and run vitest-linter
         run: |
-          go install github.com/VidiomTM/vitest-linter/cmd/vitest-linter@v1.0.0
+          git clone --depth 1 --branch v1.0.0 https://github.com/VidiomTM/vitest-linter.git /tmp/vitest-linter
+          cd /tmp/vitest-linter && cargo build --release -q
+          cp /tmp/vitest-linter/target/release/vitest-linter /usr/local/bin/
+          cd $GITHUB_WORKSPACE
           vitest-linter . --format terminal
+      - name: Cleanup vitest-linter
+        if: always()
+        run: rm -rf /tmp/vitest-linter
 
   required-checks:
     name: Required Checks (PR)
