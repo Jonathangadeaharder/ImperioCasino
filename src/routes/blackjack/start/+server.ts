@@ -28,16 +28,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const c4 = deck.pop();
 	if (!c1 || !c2 || !c3 || !c4)
 		return json({ error: "Deck error" }, { status: 500 });
-	const player_hand = [c1, c2];
-	const dealer_hand = [c3, c4];
-	const _playerValue = calculateHandValue(player_hand);
-	const dealerValue = calculateHandValue(dealer_hand);
+	const playerHand = [c1, c2];
+	const dealerHand = [c3, c4];
+	const _playerValue = calculateHandValue(playerHand);
+	const dealerValue = calculateHandValue(dealerHand);
 
 	const state: BlackjackState = {
 		user_id: userId,
 		deck,
-		dealer_hand,
-		player_hand,
+		dealer_hand: dealerHand,
+		player_hand: playerHand,
 		player_second_hand: null,
 		player_coins: coins - wager,
 		current_wager: wager,
@@ -64,8 +64,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		deck: [],
 		can_double_down: false,
 		can_split:
-			player_hand[0].name === player_hand[1].name &&
-			["Jack", "Queen", "King"].includes(player_hand[0].name) ===
-				["Jack", "Queen", "King"].includes(player_hand[1].name),
+			playerHand[0].name === playerHand[1].name &&
+			["Jack", "Queen", "King"].includes(playerHand[0].name) ===
+				["Jack", "Queen", "King"].includes(playerHand[1].name),
 	});
 };

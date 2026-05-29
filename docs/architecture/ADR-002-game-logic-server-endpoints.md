@@ -2,9 +2,9 @@
 id: ADR-002
 kind: adr
 title: Game Logic in SvelteKit Server Endpoints
-status: draft
-authors: []
-reviewers: []
+status: accepted
+authors: [Jonathan Gadea Harder]
+reviewers: [Jonathan Gadea Harder]
 tags: []
 supersedes: []
 superseded_by: []

@@ -2,9 +2,9 @@
 id: ADR-001
 kind: adr
 title: SvelteKit Monolith with PocketBase Backend
-status: draft
-authors: []
-reviewers: []
+status: accepted
+authors: [Jonathan Gadea Harder]
+reviewers: [Jonathan Gadea Harder]
 tags: []
 supersedes: []
 superseded_by: []

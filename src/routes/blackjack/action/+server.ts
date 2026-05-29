@@ -86,7 +86,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	state.dealer_value = calculateHandValue(state.dealer_hand);
 	await locals.db.updateBlackjackGame(game_id, state);
-	const player_coins = await locals.db.getCoins(userId);
+	const playerCoins = await locals.db.getCoins(userId);
 	const canSplit =
 		!state.split &&
 		state.player_hand.length === 2 &&
@@ -94,7 +94,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	return json({
 		...state,
-		player_coins,
+		player_coins: playerCoins,
 		can_double_down:
 			action !== "double" && state.player_hand.length === 2 && !state.split,
 		can_split: canSplit,

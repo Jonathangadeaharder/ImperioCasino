@@ -2,9 +2,9 @@
 id: ADR-003
 kind: adr
 title: Threlte for 3D Slot Engine
-status: draft
-authors: []
-reviewers: []
+status: accepted
+authors: [Jonathan Gadea Harder]
+reviewers: [Jonathan Gadea Harder]
 tags: []
 supersedes: []
 superseded_by: []

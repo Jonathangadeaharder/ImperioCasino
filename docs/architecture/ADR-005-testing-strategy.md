@@ -2,9 +2,9 @@
 id: ADR-005
 kind: adr
 title: Testing Strategy
-status: draft
-authors: []
-reviewers: []
+status: accepted
+authors: [Jonathan Gadea Harder]
+reviewers: [Jonathan Gadea Harder]
 tags: []
 supersedes: []
 superseded_by: []
