@@ -44,6 +44,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm dlx @biomejs/biome check .
+      - name: Generate SvelteKit types
+        run: pnpm svelte-kit sync
       - name: Type check
         run: pnpm exec svelte-check --fail-on-warnings
       - name: Unit tests with coverage
