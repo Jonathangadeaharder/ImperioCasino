@@ -1,5 +1,4 @@
 <script lang="ts">
-// biome-ignore lint/correctness/noUnusedImports: Used in template
 import Card from "$lib/components/Card.svelte";
 import type { BlackjackState, Card as CardType } from "$lib/types";
 
