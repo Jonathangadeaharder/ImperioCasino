@@ -97,7 +97,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: VidiomTM/vitest-linter@v1
+      - name: Install and run vitest-linter
+        run: |
+          npm install -g vitest-linter 2>/dev/null || true
+          vitest-linter . --format terminal
 
   required-checks:
     name: Required Checks (PR)
