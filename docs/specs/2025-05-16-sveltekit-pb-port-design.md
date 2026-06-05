@@ -47,9 +47,9 @@ ImperioCasino/
 │   ├── lib/
 │   │   ├── server/
 │   │   │   ├── db/
-│   │   │   │   ├── adapter.ts       # Interface: getCoins, updateCoins, etc.
+│   │   │   │   ├── adapter.ts       # Interface: getCoins, setCoins, addCoins, etc.
 │   │   │   │   ├── pocketbase.ts    # PocketBase implementation
-│   │   │   │   └── supabase.ts      # Future Supabase implementation
+│   │   │   │   └── supabase.ts      # Future Supabase implementation (not yet created)
 │   │   │   ├── games/
 │   │   │   │   ├── blackjack.ts     # Deck, shuffle, hit, stand, split, payout
 │   │   │   │   ├── roulette.ts      # Bet validation, spin, payout
@@ -59,10 +59,19 @@ ImperioCasino/
 │   │   │   ├── Nav.svelte
 │   │   │   ├── CoinBalance.svelte
 │   │   │   ├── Card.svelte
-│   │   │   ├── Chip.svelte
+│   │   │   ├── ChipSelector.svelte
+│   │   │   ├── BlackjackBoard.svelte
+│   │   │   ├── ResultModal.svelte
+│   │   │   ├── SlotMachine.svelte
+│   │   │   ├── SlotCasing.svelte
+│   │   │   ├── SlotLights.svelte
+│   │   │   ├── Reel.svelte
 │   │   │   └── ...
 │   │   └── types.ts              # Shared types
-│   └── app.css
+│   ├── hooks.server.ts        # PocketBase per-request setup + auth restore
+│   ├── app.d.ts               # App.Locals type declarations
+│   ├── app.css                # Global styles
+│   └── app.html               # HTML shell
 ├── static/
 │   ├── models/               # GLB files for Threlte slot machine
 │   └── images/               # Card faces, chip textures
@@ -151,6 +160,7 @@ export interface DBAdapter {
   getCoins(userId: string): Promise<number>
   addCoins(userId: string, amount: number): Promise<number>
   deductCoins(userId: string, amount: number): Promise<number>
+  setCoins(userId: string, amount: number): Promise<number>
   createBlackjackGame(userId: string, state: BlackjackState): Promise<string>
   updateBlackjackGame(gameId: string, state: Partial<BlackjackState>): Promise<void>
   getBlackjackGame(gameId: string): Promise<BlackjackState>

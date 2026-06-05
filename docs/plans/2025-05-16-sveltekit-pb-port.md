@@ -51,11 +51,11 @@
 | `src/lib/components/Card.svelte` | Card display |
 | `src/lib/components/ChipSelector.svelte` | Chip picker |
 | `src/lib/components/BlackjackBoard.svelte` | Blackjack table |
-| `src/lib/components/RouletteTable.svelte` | Betting grid |
-| `src/lib/components/RouletteWheel.svelte` | Wheel animation |
+| `src/lib/components/ResultModal.svelte` | Win/loss modal |
 | `src/lib/components/SlotMachine.svelte` | Threlte slot |
 | `src/lib/components/Reel.svelte` | Threlte reel |
-| `src/lib/components/ResultModal.svelte` | Win/loss modal |
+| `src/lib/components/SlotCasing.svelte` | Threlte slot casing |
+| `src/lib/components/SlotLights.svelte` | Threlte slot lights |
 
 ---
 

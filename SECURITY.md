@@ -1,279 +1,222 @@
 # Security Documentation
 
-## Security Improvements Applied
+## Security Model
 
-This document outlines the security enhancements implemented in ImperioCasino following a comprehensive security audit.
+ImperioCasino is a SvelteKit application backed by PocketBase (Go binary). This document outlines the security architecture, implemented controls, and remaining considerations.
 
-### Critical Fixes
+## Architecture Security
 
-#### 1. Password Hashing ✅
-**Issue:** Passwords were stored in plain text.
-**Fix:** Implemented Werkzeug password hashing using `generate_password_hash` and `check_password_hash`.
-**Location:** `session_management/imperioApp/utils/models.py`
+### Stack
 
-```python
-def set_password(self, password):
-    self.password = generate_password_hash(password)
+| Layer | Tech | Security Notes |
+|-------|------|----------------|
+| Frontend | SvelteKit, Svelte 5 | SSR by default, no client secrets |
+| 3D | Threlte, Three.js | Client-side only, no security impact |
+| Backend | PocketBase (Go binary) | Handles auth, DB, API rules |
+| Auth | PocketBase auth | Cookie-based, httpOnly by default |
+| Build | Vite | No runtime impact |
 
-def verify_password(self, password):
-    return check_password_hash(self.password, password)
+### Auth Flow
+
+1. `hooks.server.ts` creates a PocketBase instance per request
+2. Auth cookie (`pb_auth`) is loaded from request headers
+3. If valid, `authRefresh()` revalidates the token server-side
+4. `event.locals.user` is set for all downstream server load/action handlers
+5. Auth guard in `+layout.server.ts` redirects unauthenticated users to `/login`
+6. PocketBase SDK manages cookie lifecycle — no manual JWT handling
+
+### Cookie Security (Implemented)
+
+```typescript
+// hooks.server.ts — actual cookie configuration
+pb.authStore.exportToCookie({
+  httpOnly: true,     // Prevents JavaScript access (XSS protection)
+  secure: !dev,       // HTTPS-only in production
+  sameSite: "lax",    // CSRF mitigation
+  path: "/",          // Available on all routes
+});
 ```
 
-**⚠️ Important:** Existing user passwords need to be rehashed. Users will need to reset their passwords or you must run a migration script.
+## Implemented Security Controls
 
-#### 2. Secure Secret Key Management ✅
-**Issue:** Hardcoded weak secret key (`'your-secret-key'`).
-**Fix:**
-- Auto-generates secure key in development
-- Requires `SECRET_KEY` environment variable in production
-- Fails safely if not set in production
+### 1. Server-Side Game Logic ✅
 
-**Location:** `session_management/imperioApp/utils/config.py`
+**Control:** All game logic (blackjack, roulette, slots) runs in SvelteKit server endpoints under `src/lib/server/games/`. Client sends actions; server validates, executes, and returns results.
 
-**Action Required:** Set `SECRET_KEY` in your `.env` file:
-```bash
-python -c "import secrets; print(secrets.token_hex(32))"
-```
+**Benefit:** Prevents client-side manipulation of game outcomes, payout calculations, or balance changes.
 
-#### 3. CORS Restriction ✅
-**Issue:** Allowed requests from any origin (`origins: "*"`).
-**Fix:** Restricted to specific allowed origins from environment configuration.
+### 2. PocketBase Auth with httpOnly Cookies ✅
 
-**Location:** `session_management/imperioApp/__init__.py`
+**Control:** Auth tokens stored in httpOnly cookies, not localStorage. Cookie flags: `httpOnly=true`, `sameSite=lax`, `secure=true` in production.
 
-```python
-CORS(app, resources={r"/*": {"origins": app.config['CORS_ORIGINS']}}, supports_credentials=True)
-```
+**Benefit:** Mitigates XSS-based token theft and CSRF attacks.
 
-### High Priority Fixes
+### 3. DB Abstraction Layer ✅
 
-#### 4. Rate Limiting ✅
-**Issue:** No protection against brute force or API abuse.
-**Fix:** Implemented Flask-Limiter with endpoint-specific limits.
+**Control:** Game logic uses `DBAdapter` interface (`src/lib/server/db/adapter.ts`), not direct PocketBase calls. Enables audit logging and validation at the adapter level.
 
-**Limits Applied:**
-- Login: 5 per minute
-- Signup: 3 per hour
-- Spin: 60 per minute
-- Default: 200 per day, 50 per hour
+**Benefit:** Single point of control for all data operations; easier to add authorization checks.
 
-**Location:** `session_management/imperioApp/__init__.py`, `routes.py`
+### 4. Auth Guard (Layout Server Load) ✅
 
-#### 5. Input Validation ✅
-**Issue:** Insufficient validation of user inputs.
-**Fix:** Enhanced validation in roulette game logic.
+**Control:** `src/routes/+layout.server.ts` redirects unauthenticated users to `/login` for all non-public paths.
 
-**Improvements:**
-- Validates bet amounts are positive numbers
-- Validates odds are non-negative
-- Validates bet numbers are in valid range (0-36)
-- Checks total bet amount before deducting coins
+**Benefit:** No game page or balance data accessible without authentication.
 
-**Location:** `session_management/imperioApp/game_logic/roulette.py`
+### 5. Input Validation in Server Endpoints ✅
 
-#### 6. Race Condition Prevention ✅
-**Issue:** Concurrent requests could cause coin balance inconsistencies.
-**Fix:** Implemented database row locking using `with_for_update()`.
+**Control:**
+- Blackjack: wager > 0 check, balance sufficiency check
+- Roulette: non-empty bets check, total bet <= balance check
+- Slots: balance >= 1 check before spin
 
-**Location:** `session_management/imperioApp/game_logic/blackjack.py`
+**Benefit:** Prevents negative wagers, overspending, and empty requests.
 
-```python
-locked_user = db.session.query(User).with_for_update().filter_by(id=user.id).first()
-```
+### 6. PocketBase API Rules ✅
 
-### Medium Priority Fixes
+**Control:** `blackjack_games` collection has rules:
+- List/View/Create/Update: `user_id = @request.auth.id` (users can only access their own games)
+- Delete: disabled (no rule)
 
-#### 7. Error Handling ✅
-**Issue:** Inconsistent error handling and use of `print()` instead of logging.
-**Fix:**
-- Added global error handlers (404, 500, 400, 401)
-- Replaced `print()` with `logging.debug()`
-- Added proper database rollback on errors
+**Benefit:** Row-level security prevents users from reading or modifying other players' game state.
 
-**Location:** `session_management/imperioApp/routes.py`
+### 7. Dependency Version Pinning ✅
 
-#### 8. Logging Configuration ✅
-**Issue:** DEBUG logging always enabled, potential information leakage.
-**Fix:**
-- Configurable log level via `LOG_LEVEL` environment variable
-- Defaults to INFO in production
-- Separate log files (`logs/app.log`)
+**Control:** Dependencies in `package.json` use caret ranges with `pnpm` lockfile for deterministic installs. True version pinning (exact versions) would further reduce supply chain risk but is not currently enforced.
 
-**Location:** `session_management/imperioApp/__init__.py`
-
-#### 9. Database Indexing ✅
-**Issue:** No indexes on frequently queried columns.
-**Fix:** Added indexes to:
-- `users.username`
-- `users.email`
-- `blackjack_game_state.user_id`
-- Composite index on `(user_id, game_over)`
-
-**Location:** `session_management/imperioApp/utils/models.py`
-
-#### 10. Dependency Version Pinning ✅
-**Issue:** Unpinned dependencies could introduce breaking changes.
-**Fix:** All dependencies now have specific version numbers.
-
-**Location:** `session_management/requirements.txt`
-
-### Configuration Improvements
-
-#### 11. Environment Variables ✅
-**Issue:** Hardcoded configuration values.
-**Fix:** All configuration now uses environment variables with sensible defaults.
-
-**New Environment Variables:**
-- `SECRET_KEY`
-- `DATABASE_URI`
-- `FLASK_ENV`
-- `LOG_LEVEL`
-- `CORS_ORIGINS`
-- `SESSION_COOKIE_SECURE`
-- `CHERRY_CHARM_URL`
-- `BLACK_JACK_URL`
-- `ROULETTE_URL`
-- `DB_POOL_SIZE`
-- `DB_POOL_RECYCLE`
-
-#### 12. Enhanced .gitignore ✅
-**Issue:** Incomplete .gitignore could lead to sensitive files being committed.
-**Fix:** Comprehensive .gitignore covering:
-- Environment files (`.env`, `.env.*`)
-- Python artifacts (`__pycache__`, `*.pyc`)
-- Flask sessions (`flask_session/`)
-- IDE files (`.vscode/`, `.idea/`)
-- Logs and databases
-
-### Security Features Added
-
-#### Session Security
-- `SESSION_COOKIE_HTTPONLY = True` (prevents JavaScript access)
-- `SESSION_COOKIE_SAMESITE = 'Lax'` (CSRF protection)
-- `SESSION_COOKIE_SECURE` (configurable, set to True in production with HTTPS)
-
-#### Database Connection Pooling
-- Pool size: 10 connections
-- Pool recycle: 3600 seconds
-- Pre-ping enabled for connection health checks
+**Benefit:** Lockfile ensures reproducible installs. Caret ranges allow patch updates; exact pinning would be stricter.
 
 ## Remaining Security Considerations
 
 ### ⚠️ Important: Still To Do
 
-1. **JWT Tokens in URL**
-   - **Current State:** Tokens still passed in URL query parameters
-   - **Risk:** Tokens visible in logs, browser history, referrer headers
-   - **Recommendation:** Implement secure token exchange or use POST redirects
-   - **Priority:** High
-
-2. **HTTPS Enforcement**
-   - **Current State:** HTTP URLs hardcoded
-   - **Risk:** Credentials and tokens transmitted in plain text
-   - **Recommendation:**
-     - Obtain SSL/TLS certificates
-     - Configure reverse proxy (Nginx) with HTTPS
-     - Set `SESSION_COOKIE_SECURE=True` in production
+1. **HTTPS Enforcement**
+   - **Current State:** `secure: !dev` cookie flag only effective with HTTPS
+   - **Risk:** Credentials transmitted in plain text over HTTP
+   - **Recommendation:** Configure reverse proxy (Nginx/Caddy) with TLS certificates
    - **Priority:** Critical for production
 
-3. **Token Storage in Frontend**
-   - **Current State:** Tokens stored in localStorage
-   - **Risk:** Vulnerable to XSS attacks
-   - **Recommendation:** Use httpOnly cookies or sessionStorage
+2. **Rate Limiting**
+   - **Current State:** No rate limiting on game endpoints
+   - **Risk:** Abuse of spin/action endpoints for automated play
+   - **Recommendation:** Add rate limiting middleware or PocketBase hooks
+   - **Priority:** High
+
+3. **CORS Configuration**
+   - **Current State:** PocketBase default CORS (allows all origins in dev)
+   - **Risk:** Cross-origin requests from malicious sites
+   - **Recommendation:** Configure PocketBase CORS origins for production
    - **Priority:** Medium
 
-4. **Database Migration for Password Hashing**
-   - **Current State:** Existing passwords may still be plain text
-   - **Action Required:**
-     ```python
-     # Migration script needed to rehash existing passwords
-     # OR force password reset for all users
-     ```
+4. **CSRF Protection**
+   - **Current State:** `sameSite=lax` provides partial CSRF protection
+   - **Risk:** POST requests from top-level navigations are allowed
+   - **Recommendation:** Add SvelteKit CSRF protection (origin header check) or anti-CSRF token
+   - **Priority:** Medium
+
+5. **Audit Logging**
+   - **Current State:** No audit trail for game actions or balance changes
+   - **Risk:** Cannot investigate disputes or detect suspicious patterns
+   - **Recommendation:** Log all game actions (spin, hit, stand) with timestamp, user, and result to PocketBase
+   - **Priority:** Medium
+
+6. **Content Security Policy (CSP)**
+   - **Current State:** No CSP headers configured
+   - **Risk:** XSS could load external scripts
+   - **Recommendation:** Add CSP headers in `hooks.server.ts` via `resolve` response headers
+   - **Priority:** Medium
+
+7. **PocketBase Admin Access**
+   - **Current State:** Default admin credentials set by `scripts/setup.sh` (`admin@imperiocasino.com` / `changeme123!`)
+   - **Risk:** Default credentials are publicly visible in the repo
+   - **Recommendation:** Change admin credentials immediately after first setup; use strong password
    - **Priority:** Critical
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `PUBLIC_POCKETBASE_URL` | PocketBase server URL | No (code currently hardcodes `http://127.0.0.1:8090`) |
+
+See `.env.example` for template.
 
 ## Deployment Checklist
 
 ### Before Deploying to Production:
 
-- [ ] Set strong `SECRET_KEY` in environment variables
-- [ ] Set `FLASK_ENV=production`
-- [ ] Set `SESSION_COOKIE_SECURE=True` (requires HTTPS)
-- [ ] Set `LOG_LEVEL=WARNING` or `INFO`
-- [ ] Configure database with connection pooling
-- [ ] Set up HTTPS/TLS certificates
-- [ ] Update all URLs to use HTTPS
-- [ ] Configure CORS origins for production domains
-- [ ] Set up database backups
-- [ ] Configure rate limiting storage (Redis recommended for production)
+- [ ] Change PocketBase admin credentials from defaults
+- [ ] Configure HTTPS/TLS certificates (reverse proxy)
+- [ ] Set `PUBLIC_POCKETBASE_URL` to HTTPS endpoint
+- [ ] Configure PocketBase CORS origins for production domains
+- [ ] Add rate limiting to game endpoints
+- [ ] Enable SvelteKit CSRF protection
+- [ ] Add Content Security Policy headers
+- [ ] Set up PocketBase database backups
 - [ ] Review and test all authentication flows
-- [ ] Run security scan (e.g., `bandit`, `safety`)
+- [ ] Run dependency audit: `pnpm audit`
 - [ ] Set up monitoring and alerting
-- [ ] Force password reset for all existing users (due to password hashing change)
+- [ ] Implement audit logging for game actions
 
-### Production Environment Variables
+### Production PocketBase Configuration
 
-Create a `.env` file (never commit this!):
-
-```bash
-FLASK_ENV=production
-SECRET_KEY=<generated-secure-key>
-DATABASE_URI=postgresql://user:pass@localhost/imperiocasino
-LOG_LEVEL=WARNING
-SESSION_COOKIE_SECURE=True
-
-CHERRY_CHARM_URL=https://slots.yourdomain.com
-BLACK_JACK_URL=https://blackjack.yourdomain.com
-ROULETTE_URL=https://roulette.yourdomain.com
-
-CORS_ORIGINS=https://slots.yourdomain.com,https://blackjack.yourdomain.com,https://roulette.yourdomain.com
-```
+1. Change admin password from default
+2. Configure email SMTP for password resets
+3. Set production CORS origins
+4. Enable HTTPS via reverse proxy
+5. Set up regular `pb_data` backups
 
 ## Security Testing
 
 ### Recommended Tools
 
-1. **Static Analysis:**
+1. **Dependency Auditing:**
    ```bash
-   pip install bandit
-   bandit -r session_management/
+   pnpm audit
    ```
 
-2. **Dependency Scanning:**
+2. **Static Analysis:**
    ```bash
-   pip install safety
-   safety check -r session_management/requirements.txt
+   pnpm dlx biome check
    ```
 
-3. **OWASP ZAP or Burp Suite** for penetration testing
+3. **Type Checking:**
+   ```bash
+   pnpm run check
+   ```
+
+4. **OWASP ZAP** or **Burp Suite** for penetration testing
 
 ### Regular Security Practices
 
 1. **Keep dependencies updated:**
    ```bash
-   pip list --outdated
+   pnpm outdated
+   pnpm update
    ```
 
-2. **Monitor logs for suspicious activity**
+2. **Monitor PocketBase logs for suspicious activity**
 
 3. **Regular security audits**
 
-4. **Backup database regularly**
+4. **Backup PocketBase data regularly**
 
 5. **Test disaster recovery procedures**
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability, please email security@yourdomain.com (DO NOT create a public issue).
+If you discover a security vulnerability, please email security@imperiocasino.com (DO NOT create a public issue).
 
 ## Compliance
 
-This application now implements security controls that align with:
+This application implements security controls that align with:
 - OWASP Top 10 Web Application Security Risks
-- Basic GDPR requirements (password protection)
+- Basic GDPR requirements (password protection via PocketBase)
 - PCI DSS recommendations (for future payment integration)
 
 ---
 
-**Last Updated:** 2025-11-18
-**Security Audit Version:** 1.0
-**Status:** Enhanced - Ready for staging deployment (NOT production without HTTPS)
+**Last Updated:** 2026-06-05
+**Security Audit Version:** 2.0
+**Status:** SvelteKit + PocketBase — Ready for staging deployment (NOT production without HTTPS + rate limiting)
