@@ -116,7 +116,7 @@ pnpm run setup      # Initial setup (PocketBase download + schema)
 ## PocketBase Collections
 
 - **users** (auth) — `username`, `coins` (default 100)
-- **blackjack_games** — `user`, `deck`, `dealer_hand`, `player_hand`, `player_second_hand`, `player_coins`, `current_wager`, `game_over`, `message`, `player_stood`, `double_down`, `split`, `current_hand`, `dealer_value`
+- **blackjack_games** — `user_id`, `deck`, `dealer_hand`, `player_hand`, `player_second_hand`, `player_coins`, `current_wager`, `game_over`, `message`, `player_stood`, `double_down`, `split`, `current_hand`, `dealer_value`
 
 ## License
 

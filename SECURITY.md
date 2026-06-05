@@ -75,16 +75,16 @@ pb.authStore.exportToCookie({
 ### 6. PocketBase API Rules ✅
 
 **Control:** `blackjack_games` collection has rules:
-- List/View/Create/Update: `user = @request.auth.id` (users can only access their own games)
+- List/View/Create/Update: `user_id = @request.auth.id` (users can only access their own games)
 - Delete: disabled (no rule)
 
 **Benefit:** Row-level security prevents users from reading or modifying other players' game state.
 
 ### 7. Dependency Version Pinning ✅
 
-**Control:** All dependencies in `package.json` use caret ranges. `pnpm` lockfile ensures deterministic installs.
+**Control:** Dependencies in `package.json` use caret ranges with `pnpm` lockfile for deterministic installs. True version pinning (exact versions) would further reduce supply chain risk but is not currently enforced.
 
-**Benefit:** Reduces supply chain attack surface.
+**Benefit:** Lockfile ensures reproducible installs. Caret ranges allow patch updates; exact pinning would be stricter.
 
 ## Remaining Security Considerations
 
@@ -138,7 +138,7 @@ pb.authStore.exportToCookie({
 
 | Variable | Purpose | Required |
 |----------|---------|----------|
-| `PUBLIC_POCKETBASE_URL` | PocketBase server URL | Yes (defaults to `http://127.0.0.1:8090` in code) |
+| `PUBLIC_POCKETBASE_URL` | PocketBase server URL | No (code currently hardcodes `http://127.0.0.1:8090`) |
 
 See `.env.example` for template.
 
