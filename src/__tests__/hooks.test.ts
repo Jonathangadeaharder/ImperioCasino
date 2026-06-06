@@ -1,13 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 
-const mockStore = {
-	isValid: false,
-	loadFromCookie: vi.fn(),
-	clear: vi.fn(),
-	model: null as { id: string; username: string; coins: number } | null,
-	exportToCookie: vi.fn(() => "pb_auth=session"),
-};
+const { mockStore } = vi.hoisted(() => {
+	const store = {
+		isValid: false,
+		loadFromCookie: vi.fn(),
+		clear: vi.fn(),
+		model: null as { id: string; username: string; coins: number } | null,
+		exportToCookie: vi.fn(() => "pb_auth=session"),
+	};
+	return { mockStore: store };
+});
 
 vi.mock("pocketbase", () => ({
 	default: vi.fn(() => ({
@@ -114,5 +117,41 @@ describe("hooks.server handle", () => {
 			"set-cookie",
 			"pb_auth=session",
 		);
+	});
+
+	it("clears auth store when authRefresh throws", async () => {
+		const mockAuthRefresh = vi
+			.fn()
+			.mockRejectedValue(new Error("Token expired"));
+		const mockClear = vi.fn();
+		const mockPB = {
+			collection: vi.fn().mockReturnValue({
+				authRefresh: mockAuthRefresh,
+				getOne: vi.fn(),
+				getList: vi.fn(),
+				create: vi.fn(),
+				update: vi.fn(),
+			}),
+			authStore: {
+				...mockStore,
+				isValid: true,
+				clear: mockClear,
+				model: { id: "user1", username: "test", coins: 500 },
+			},
+		};
+
+		const event = {
+			request: { headers: { get: vi.fn(() => "pb_auth=expired") } },
+			locals: {},
+		} as any;
+		const resolve = vi.fn().mockResolvedValue(mockResolve());
+
+		const PocketBase = (await import("pocketbase")).default;
+		vi.mocked(PocketBase).mockReturnValue(mockPB as any);
+
+		await handle({ event, resolve });
+
+		expect(mockAuthRefresh).toHaveBeenCalled();
+		expect(mockClear).toHaveBeenCalled();
 	});
 });

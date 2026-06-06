@@ -125,4 +125,50 @@ describe("blackjack start POST", () => {
 		expect(body).toHaveProperty("can_split");
 		expect(typeof body.can_split).toBe("boolean");
 	});
+
+	it("returns 401 when user is not authenticated", async () => {
+		const event = mockEvent(10, { user: null });
+
+		const response = await POST(event);
+		const body = await response.json();
+
+		expect(response.status).toBe(401);
+		expect(body.error).toBe("Not authenticated");
+	});
+
+	it("returns 400 for non-integer wager", async () => {
+		const event = mockEvent(10.5);
+
+		const response = await POST(event);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body.error).toBe("Invalid wager");
+	});
+
+	it("returns 500 when deductCoins fails", async () => {
+		const event = mockEvent(10);
+		const mockGetCoins = vi.mocked(event.locals.db.getCoins);
+		const mockDeductCoins = vi.mocked(event.locals.db.deductCoins);
+		const mockCreateBlackjackGame = vi.mocked(
+			event.locals.db.createBlackjackGame,
+		);
+		const mockUpdateBlackjackGame = vi.mocked(
+			event.locals.db.updateBlackjackGame,
+		);
+		mockGetCoins.mockResolvedValue(100);
+		mockDeductCoins.mockRejectedValue(new Error("DB error"));
+		mockCreateBlackjackGame.mockResolvedValue("game1");
+		mockUpdateBlackjackGame.mockResolvedValue(undefined);
+
+		const response = await POST(event);
+		const body = await response.json();
+
+		expect(response.status).toBe(500);
+		expect(body.error).toBe("Transaction failed");
+		expect(mockUpdateBlackjackGame).toHaveBeenCalledWith("game1", {
+			game_over: true,
+			message: "Coin deduction failed",
+		});
+	});
 });
