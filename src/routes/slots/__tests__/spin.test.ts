@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST } from "../spin/+server";
 
-function mockEvent() {
+function mockEvent(overrides?: Record<string, unknown>) {
 	const mockGetCoins = vi.fn();
 	const mockDeductCoins = vi.fn();
 	const mockAddCoins = vi.fn();
@@ -31,6 +31,7 @@ function mockEvent() {
 		locals: {
 			db: mockDb,
 			user: { id: "user1", username: "test", coins: 100 },
+			...(overrides ?? {}),
 		},
 		params: {},
 		url: new URL("http://localhost:5173/slots/spin"),
@@ -95,5 +96,15 @@ describe("slots spin POST", () => {
 
 		expect(body.payout).toBeGreaterThanOrEqual(0);
 		expect(body.total_coins).toBeGreaterThanOrEqual(0);
+	});
+
+	it("returns 401 when user is not authenticated", async () => {
+		const event = mockEvent({ user: null });
+
+		const response = await POST(event);
+		const body = await response.json();
+
+		expect(response.status).toBe(401);
+		expect(body.error).toBe("Not authenticated");
 	});
 });
