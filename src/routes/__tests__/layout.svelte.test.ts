@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/svelte";
+import type { Snippet } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
 import Layout from "../+layout.svelte";
 
@@ -12,7 +13,7 @@ describe("+layout.svelte", () => {
 
 	it("renders Nav component with site title", () => {
 		render(Layout, {
-			children: () => "",
+			children: (() => "") as unknown as Snippet,
 		});
 
 		expect(
@@ -22,7 +23,7 @@ describe("+layout.svelte", () => {
 
 	it("renders main element", () => {
 		const { container } = render(Layout, {
-			children: () => "",
+			children: (() => "") as unknown as Snippet,
 		});
 
 		expect(container.querySelector("main")).toBeInTheDocument();
@@ -30,7 +31,7 @@ describe("+layout.svelte", () => {
 
 	it("renders main element for children", () => {
 		const { container } = render(Layout, {
-			children: () => "",
+			children: (() => "") as unknown as Snippet,
 		});
 
 		const main = container.querySelector("main");
