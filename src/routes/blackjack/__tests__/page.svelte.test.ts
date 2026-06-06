@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { fireEvent, render, screen, waitFor } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "../+page.svelte";
 
@@ -22,9 +22,7 @@ describe("blackjack +page.svelte", () => {
 
 	it("renders Deal button", () => {
 		render(Page);
-		expect(
-			screen.getByRole("button", { name: "Deal" }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Deal" })).toBeInTheDocument();
 	});
 
 	it("renders BlackjackBoard component", () => {
@@ -103,9 +101,7 @@ describe("blackjack +page.svelte", () => {
 				return Promise.resolve({
 					ok: true,
 					json: () =>
-						Promise.resolve(
-							callCount === 1 ? dealResponse : standResponse,
-						),
+						Promise.resolve(callCount === 1 ? dealResponse : standResponse),
 				});
 			}),
 		);

@@ -17,12 +17,8 @@ describe("+page.svelte (home)", () => {
 
 	it("renders game links", () => {
 		render(Page);
-		expect(
-			screen.getByRole("link", { name: /Blackjack/ }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: /Roulette/ }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /Blackjack/ })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /Roulette/ })).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: /Slots/ })).toBeInTheDocument();
 	});
 

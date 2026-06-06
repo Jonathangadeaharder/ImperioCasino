@@ -122,9 +122,7 @@ describe("roulette spin POST", () => {
 	});
 
 	it("returns 400 for invalid bet entry (non-number amt)", async () => {
-		const event = mockEvent([
-			{ numbers: "7", odds: 35, amt: "bad" } as any,
-		]);
+		const event = mockEvent([{ numbers: "7", odds: 35, amt: "bad" } as any]);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -134,9 +132,7 @@ describe("roulette spin POST", () => {
 	});
 
 	it("returns 400 for invalid bet entry (negative amt)", async () => {
-		const event = mockEvent([
-			{ numbers: "7", odds: 35, amt: -5 },
-		]);
+		const event = mockEvent([{ numbers: "7", odds: 35, amt: -5 }]);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -146,9 +142,7 @@ describe("roulette spin POST", () => {
 	});
 
 	it("returns 400 for invalid bet entry (non-string numbers)", async () => {
-		const event = mockEvent([
-			{ numbers: 7, odds: 35, amt: 10 } as any,
-		]);
+		const event = mockEvent([{ numbers: 7, odds: 35, amt: 10 } as any]);
 
 		const response = await POST(event);
 		const body = await response.json();
@@ -158,9 +152,7 @@ describe("roulette spin POST", () => {
 	});
 
 	it("returns 400 for invalid bet entry (non-number odds)", async () => {
-		const event = mockEvent([
-			{ numbers: "7", odds: "35", amt: 10 } as any,
-		]);
+		const event = mockEvent([{ numbers: "7", odds: "35", amt: 10 } as any]);
 
 		const response = await POST(event);
 		const body = await response.json();

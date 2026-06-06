@@ -17,9 +17,7 @@ describe("login +page.svelte", () => {
 
 	it("renders submit button", () => {
 		render(Page);
-		expect(
-			screen.getByRole("button", { name: "Login" }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
 	});
 
 	it("renders link to signup", () => {

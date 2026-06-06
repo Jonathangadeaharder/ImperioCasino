@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { fireEvent, render, screen, waitFor } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock @threlte/core with simple passthrough components
 vi.mock("@threlte/core", () => {
 	function MockCanvas() {}
-	MockCanvas.prototype.$$render = function (
-		result: any,
-		props: any,
-		bindings: any,
+	MockCanvas.prototype.$$render = (
+		_result: any,
+		_props: any,
+		_bindings: any,
 		slots: any,
-	) {
+	) => {
 		const slotContent = slots?.default?.() ?? "";
 		return slotContent;
 	};
@@ -20,8 +20,8 @@ vi.mock("@threlte/core", () => {
 		T: new Proxy(
 			{},
 			{
-				get(_, tag: string) {
-					return function () {};
+				get(_, _tag: string) {
+					return () => {};
 				},
 			},
 		),
@@ -78,7 +78,9 @@ describe("slots +page.svelte", () => {
 		);
 
 		render(Page);
-		await fireEvent.click(screen.getByRole("button", { name: "SPIN (1 coin)" }));
+		await fireEvent.click(
+			screen.getByRole("button", { name: "SPIN (1 coin)" }),
+		);
 
 		await waitFor(() => {
 			expect(screen.getByText(/You won 50 coins!/)).toBeInTheDocument();
@@ -105,7 +107,9 @@ describe("slots +page.svelte", () => {
 		);
 
 		render(Page);
-		await fireEvent.click(screen.getByRole("button", { name: "SPIN (1 coin)" }));
+		await fireEvent.click(
+			screen.getByRole("button", { name: "SPIN (1 coin)" }),
+		);
 
 		await waitFor(() => {
 			expect(screen.getByText("No win. Try again!")).toBeInTheDocument();
@@ -126,7 +130,9 @@ describe("slots +page.svelte", () => {
 		);
 
 		render(Page);
-		await fireEvent.click(screen.getByRole("button", { name: "SPIN (1 coin)" }));
+		await fireEvent.click(
+			screen.getByRole("button", { name: "SPIN (1 coin)" }),
+		);
 
 		await waitFor(() => {
 			expect(screen.getByText("Not enough coins")).toBeInTheDocument();
@@ -141,7 +147,9 @@ describe("slots +page.svelte", () => {
 		vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network")));
 
 		render(Page);
-		await fireEvent.click(screen.getByRole("button", { name: "SPIN (1 coin)" }));
+		await fireEvent.click(
+			screen.getByRole("button", { name: "SPIN (1 coin)" }),
+		);
 
 		await waitFor(() => {
 			expect(screen.getByText("Spin failed. Try again.")).toBeInTheDocument();

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { load } from "../+layout.server";
 
 function mockEvent(pathname: string, user: any = null) {

@@ -18,15 +18,18 @@ describe("Nav.svelte", () => {
 
 	it("renders game navigation links", () => {
 		render(Nav);
-		expect(
-			screen.getByRole("link", { name: "Blackjack" }),
-		).toHaveAttribute("href", "/blackjack");
-		expect(
-			screen.getByRole("link", { name: "Roulette" }),
-		).toHaveAttribute("href", "/roulette");
-		expect(
-			screen.getByRole("link", { name: "Slots" }),
-		).toHaveAttribute("href", "/slots");
+		expect(screen.getByRole("link", { name: "Blackjack" })).toHaveAttribute(
+			"href",
+			"/blackjack",
+		);
+		expect(screen.getByRole("link", { name: "Roulette" })).toHaveAttribute(
+			"href",
+			"/roulette",
+		);
+		expect(screen.getByRole("link", { name: "Slots" })).toHaveAttribute(
+			"href",
+			"/slots",
+		);
 	});
 
 	it("hides logout link when no user", () => {
@@ -41,9 +44,10 @@ describe("Nav.svelte", () => {
 		// @ts-expect-error - mock store setter
 		page.data = { user: { id: "u1", username: "player", coins: 100 } };
 		render(Nav);
-		expect(
-			screen.getByRole("link", { name: "Logout" }),
-		).toHaveAttribute("href", "/logout");
+		expect(screen.getByRole("link", { name: "Logout" })).toHaveAttribute(
+			"href",
+			"/logout",
+		);
 	});
 
 	it("shows coin balance when user is present", async () => {
