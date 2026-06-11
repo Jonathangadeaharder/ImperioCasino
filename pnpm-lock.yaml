@@ -26,10 +26,10 @@ importers:
     devDependencies:
       '@sveltejs/adapter-auto':
         specifier: ^4.0.0
-        version: 4.0.0(@sveltejs/kit@2.61.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0)))
+        version: 4.0.0(@sveltejs/kit@2.65.0(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0)))
       '@sveltejs/kit':
-        specifier: ^2.61.1
-        version: 2.61.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))
+        specifier: ^2.65.0
+        version: 2.65.0(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.0.3
         version: 5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0))
@@ -508,8 +508,8 @@ packages:
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
 
-  '@sveltejs/kit@2.61.1':
-    resolution: {integrity: sha512-Ny8s1SR1TyQS2hD2Rvw0XKzU2Nw1eUF52dTb6T2bdcgz7wSC+Nyb5IwjWYlR4b2dvbbR5NJDiQwHg3rnNseghg==}
+  '@sveltejs/kit@2.65.0':
+    resolution: {integrity: sha512-nUWJ4dSKNo8mIOh+HTL+XyRj8FX9Dyb1ayBxj4q9+WrTJfn4jfTt21p3WUFTnnmdnt9xAXpBKLQ+H9y41x0X7Q==}
     engines: {node: '>=18.13'}
     hasBin: true
     peerDependencies:
@@ -1681,12 +1681,12 @@ snapshots:
     dependencies:
       acorn: 8.16.0
 
-  '@sveltejs/adapter-auto@4.0.0(@sveltejs/kit@2.61.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0)))':
+  '@sveltejs/adapter-auto@4.0.0(@sveltejs/kit@2.65.0(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0)))':
     dependencies:
-      '@sveltejs/kit': 2.61.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))
+      '@sveltejs/kit': 2.65.0(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))
       import-meta-resolve: 4.2.0
 
-  '@sveltejs/kit@2.61.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))':
+  '@sveltejs/kit@2.65.0(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.7)(vite@6.4.2(@types/node@25.8.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@6.4.2(@types/node@25.8.0))':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@sveltejs/acorn-typescript': 1.0.10(acorn@8.16.0)
