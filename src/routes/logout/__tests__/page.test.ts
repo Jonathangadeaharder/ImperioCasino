@@ -1,25 +1,27 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
+
+const authMock = vi.hoisted(() => ({
+	signOut: vi.fn(async () => {}),
+}));
+
+vi.mock("$lib/server/auth-service", () => ({
+	authService: { signOut: authMock.signOut },
+}));
+
 import { actions, load } from "../+page.server";
 
-function mockEvent() {
+function mockEvent(): any {
 	return {
+		request: new Request("http://localhost:5173/logout"),
+		cookies: { set: vi.fn(), delete: vi.fn() },
 		locals: {
-			pb: {
-				collection: vi.fn(),
-				authStore: {
-					isValid: true,
-					clear: vi.fn(),
-					loadFromCookie: vi.fn(),
-					model: { id: "user1" },
-				},
-			},
 			db: {},
-			user: { id: "user1", username: "test", coins: 100 },
+			user: { id: "u1", username: "t", coins: 100 },
 		},
 		params: {},
 		url: new URL("http://localhost:5173/logout"),
-	} as unknown as Parameters<NonNullable<typeof actions.default>>[0];
+	} as any;
 }
 
 describe("logout +page.server", () => {
@@ -33,14 +35,13 @@ describe("logout +page.server", () => {
 	});
 
 	describe("actions.default", () => {
-		it("clears auth store and redirects to /login", async () => {
+		it("signs out and redirects to /login", async () => {
 			const event = mockEvent();
-
 			await expect(actions.default(event)).rejects.toMatchObject({
 				status: 303,
 				location: "/login",
 			});
-			expect(event.locals.pb.authStore.clear).toHaveBeenCalled();
+			expect(authMock.signOut).toHaveBeenCalledWith(event);
 		});
 	});
 });

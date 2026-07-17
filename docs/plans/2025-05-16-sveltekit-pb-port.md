@@ -72,7 +72,7 @@
 - [ ] **Step 1: Create SvelteKit project**
 
 ```bash
-cd /Users/jonathangadeaharder/projects/ImperioCasino
+cd /Users/jonathangadeaharder/projects/games/ImperioCasino
 pnpm create @sveltejs/kit@latest . -- --template minimal --types typescript --no-add-ons
 ```
 

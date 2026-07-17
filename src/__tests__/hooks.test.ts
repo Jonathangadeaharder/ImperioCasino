@@ -1,100 +1,87 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockStore } = vi.hoisted(() => {
-	const store = {
-		isValid: false,
-		loadFromCookie: vi.fn(),
-		clear: vi.fn(),
-		model: null as { id: string; username: string; coins: number } | null,
-		exportToCookie: vi.fn(() => "pb_auth=session"),
-	};
-	return { mockStore: store };
-});
+const envState = vi.hoisted(() => ({
+	building: false,
+}));
 
-vi.mock("pocketbase", () => ({
-	default: vi.fn(() => ({
-		collection: vi.fn().mockReturnValue({
-			authRefresh: vi.fn().mockResolvedValue({}),
-			getOne: vi.fn(),
-			getList: vi.fn(),
-			create: vi.fn(),
-			update: vi.fn(),
-		}),
-		authStore: mockStore,
-	})),
+const authState = vi.hoisted(() => ({
+	session: null as {
+		user: { id: string; username: string; coins: number };
+	} | null,
+}));
+
+vi.mock("$app/environment", () => ({
+	get building() {
+		return envState.building;
+	},
+	dev: true,
+	prerender: false,
+}));
+
+vi.mock("$lib/server/db/database", () => ({
+	ensureDb: vi.fn(async () => {}),
+}));
+
+vi.mock("$lib/server/auth-service", () => ({
+	authService: {
+		getSession: vi.fn(async () => authState.session),
+	},
 }));
 
 import { handle } from "../hooks.server";
 
-function mockResolve() {
+function makeEvent(pathname: string, cookie = ""): any {
+	return {
+		url: new URL(`http://localhost:5173${pathname}`),
+		request: { headers: { get: vi.fn(() => cookie) } },
+		cookies: { set: vi.fn(), delete: vi.fn() },
+		locals: {} as Record<string, unknown>,
+	};
+}
+
+function mockResolve(): any {
 	return { headers: { set: vi.fn(), append: vi.fn() } };
 }
 
 describe("hooks.server handle", () => {
-	it("skips auth when building", async () => {
-		const event = {
-			request: { headers: { get: vi.fn(() => "") } },
-			locals: {},
-		} as any;
-		const resolve = vi
-			.fn()
-			.mockResolvedValue({ headers: { set: vi.fn(), append: vi.fn() } });
+	beforeEach(() => {
+		vi.clearAllMocks();
+		authState.session = null;
+		envState.building = false;
+	});
 
-		await handle({ event, resolve });
-
+	it("skips ensureDb and auth when building", async () => {
+		envState.building = true;
+		const event = makeEvent("/blackjack");
+		const resolve = vi.fn().mockResolvedValue(mockResolve());
+		await handle({ event, resolve } as any);
 		expect(resolve).toHaveBeenCalledWith(event);
 	});
 
-	it("sets up pb and db on locals", async () => {
-		const event = {
-			request: { headers: { get: vi.fn(() => "") } },
-			locals: {},
-		} as any;
+	it("sets up db and auth on locals", async () => {
+		const event = makeEvent("/");
 		const resolve = vi.fn().mockResolvedValue(mockResolve());
-
-		await handle({ event, resolve });
-
-		expect(event.locals.pb).toBeDefined();
+		await handle({ event, resolve } as any);
 		expect(event.locals.db).toBeDefined();
+		expect(typeof event.locals.auth).toBe("function");
 	});
 
-	it("loads auth cookie from request", async () => {
-		const event = {
-			request: { headers: { get: vi.fn(() => "pb_auth=token123") } },
-			locals: {},
-		} as any;
+	it("sets user to null when no session", async () => {
+		authState.session = null;
+		const event = makeEvent("/");
 		const resolve = vi.fn().mockResolvedValue(mockResolve());
-
-		await handle({ event, resolve });
-
-		expect(mockStore.loadFromCookie).toHaveBeenCalledWith("pb_auth=token123");
-	});
-
-	it("sets user to null when auth store is invalid", async () => {
-		mockStore.isValid = false;
-		const event = {
-			request: { headers: { get: vi.fn(() => "") } },
-			locals: {},
-		} as any;
-		const resolve = vi.fn().mockResolvedValue(mockResolve());
-
-		await handle({ event, resolve });
-
+		await handle({ event, resolve } as any);
 		expect(event.locals.user).toBeNull();
 	});
 
-	it("sets user from auth store when valid", async () => {
-		mockStore.isValid = true;
-		mockStore.model = { id: "user1", username: "test", coins: 500 };
-		const event = {
-			request: { headers: { get: vi.fn(() => "pb_auth=token") } },
-			locals: {},
-		} as any;
+	it("sets user from session when authenticated", async () => {
+		authState.session = {
+			user: { id: "user1", username: "test", coins: 500 },
+		};
+		const event = makeEvent("/blackjack");
 		const resolve = vi.fn().mockResolvedValue(mockResolve());
-
-		await handle({ event, resolve });
-
+		await handle({ event, resolve } as any);
 		expect(event.locals.user).toEqual({
 			id: "user1",
 			username: "test",
@@ -102,56 +89,46 @@ describe("hooks.server handle", () => {
 		});
 	});
 
-	it("sets set-cookie header on response", async () => {
-		mockStore.isValid = false;
-		const event = {
-			request: { headers: { get: vi.fn(() => "") } },
-			locals: {},
-		} as any;
-		const mockRes = mockResolve();
-		const resolve = vi.fn().mockResolvedValue(mockRes);
-
-		await handle({ event, resolve });
-
-		expect(mockRes.headers.append).toHaveBeenCalledWith(
-			"set-cookie",
-			"pb_auth=session",
-		);
+	it("redirects unauthenticated users on protected paths", async () => {
+		authState.session = null;
+		const event = makeEvent("/blackjack");
+		const resolve = vi.fn().mockResolvedValue(mockResolve());
+		await expect(handle({ event, resolve } as any)).rejects.toMatchObject({
+			status: 303,
+			location: "/login",
+		});
+		expect(resolve).not.toHaveBeenCalled();
 	});
 
-	it("clears auth store when authRefresh throws", async () => {
-		const mockAuthRefresh = vi
-			.fn()
-			.mockRejectedValue(new Error("Token expired"));
-		const mockClear = vi.fn();
-		const mockPB = {
-			collection: vi.fn().mockReturnValue({
-				authRefresh: mockAuthRefresh,
-				getOne: vi.fn(),
-				getList: vi.fn(),
-				create: vi.fn(),
-				update: vi.fn(),
-			}),
-			authStore: {
-				...mockStore,
-				isValid: true,
-				clear: mockClear,
-				model: { id: "user1", username: "test", coins: 500 },
-			},
-		};
-
-		const event = {
-			request: { headers: { get: vi.fn(() => "pb_auth=expired") } },
-			locals: {},
-		} as any;
+	it("allows public paths without session", async () => {
+		authState.session = null;
+		const event = makeEvent("/login");
 		const resolve = vi.fn().mockResolvedValue(mockResolve());
+		await handle({ event, resolve } as any);
+		expect(resolve).toHaveBeenCalled();
+	});
 
-		const PocketBase = (await import("pocketbase")).default;
-		vi.mocked(PocketBase).mockReturnValue(mockPB as any);
+	it("allows root path without session", async () => {
+		authState.session = null;
+		const event = makeEvent("/");
+		const resolve = vi.fn().mockResolvedValue(mockResolve());
+		await handle({ event, resolve } as any);
+		expect(resolve).toHaveBeenCalled();
+	});
 
-		await handle({ event, resolve });
-
-		expect(mockAuthRefresh).toHaveBeenCalled();
-		expect(mockClear).toHaveBeenCalled();
+	it("applies security headers to response", async () => {
+		authState.session = null;
+		const event = makeEvent("/login");
+		const response = mockResolve();
+		const resolve = vi.fn().mockResolvedValue(response);
+		await handle({ event, resolve } as any);
+		expect(response.headers.set).toHaveBeenCalledWith(
+			"X-Frame-Options",
+			"DENY",
+		);
+		expect(response.headers.set).toHaveBeenCalledWith(
+			"X-Content-Type-Options",
+			"nosniff",
+		);
 	});
 });

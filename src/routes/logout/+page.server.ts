@@ -1,9 +1,10 @@
 import { redirect } from "@sveltejs/kit";
+import { authService } from "$lib/server/auth-service";
 import type { Actions } from "./$types";
 
 export const actions: Actions = {
-	default: async ({ locals }) => {
-		locals.pb.authStore.clear();
+	default: async (event) => {
+		await authService.signOut(event);
 		redirect(303, "/login");
 	},
 };

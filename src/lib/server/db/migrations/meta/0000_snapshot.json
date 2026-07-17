@@ -1,0 +1,279 @@
+{
+	"id": "63b97fc1-5a6b-44ad-bbaa-20f9bcbd4bcd",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.blackjack_game": {
+			"name": "blackjack_game",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"deck": {
+					"name": "deck",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"dealer_hand": {
+					"name": "dealer_hand",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"player_hand": {
+					"name": "player_hand",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"player_second_hand": {
+					"name": "player_second_hand",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"player_coins": {
+					"name": "player_coins",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"current_wager": {
+					"name": "current_wager",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"game_over": {
+					"name": "game_over",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"message": {
+					"name": "message",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"player_stood": {
+					"name": "player_stood",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"double_down": {
+					"name": "double_down",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"split": {
+					"name": "split",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"current_hand": {
+					"name": "current_hand",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"dealer_value": {
+					"name": "dealer_value",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"blackjack_game_user_id_user_id_fk": {
+					"name": "blackjack_game_user_id_user_id_fk",
+					"tableFrom": "blackjack_game",
+					"tableTo": "user",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.session": {
+			"name": "session",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"token_hash": {
+					"name": "token_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"session_user_id_user_id_fk": {
+					"name": "session_user_id_user_id_fk",
+					"tableFrom": "session",
+					"tableTo": "user",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"session_token_hash_unique": {
+					"name": "session_token_hash_unique",
+					"nullsNotDistinct": false,
+					"columns": ["token_hash"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.user": {
+			"name": "user",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"username": {
+					"name": "username",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"email": {
+					"name": "email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"password_hash": {
+					"name": "password_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"coins": {
+					"name": "coins",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 100
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"user_username_unique": {
+					"name": "user_username_unique",
+					"nullsNotDistinct": false,
+					"columns": ["username"]
+				},
+				"user_email_unique": {
+					"name": "user_email_unique",
+					"nullsNotDistinct": false,
+					"columns": ["email"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}
