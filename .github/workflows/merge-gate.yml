@@ -19,7 +19,7 @@ jobs:
     name: Repo Hygiene
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Check for iCloud sync conflicts
         run: |
           if find . -path ./node_modules -prune -o -path ./.git -prune -o -name "* [0-9]*" -print | grep -q .; then
@@ -32,7 +32,7 @@ jobs:
     name: Node Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
       - name: Setup Node
@@ -57,7 +57,7 @@ jobs:
     name: Dependency Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -71,7 +71,7 @@ jobs:
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: gitleaks
@@ -90,7 +90,7 @@ jobs:
       matrix:
         language: [javascript-typescript]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
