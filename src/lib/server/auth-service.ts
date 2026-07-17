@@ -83,7 +83,7 @@ async function createSession(
 	return { token, expiresAt };
 }
 
-export class AuthService {
+class AuthService {
 	async getSession(event: RequestEvent): Promise<AuthSession | null> {
 		const cookieHeader = event.request.headers.get("cookie") ?? "";
 		const sessionToken = extractSessionToken(cookieHeader);

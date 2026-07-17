@@ -7,7 +7,7 @@ import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "./schema";
 
-export type DrizzleDb = PgliteDatabase<typeof schema>;
+type DrizzleDb = PgliteDatabase<typeof schema>;
 
 const globalForDb = globalThis as unknown as {
 	__pglite?: PGlite;
@@ -119,17 +119,3 @@ export const db = new Proxy({} as DrizzleDb, {
 		return Reflect.get(_db, prop, receiver);
 	},
 });
-
-export async function closeDb(): Promise<void> {
-	if (_pglite) {
-		try {
-			await _pglite.close();
-		} catch {
-			// Best-effort on shutdown.
-		}
-		_pglite = undefined;
-		_db = undefined;
-		_initPromise = undefined;
-		persistToGlobal();
-	}
-}

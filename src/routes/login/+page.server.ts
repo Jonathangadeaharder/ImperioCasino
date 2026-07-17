@@ -1,11 +1,9 @@
 import { fail, redirect } from "@sveltejs/kit";
+import { authPageLoad } from "$lib/server/auth-guards";
 import { authService } from "$lib/server/auth-service";
 import type { Actions, PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ locals }) => {
-	if (locals.user) redirect(303, "/");
-	return {};
-};
+export const load: PageServerLoad = authPageLoad;
 
 export const actions: Actions = {
 	default: async (event) => {

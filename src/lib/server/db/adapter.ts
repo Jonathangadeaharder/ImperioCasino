@@ -1,7 +1,9 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, type SQL, sql } from "drizzle-orm";
 import type { BlackjackState, User } from "$lib/types";
 import { db } from "./database";
 import { blackjackGame, user } from "./schema";
+
+type CoinValue = NonNullable<typeof user.$inferInsert.coins> | SQL;
 
 export interface DBAdapter {
 	getUser(id: string): Promise<User>;
@@ -20,6 +22,39 @@ export interface DBAdapter {
 
 function toUser(row: typeof user.$inferSelect): User {
 	return { id: row.id, username: row.username, coins: row.coins };
+}
+
+// Maps BlackjackState snake_case keys to drizzle blackjackGame camelCase
+// columns. Only keys present in `state` are copied into the patch.
+const BLACKJACK_FIELD_MAP: ReadonlyArray<
+	[keyof BlackjackState, keyof typeof blackjackGame.$inferInsert]
+> = [
+	["deck", "deck"],
+	["dealer_hand", "dealerHand"],
+	["player_hand", "playerHand"],
+	["player_second_hand", "playerSecondHand"],
+	["player_coins", "playerCoins"],
+	["current_wager", "currentWager"],
+	["game_over", "gameOver"],
+	["message", "message"],
+	["player_stood", "playerStood"],
+	["double_down", "doubleDown"],
+	["split", "split"],
+	["current_hand", "currentHand"],
+	["dealer_value", "dealerValue"],
+];
+
+async function updateUserCoins(
+	userId: string,
+	coinExpr: CoinValue,
+): Promise<number> {
+	const rows = await db
+		.update(user)
+		.set({ coins: coinExpr, updatedAt: new Date() })
+		.where(eq(user.id, userId))
+		.returning({ coins: user.coins });
+	if (!rows[0]) throw new Error("User not found");
+	return rows[0].coins;
 }
 
 export class DrizzleAdapter implements DBAdapter {
@@ -49,39 +84,15 @@ export class DrizzleAdapter implements DBAdapter {
 	}
 
 	async addCoins(userId: string, amount: number): Promise<number> {
-		const rows = await db
-			.update(user)
-			.set({
-				coins: sql`${user.coins} + ${amount}`,
-				updatedAt: new Date(),
-			})
-			.where(eq(user.id, userId))
-			.returning({ coins: user.coins });
-		if (!rows[0]) throw new Error("User not found");
-		return rows[0].coins;
+		return updateUserCoins(userId, sql`${user.coins} + ${amount}`);
 	}
 
 	async deductCoins(userId: string, amount: number): Promise<number> {
-		const rows = await db
-			.update(user)
-			.set({
-				coins: sql`${user.coins} - ${amount}`,
-				updatedAt: new Date(),
-			})
-			.where(eq(user.id, userId))
-			.returning({ coins: user.coins });
-		if (!rows[0]) throw new Error("User not found");
-		return rows[0].coins;
+		return updateUserCoins(userId, sql`${user.coins} - ${amount}`);
 	}
 
 	async setCoins(userId: string, amount: number): Promise<number> {
-		const rows = await db
-			.update(user)
-			.set({ coins: amount, updatedAt: new Date() })
-			.where(eq(user.id, userId))
-			.returning({ coins: user.coins });
-		if (!rows[0]) throw new Error("User not found");
-		return rows[0].coins;
+		return updateUserCoins(userId, amount);
 	}
 
 	async createBlackjackGame(
@@ -118,25 +129,10 @@ export class DrizzleAdapter implements DBAdapter {
 		state: Partial<BlackjackState>,
 	): Promise<void> {
 		const patch: Record<string, unknown> = { updatedAt: new Date() };
-		if (state.deck !== undefined) patch.deck = state.deck;
-		if (state.dealer_hand !== undefined) patch.dealerHand = state.dealer_hand;
-		if (state.player_hand !== undefined) patch.playerHand = state.player_hand;
-		if (state.player_second_hand !== undefined)
-			patch.playerSecondHand = state.player_second_hand;
-		if (state.player_coins !== undefined)
-			patch.playerCoins = state.player_coins;
-		if (state.current_wager !== undefined)
-			patch.currentWager = state.current_wager;
-		if (state.game_over !== undefined) patch.gameOver = state.game_over;
-		if (state.message !== undefined) patch.message = state.message;
-		if (state.player_stood !== undefined)
-			patch.playerStood = state.player_stood;
-		if (state.double_down !== undefined) patch.doubleDown = state.double_down;
-		if (state.split !== undefined) patch.split = state.split;
-		if (state.current_hand !== undefined)
-			patch.currentHand = state.current_hand;
-		if (state.dealer_value !== undefined)
-			patch.dealerValue = state.dealer_value;
+		for (const [stateKey, columnKey] of BLACKJACK_FIELD_MAP) {
+			const value = state[stateKey];
+			if (value !== undefined) patch[columnKey] = value;
+		}
 		await db
 			.update(blackjackGame)
 			.set(patch)
