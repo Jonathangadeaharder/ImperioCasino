@@ -4,21 +4,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const rows = vi.hoisted(() => ({ value: [] as unknown[] }));
 
 function chainable() {
-	const self: Record<string, ReturnType<typeof vi.fn>> = {};
-	const resolve = vi.fn(async () => rows.value);
-	for (const m of ["from", "where", "set", "values", "onConflictDoNothing", "onConflictDoUpdate"]) {
-		self[m] = vi.fn(() => self);
+	const builder: Record<string, ReturnType<typeof vi.fn>> = {};
+	for (const m of [
+		"from",
+		"where",
+		"set",
+		"values",
+		"onConflictDoNothing",
+		"onConflictDoUpdate",
+	]) {
+		builder[m] = vi.fn(() => builder);
 	}
-	self.limit = vi.fn(() => Promise.resolve(rows.value)) as any;
-	self.returning = vi.fn(() => Promise.resolve(rows.value)) as any;
-	// Make the builder itself thenable so `await db.insert().values({...})`
-	// (no .returning) resolves to rows.
-	Object.defineProperty(self, "then", {
-		value: (resolveFn: (v: unknown) => unknown) =>
-			Promise.resolve(rows.value).then(resolveFn),
-		configurable: true,
-	});
-	return self;
+	builder.limit = vi.fn(() => Promise.resolve(rows.value)) as any;
+	builder.returning = vi.fn(() => Promise.resolve(rows.value)) as any;
+	// Return a real Promise that also exposes the builder methods, so both
+	// `await db.insert().values({...})` (terminal) and `.values().returning()`
+	// (chained) work without a literal thenable.
+	const promise = Promise.resolve(rows.value);
+	return Object.assign(promise, builder);
 }
 
 vi.mock("./db/database", () => {
@@ -92,9 +95,7 @@ describe("AuthService", () => {
 		});
 
 		it("returns session when valid", async () => {
-			const sessionRows = [
-				{ userId: "u1", expiresAt: new Date("2027-01-01") },
-			];
+			const sessionRows = [{ userId: "u1", expiresAt: new Date("2027-01-01") }];
 			const userRows = [
 				{
 					id: "u1",
@@ -105,13 +106,13 @@ describe("AuthService", () => {
 			];
 			const dbMod = await import("./db/database");
 			const sessionChain = chainable();
-			vi.mocked(sessionChain.limit as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve(sessionRows) as any,
-			);
+			vi.mocked(
+				sessionChain.limit as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve(sessionRows) as any);
 			const userChain = chainable();
-			vi.mocked(userChain.limit as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve(userRows) as any,
-			);
+			vi.mocked(
+				userChain.limit as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve(userRows) as any);
 			vi.mocked(dbMod.db.select as unknown as ReturnType<typeof vi.fn>)
 				.mockReturnValueOnce(sessionChain)
 				.mockReturnValueOnce(userChain);
@@ -175,13 +176,13 @@ describe("AuthService", () => {
 			};
 			const dbMod = await import("./db/database");
 			const emptySelect = chainable();
-			vi.mocked(emptySelect.limit as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve([]) as any,
-			);
+			vi.mocked(
+				emptySelect.limit as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve([]) as any);
 			const insertChain = chainable();
-			vi.mocked(insertChain.returning as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve([newUser]) as any,
-			);
+			vi.mocked(
+				insertChain.returning as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve([newUser]) as any);
 			vi.mocked(dbMod.db.select as unknown as ReturnType<typeof vi.fn>)
 				.mockReturnValueOnce(emptySelect) // existing username
 				.mockReturnValueOnce(emptySelect); // existing email
@@ -209,13 +210,13 @@ describe("AuthService", () => {
 		it("returns error when insert returns no row", async () => {
 			const dbMod = await import("./db/database");
 			const emptySelect = chainable();
-			vi.mocked(emptySelect.limit as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve([]) as any,
-			);
+			vi.mocked(
+				emptySelect.limit as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve([]) as any);
 			const insertChain = chainable();
-			vi.mocked(insertChain.returning as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-				Promise.resolve([]) as any,
-			);
+			vi.mocked(
+				insertChain.returning as unknown as ReturnType<typeof vi.fn>,
+			).mockReturnValue(Promise.resolve([]) as any);
 			vi.mocked(dbMod.db.select as unknown as ReturnType<typeof vi.fn>)
 				.mockReturnValueOnce(emptySelect)
 				.mockReturnValueOnce(emptySelect);

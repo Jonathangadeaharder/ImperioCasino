@@ -7,7 +7,14 @@ const store = vi.hoisted(() => ({ rows: [] as unknown[] }));
 
 function chainable() {
 	const self: Record<string, ReturnType<typeof vi.fn>> = {};
-	for (const m of ["from", "where", "set", "values", "onConflictDoNothing", "onConflictDoUpdate"]) {
+	for (const m of [
+		"from",
+		"where",
+		"set",
+		"values",
+		"onConflictDoNothing",
+		"onConflictDoUpdate",
+	]) {
 		self[m] = vi.fn(() => self);
 	}
 	// limit/returning are terminal: return a Promise resolving to store.rows.
