@@ -30,11 +30,8 @@ yarn-error.log*
 # SvelteKit
 .svelte-kit/
 
-# PocketBase binary & data
-pocketbase/pocketbase
-pocketbase/pb_data/
-pocketbase/CHANGELOG.md
-pocketbase/LICENSE.md
+# PGlite data dir
+.pglite/
 
 # Ralph loop
 .ralph-loop/
@@ -44,4 +41,3 @@ pocketbase/LICENSE.md
 
 # Coverage reports
 coverage/
-pocketbase/pocketbase_linux/

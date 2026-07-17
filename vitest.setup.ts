@@ -25,7 +25,7 @@ vi.mock('$app/stores', () => {
 });
 
 vi.mock('$env/dynamic/private', () => ({
-	env: { POCKETBASE_URL: 'http://127.0.0.1:8090' }
+	env: { PGLITE_DATA_DIR: 'memory' }
 }));
 
 globalThis.fetch = vi.fn(() => {
