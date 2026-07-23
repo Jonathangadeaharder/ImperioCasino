@@ -25,7 +25,7 @@
     "@sveltejs/adapter-auto": "^4.0.0",
     "@sveltejs/kit": "^2.69.3",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/svelte": "^5.4.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^3.0.0",
